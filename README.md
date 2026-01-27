@@ -1,123 +1,79 @@
-# Ray Menu
+# 𖤓 Ray Menu
 
-A framework-agnostic radial/pie menu library with Web Component and React bindings. Features smart edge detection, flip behavior, and infinite radial selection.
+> **Infinite, fluid, and framework-agnostic radial navigation for the modern web.**
 
-## Features
+**Ray Menu** is a lightweight, high-performance radial (pie) menu library designed with a "headless-first" philosophy. It combines advanced geometry with smooth 3D-inspired interactions, making it perfect for complex apps, games, or creative tools on the web.
 
-- **Framework-agnostic** - Web Component works anywhere, React bindings available
-- **Zero dependencies** - Pure TypeScript, no runtime dependencies
-- **Headless-first architecture** - Core logic separated from UI
-- **Smart edge detection** - Automatic repositioning near viewport edges
-- **Flip behavior** - Intelligent flip when near edges
-- **Infinite radial selection** - Select based on angle, not distance
-- **Visual effects** - Optional cursor trail and anchor line effects
-- **Submenu support**
-- **Keyboard navigation** (Escape to close)
-- **TypeScript support** with full type definitions
+---
 
-## Installation
+## ✨ Key Features
+
+- **⚛️ Framework Agnostic:** Built as a pure Web Component. Works in React, Vue, Svelte, or vanilla HTML.
+- **🪶 Zero Dependencies:** Written in pure TypeScript with **0** runtime dependencies. Only **19KB**.
+- **🌀 Infinite Radial Selection:** Select items based on angle, not distance. Flick your wrist to select.
+- **🧠 Smart Edge Detection:** Context-aware positioning. The menu flips or shifts automatically when near screen edges.
+- **🎨 Squishy Visuals:** Optiona cursor trails and anchor lines for satisfying tactile feedback.
+
+---
+
+## 🚀 Installation
 
 ```bash
-npm install ray-menu
-# or
+# Using bun (recommended)
 bun add ray-menu
+
+# Using npm
+npm install ray-menu
+
 ```
 
-## Usage
+---
 
-### Web Component (Framework-agnostic)
+## 🛠 Usage
+
+### 1. Web Component (Universal)
+
+Perfect for any project. Just import and use the custom tag.
 
 ```html
-<ray-menu id="menu" radius="140" inner-radius="45" infinite-selection></ray-menu>
-
 <script type="module">
-  import 'ray-menu';
+  import "ray-menu";
+  const menu = document.querySelector("ray-menu");
 
-  const menu = document.getElementById('menu');
-
-  // Set menu items
   menu.items = [
-    { id: 'copy', label: 'Copy', shortcut: 'Cmd+C' },
-    { id: 'paste', label: 'Paste', shortcut: 'Cmd+V' },
-    { id: 'cut', label: 'Cut', shortcut: 'Cmd+X' },
+    { id: "copy", label: "Copy", shortcut: "⌘C" },
+    { id: "paste", label: "Paste", shortcut: "⌘V" },
   ];
 
-  // Listen for selection
-  menu.addEventListener('ray-select', (e) => {
-    console.log('Selected:', e.detail.item);
-  });
-
-  // Open on right-click
-  document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    menu.open(e.clientX, e.clientY);
-  });
+  menu.addEventListener("ray-select", (e) => console.log(e.detail.item));
 </script>
+
+<ray-menu id="menu" radius="140" show-anchor-line></ray-menu>
 ```
 
-#### Web Component Attributes
+### 2. React Bindings
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `radius` | number | 120 | Outer radius in pixels |
-| `inner-radius` | number | 40 | Inner dead zone radius |
-| `infinite-selection` | boolean | true | Enable infinite radial selection |
-| `center-deadzone` | number | 30 | No selection within this radius |
-| `infinite-threshold` | number | 0 | Max selection distance (0 = infinite) |
-| `edge-behavior` | 'flip' \| 'shift' \| 'none' | 'flip' | Edge handling mode |
-| `show-trail-path` | boolean | false | Show cursor trail effect |
-| `show-anchor-line` | boolean | false | Show line from menu edge to cursor |
-
-#### Web Component Methods
-
-- `open(x: number, y: number)` - Open menu at position
-- `close()` - Close menu
-- `toggle(x: number, y: number)` - Toggle menu at position
-
-#### Web Component Events
-
-- `ray-select` - Fired when an item is selected. `e.detail.item` contains the selected item.
-- `ray-open` - Fired when menu opens
-- `ray-close` - Fired when menu closes
-
-### React
+Includes a specialized hook and the `TheHelm` component for a seamless React experience.
 
 ```tsx
-import { TheHelm, useRadialMenu, type MenuItem } from 'ray-menu/react';
-
-const menuItems: MenuItem[] = [
-  { id: 'copy', label: 'Copy', shortcut: 'Cmd+C', onSelect: () => console.log('Copy') },
-  { id: 'paste', label: 'Paste', shortcut: 'Cmd+V', onSelect: () => console.log('Paste') },
-  { id: 'cut', label: 'Cut', shortcut: 'Cmd+X', onSelect: () => console.log('Cut') },
-];
+import { TheHelm, useRadialMenu } from "ray-menu/react";
 
 function App() {
   const menu = useRadialMenu({
-    items: menuItems,
-    onSelect: (item) => console.log('Selected:', item.label),
-    config: {
-      radius: 140,
-      innerRadius: 45,
-      infiniteSelection: true,
-      centerDeadzone: 30,
-    },
+    items: [{ id: "1", label: "Save" }],
+    onSelect: (item) => console.log(item),
   });
 
   return (
-    <div
-      onContextMenu={(e) => {
-        e.preventDefault();
-        menu.open({ x: e.clientX, y: e.clientY });
-      }}
-    >
-      Right-click to open menu
-      <TheHelm menu={menu} showTrailPath showAnchorLine />
+    <div onContextMenu={menu.open}>
+      <TheHelm menu={menu} showTrailPath />
     </div>
   );
 }
 ```
 
-### Core Logic Only
+<details>
+<summary>Core Logic Only</summary>
 
 Use the pure TypeScript core without any UI:
 
@@ -128,7 +84,7 @@ import {
   distributeAngles,
   detectEdgeConstraints,
   calculateSmartFlip,
-} from 'ray-menu/core';
+} from "ray-menu/core";
 
 // Calculate angles for 6 menu items
 const angles = distributeAngles(6);
@@ -141,110 +97,78 @@ const edgeState = detectEdgeConstraints({ x: 100, y: 50 }, 120, viewport);
 const flipState = calculateSmartFlip({ x: 100, y: 50 }, 120, edgeState);
 ```
 
-## Configuration Options
+</details>
 
-```ts
-interface MenuConfig {
-  radius: number;            // Outer radius (default: 120)
-  innerRadius: number;       // Inner dead zone (default: 40)
-  gap: number;               // Gap between items in radians (default: 0.05)
-  startAngle: number;        // Start angle (default: -PI/2, top)
-  sweepAngle: number;        // Total arc span (default: 2*PI, full circle)
-  animationDuration: number; // Animation ms (default: 200)
-  edgeDetection: boolean;    // Enable edge repositioning (default: true)
-  smartFlip: boolean;        // Enable flip behavior (default: true)
+---
 
-  // Infinite Selection Mode
-  infiniteSelection: boolean;   // Sectors extend infinitely (default: true)
-  centerDeadzone: number;       // No selection within this radius (default: 30)
-  infiniteThreshold: number;    // Max distance, 0 = truly infinite (default: 0)
-  edgeBehavior: 'flip' | 'shift' | 'none'; // Edge handling (default: 'flip')
-}
-```
+## 📐 Technical Architecture
 
-## Visual Effects
+RayMenu is split into three distinct layers to provide maximum flexibility:
 
-The menu supports optional visual effects for cursor tracking:
+| Layer     | Path             | Description                                                     |
+| --------- | ---------------- | --------------------------------------------------------------- |
+| **Core**  | `ray-menu/core`  | Pure math: `atan2` calculations, edge logic, and physics.       |
+| **WC**    | `ray-menu`       | The `<ray-menu>` Web Component. Zero-dep & Shadow DOM isolated. |
+| **React** | `ray-menu/react` | Typed hooks and components for the React ecosystem.             |
 
-- **Trail Path** - Shows a fading trail following cursor movement with direction indicator
-- **Anchor Line** - Shows a dashed line from the selected menu item edge to the cursor when outside the menu radius
+---
 
-### Web Component
-```html
-<ray-menu show-trail-path show-anchor-line></ray-menu>
-```
+## ⚙️ Configuration
 
-### React
-```tsx
-<TheHelm menu={menu} showTrailPath showAnchorLine />
-```
+**Web Component Attributes**
 
-## Infinite Radial Selection
+| Attribute / Prop     | Type      | Default  | Description                                     |
+| -------------------- | --------- | -------- | ----------------------------------------------- |
+| `radius`             | `number`  | `120`    | Outer radius in pixels.                         |
+| `inner-radius`       | `number`  | `40`     | Inner "dead zone" for the center.               |
+| `gap`                | `number`  | `0.05`   | Gap between items in radians.                   |
+| `start-angle`        | `number`  | `-π/2`   | Start angle (default: -π/2, top)                |
+| `sweep-angle`        | `number`  | `2π`     | Total arc span (default: 2π, full circle)       |
+| `animation-duration` | `number`  | `200`    | Animation ms (default: 200)                     |
+| `edge-detection`     | `boolean` | `true`   | Enable edge repositioning (default: true)       |
+| `smart-flip`         | `boolean` | `true`   | Enable flip behavior (default: true)            |
+| `edge-behavior`      | `string`  | `'flip'` | Edge handling mode: `flip`, `shift`, or `none`. |
+| `infinite-selection` | `boolean` | `true`   | Selection extends beyond the menu radius.       |
+| `center-deadzone`    | `number`  | `30`     | No selection within this radius                 |
+| `infinite-threshold` | `number`  | `0`      | Max selection distance (0 = infinite)           |
+| `show-trail-path`    | `boolean` | `false`  | Enables the "Drift Trace" cursor trail.         |
+| `show-anchor-line`   | `boolean` | `false`  | Show line from menu edge to cursor.             |
 
-When `infiniteSelection` is enabled, menu items are selected based on the angular sector alone, regardless of cursor distance. This allows users to:
+**Web Component Methods**
 
-- Move the cursor far beyond the menu while maintaining selection
-- Make quick selections with broad gestures
-- Reduce precision requirements for item selection
+- `open(x: number, y: number)` - Open menu at position
+- `close()` - Close menu
+- `toggle(x: number, y: number)` - Toggle menu at position
 
-The `centerDeadzone` prevents erratic selection when the cursor is too close to the center.
+**Web Component Events**
 
-## Project Structure
+- `ray-select` - Fired when an item is selected. `e.detail.item` contains the selected item.
+- `ray-open` - Fired when menu opens
+- `ray-close` - Fired when menu closes
 
-```
-src/
-├── core/           # Pure TypeScript logic (no framework deps)
-│   ├── angle.ts    # atan2-based angle calculations
-│   ├── edge.ts     # Viewport edge detection
-│   ├── flip.ts     # Smart flip logic
-│   ├── physics.ts  # Animation utilities
-│   └── types.ts    # Type definitions
-├── wc/             # Web Component
-│   ├── ray-menu.ts # Custom element
-│   └── index.ts    # Entry point
-├── components/     # React components
-│   ├── TheHelm.tsx
-│   ├── ArcSubMenu.tsx
-│   └── DriftTrace.tsx
-├── hooks/
-│   └── useRadialMenu.ts
-└── index.ts        # React entry point
-```
+---
 
-## Development
+## ✺ Infinite Selection Logic
 
-### Prerequisites
+Unlike standard menus that require precise hovering, **RayMenu** uses angular sectors. Once the menu is open, the cursor's distance doesn't matter—only its angle relative to the center. This turns every selection into a fast, "flick-style" gesture, significantly reducing cognitive load and increasing speed.
 
-- Node.js 18+
-- Bun (recommended) or npm
+---
 
-### Install dependencies
+## 🧪 Development
 
 ```bash
+# Install
 bun install
-```
 
-### Run the playground
-
-```bash
+# Dev Playground
 bun run dev
-```
 
-### Build the library
-
-```bash
+# Build (Generates dist/wc and dist/react)
 bun run build
+
 ```
 
-Output:
-- `dist/wc/` - Web Component build (framework-agnostic)
-- `dist/react/` - React build
-
-### Type check
-
-```bash
-bun run typecheck
-```
+---
 
 ## License
 
