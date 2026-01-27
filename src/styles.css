@@ -1,0 +1,17 @@
+/* Radial Menu Library Styles */
+/* When using with Tailwind, import this file and use the 'rd' prefix for utility classes */
+
+@import "tailwindcss" prefix(rd);
+
+@theme {
+  --color-radial-bg: oklch(0.15 0.02 260);
+  --color-radial-surface: oklch(0.22 0.03 260);
+  --color-radial-border: oklch(0.35 0.04 260);
+  --color-radial-text: oklch(0.92 0.01 260);
+  --color-radial-text-muted: oklch(0.65 0.02 260);
+  --color-radial-accent: oklch(0.7 0.15 200);
+  --color-radial-accent-hover: oklch(0.75 0.18 200);
+
+  --radius-radial: 12px;
+  --shadow-radial: 0 8px 32px oklch(0 0 0 / 0.4);
+}

@@ -1,0 +1,77 @@
+{
+  "name": "radial-menu",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A headless-first React radial menu component library",
+  "author": "",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "radial-menu",
+    "pie-menu",
+    "context-menu",
+    "headless",
+    "typescript"
+  ],
+  "main": "./dist/radial-menu.cjs",
+  "module": "./dist/radial-menu.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/radial-menu.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/radial-menu.cjs"
+      }
+    },
+    "./styles.css": "./dist/radial-menu.css",
+    "./core": {
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/radial-menu.mjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "dev": "vite --config playground/vite.config.ts",
+    "build": "tsc -b && vite build",
+    "build:watch": "vite build --watch",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "playground": "vite --config playground/vite.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react-swc": "^4.2.2",
+    "ajv": "^8.17.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.18",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.2.4",
+    "vite-plugin-dts": "^4.5.4"
+  }
+}
