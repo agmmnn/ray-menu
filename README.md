@@ -1,12 +1,10 @@
 # 𖤓 Ray Menu
 
-> **Infinite, fluid, and framework-agnostic radial navigation for the modern web.**
+> **Infinite, fluid, and framework-agnostic radial menu for the modern web.**
 
 **Ray Menu** is a lightweight, high-performance radial (pie) menu library designed with a "headless-first" philosophy. It combines advanced geometry with smooth 3D-inspired interactions, making it perfect for complex apps, games, or creative tools on the web.
 
----
-
-## ✨ Key Features
+## Key Features
 
 - **⚛️ Framework Agnostic:** Built as a pure Web Component. Works in React, Vue, Svelte, or vanilla HTML.
 - **🪶 Zero Dependencies:** Written in pure TypeScript with **0** runtime dependencies. Only **19KB**.
@@ -14,20 +12,20 @@
 - **🧠 Smart Edge Detection:** Context-aware positioning. The menu flips or shifts automatically when near screen edges.
 - **🎨 Squishy Visuals:** Optiona cursor trails and anchor lines for satisfying tactile feedback.
 
----
-
 ## 🚀 Installation
 
 ```bash
-# Using bun (recommended)
+# Use your package manager npm, yarn, pnpm, or bun
 bun add ray-menu
-
-# Using npm
-npm install ray-menu
-
 ```
 
----
+Using CDN:
+
+```html
+<script type="module">
+  import "https://unpkg.com/ray-menu@latest/dist/wc/ray-menu.mjs";
+</script>
+```
 
 ## 🛠 Usage
 
@@ -99,8 +97,6 @@ const flipState = calculateSmartFlip({ x: 100, y: 50 }, 120, edgeState);
 
 </details>
 
----
-
 ## 📐 Technical Architecture
 
 RayMenu is split into three distinct layers to provide maximum flexibility:
@@ -110,8 +106,6 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 | **Core**  | `ray-menu/core`  | Pure math: `atan2` calculations, edge logic, and physics.       |
 | **WC**    | `ray-menu`       | The `<ray-menu>` Web Component. Zero-dep & Shadow DOM isolated. |
 | **React** | `ray-menu/react` | Typed hooks and components for the React ecosystem.             |
-
----
 
 ## ⚙️ Configuration
 
@@ -146,13 +140,9 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 - `ray-open` - Fired when menu opens
 - `ray-close` - Fired when menu closes
 
----
-
 ## ✺ Infinite Selection Logic
 
 Unlike standard menus that require precise hovering, **RayMenu** uses angular sectors. Once the menu is open, the cursor's distance doesn't matter—only its angle relative to the center. This turns every selection into a fast, "flick-style" gesture, significantly reducing cognitive load and increasing speed.
-
----
 
 ## 🧪 Development
 
@@ -165,10 +155,20 @@ bun run dev
 
 # Build (Generates dist/wc and dist/react)
 bun run build
-
 ```
 
----
+<details>
+<summary>Testing</summary>
+
+```bash
+# Install Playwright
+bunx playwright install
+
+# Run E2E tests
+bun run test:e2e
+```
+
+</details>
 
 ## License
 
