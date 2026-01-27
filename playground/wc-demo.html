@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ray Menu - Web Component Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #18181b;
+        color: #fafafa;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      header {
+        max-width: 800px;
+        margin: 0 auto 2rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      p {
+        color: #a1a1aa;
+      }
+
+      .demo-area {
+        max-width: 800px;
+        margin: 0 auto;
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .demo-box {
+        height: 200px;
+        background: rgba(39, 39, 42, 0.5);
+        border: 2px dashed #3f3f46;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: context-menu;
+        transition: border-color 0.2s;
+      }
+
+      .demo-box:hover {
+        border-color: #71717a;
+      }
+
+      .demo-box span {
+        color: #71717a;
+      }
+
+      .controls {
+        max-width: 800px;
+        margin: 0 auto 1.5rem;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+      }
+
+      .controls h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .controls-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+      }
+
+      input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+      }
+
+      input[type="range"] {
+        width: 100%;
+      }
+
+      select {
+        background: #3f3f46;
+        color: #fafafa;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+      }
+
+      .control-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .control-item span {
+        font-size: 0.875rem;
+        color: #a1a1aa;
+      }
+
+      #log {
+        max-width: 800px;
+        margin: 1.5rem auto 0;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+        font-family: monospace;
+        font-size: 0.875rem;
+        color: #60a5fa;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Ray Menu - Web Component Demo</h1>
+      <p>Right-click anywhere in the demo areas to open the radial menu.</p>
+    </header>
+
+    <div class="controls">
+      <h2>Configuration</h2>
+      <div class="controls-grid">
+        <label>
+          <input type="checkbox" id="infinite" checked />
+          <span>Infinite Selection</span>
+        </label>
+
+        <label>
+          <input type="checkbox" id="trailPath" />
+          <span>Show Trail Path</span>
+        </label>
+
+        <label>
+          <input type="checkbox" id="anchorLine" />
+          <span>Show Anchor Line</span>
+        </label>
+
+        <div class="control-item">
+          <span>Center Deadzone: <output id="deadzoneValue">30</output>px</span>
+          <input type="range" id="deadzone" min="10" max="60" value="30" />
+        </div>
+
+        <div class="control-item">
+          <span>Edge Behavior</span>
+          <select id="edgeBehavior">
+            <option value="flip">Flip</option>
+            <option value="shift">Shift</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-area">
+      <div class="demo-box" id="demo1">
+        <span>Right-click here</span>
+      </div>
+      <div class="demo-box" id="demo2">
+        <span>Or here - test edge detection</span>
+      </div>
+    </div>
+
+    <div id="log">Last action: none</div>
+
+    <!-- The Ray Menu Web Component -->
+    <ray-menu
+      id="menu"
+      radius="140"
+      inner-radius="45"
+      infinite-selection
+      center-deadzone="30"
+    ></ray-menu>
+
+    <script type="module">
+      // Import from built output (run `bun run build` first)
+      import { RayMenu } from "../dist/wc/ray-menu.mjs";
+
+      const menu = document.getElementById("menu");
+      const log = document.getElementById("log");
+
+      // Set menu items
+      menu.items = [
+        { id: "copy", label: "Copy", shortcut: "⌘+C" },
+        { id: "paste", label: "Paste", shortcut: "⌘+V" },
+        { id: "cut", label: "Cut", shortcut: "⌘+X" },
+        { id: "delete", label: "Delete", shortcut: "⌦" },
+        { id: "share", label: "Share" },
+        { id: "settings", label: "Settings" },
+      ];
+
+      // Listen for selection events
+      menu.addEventListener("ray-select", (e) => {
+        log.textContent = `Selected: ${e.detail.label}`;
+        console.log("ray-select", e.detail);
+      });
+
+      menu.addEventListener("ray-open", () => {
+        log.textContent = "Menu opened";
+        console.log("Menu opened");
+      });
+
+      menu.addEventListener("ray-close", () => {
+        console.log("Menu closed");
+      });
+
+      // Context menu triggers
+      document.querySelectorAll(".demo-box").forEach((box) => {
+        box.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          menu.open(e.clientX, e.clientY);
+        });
+      });
+
+      // Controls
+      document.getElementById("infinite").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("infinite-selection", "");
+        } else {
+          menu.removeAttribute("infinite-selection");
+        }
+      });
+
+      document.getElementById("deadzone").addEventListener("input", (e) => {
+        const value = e.target.value;
+        document.getElementById("deadzoneValue").textContent = value;
+        menu.setAttribute("center-deadzone", value);
+      });
+
+      document
+        .getElementById("edgeBehavior")
+        .addEventListener("change", (e) => {
+          menu.setAttribute("edge-behavior", e.target.value);
+        });
+
+      document.getElementById("trailPath").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("show-trail-path", "");
+        } else {
+          menu.removeAttribute("show-trail-path");
+        }
+      });
+
+      document.getElementById("anchorLine").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("show-anchor-line", "");
+        } else {
+          menu.removeAttribute("show-anchor-line");
+        }
+      });
+    </script>
+  </body>
+</html>

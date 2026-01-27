@@ -2,27 +2,31 @@
 
 ## Project Overview
 
-React library for radial/pie menus using Vite's library mode. Headless-first architecture with core logic separated from React components.
+Ray Menu - A framework-agnostic radial/pie menu library. Web Component as primary output, with React bindings. Headless-first architecture with core logic separated from UI.
 
 ## Key Commands
 
 ```bash
-bun run dev       # Start playground dev server
-bun run build     # Build library to dist/
-bun run typecheck # Run TypeScript checks
+bun run dev         # Start React playground dev server
+bun run build       # Build both Web Component and React to dist/
+bun run build:wc    # Build Web Component only
+bun run build:react # Build React only
+bun run typecheck   # Run TypeScript checks
 ```
 
 ## Architecture
 
-- `/src/core/` - Pure TypeScript logic (angle math, edge detection, flip logic, physics). No React dependencies.
-- `/src/components/` - React components (TheHelm, ArcSubMenu, DriftTrace). Use inline styles for portability.
-- `/src/hooks/` - useRadialMenu hook for state management.
-- `/playground/` - Dev-only React app for testing.
+- `/src/core/` - Pure TypeScript logic (angle math, edge detection, flip logic, physics). No framework dependencies.
+- `/src/wc/` - Web Component (`<ray-menu>`). Zero dependencies, uses Shadow DOM.
+- `/src/components/` - React components (TheHelm, ArcSubMenu, DriftTrace). Use inline styles.
+- `/src/hooks/` - useRadialMenu hook for React state management.
+- `/playground/` - Dev-only testing apps (React + HTML for WC).
 
 ## Code Style
 
 - Components use inline styles (not Tailwind classes) for framework-agnostic output
-- Core logic must remain pure TypeScript with no React imports
+- Core logic must remain pure TypeScript with no framework imports
+- Web Component uses Shadow DOM with scoped styles
 - Path aliases: `@core`, `@components`, `@hooks`
 
 ## Key Features
@@ -33,4 +37,5 @@ bun run typecheck # Run TypeScript checks
 
 ## Build Output
 
-Library builds to ESM + CJS with TypeScript definitions. React/ReactDOM are externalized (peer dependencies).
+- `dist/wc/` - Web Component (ESM + CJS), zero dependencies
+- `dist/react/` - React bindings (ESM + CJS), React as peer dep

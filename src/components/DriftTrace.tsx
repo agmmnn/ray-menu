@@ -12,6 +12,10 @@ export interface DriftTraceProps {
   maxPoints?: number
   color?: string
   className?: string
+  /** Show cursor trail path effect */
+  showTrailPath?: boolean
+  /** Show anchor line from menu edge to cursor */
+  showAnchorLine?: boolean
 }
 
 export function DriftTrace({
@@ -24,6 +28,8 @@ export function DriftTrace({
   maxPoints = 20,
   color = 'rgba(100, 180, 255, 0.5)',
   className = '',
+  showTrailPath = true,
+  showAnchorLine = true,
 }: DriftTraceProps) {
   const historyRef = useRef<{ positions: Point[]; timestamps: number[] }>({
     positions: [],
@@ -82,7 +88,10 @@ export function DriftTrace({
     return `M ${anchorPoint.x},${anchorPoint.y} L ${position.x},${position.y}`
   }, [anchorPoint, position, distFromCenter, menuRadius])
 
-  if (trailPoints.length < 2 && !anchorLineData) return null
+  // Early return if nothing to show
+  const hasTrailContent = showTrailPath && trailPoints.length >= 2
+  const hasAnchorContent = showAnchorLine && anchorLineData
+  if (!hasTrailContent && !hasAnchorContent) return null
 
   return (
     <svg
@@ -118,7 +127,7 @@ export function DriftTrace({
       </defs>
 
       {/* Anchor line for infinite selection - stretches from menu edge to cursor */}
-      {anchorLineData && (
+      {showAnchorLine && anchorLineData && (
         <>
           <path
             d={anchorLineData}
@@ -143,7 +152,7 @@ export function DriftTrace({
       )}
 
       {/* Trail path */}
-      {pathData && (
+      {showTrailPath && pathData && (
         <path
           d={pathData}
           fill="none"
@@ -156,7 +165,7 @@ export function DriftTrace({
       )}
 
       {/* Trail dots with fading opacity */}
-      {trailPoints.map((point, index) => (
+      {showTrailPath && trailPoints.map((point, index) => (
         <circle
           key={`${point.timestamp}-${index}`}
           cx={point.x}
@@ -168,17 +177,19 @@ export function DriftTrace({
       ))}
 
       {/* Current position indicator */}
-      <circle
-        cx={position.x}
-        cy={position.y}
-        r={6}
-        fill={color}
-        opacity={0.8}
-        filter="url(#trailBlur)"
-      />
+      {showTrailPath && (
+        <circle
+          cx={position.x}
+          cy={position.y}
+          r={6}
+          fill={color}
+          opacity={0.8}
+          filter="url(#trailBlur)"
+        />
+      )}
 
       {/* Direction indicator line */}
-      {speed > 50 && (
+      {showTrailPath && speed > 50 && (
         <line
           x1={position.x}
           y1={position.y}

@@ -10,11 +10,19 @@ export interface TheHelmProps extends Omit<UseRadialMenuOptions, 'items'> {
   /** External menu state from useRadialMenu - if provided, items prop is ignored */
   menu?: UseRadialMenuReturn
   className?: string
+  /** Show cursor trail path effect */
+  showTrailPath?: boolean
+  /** Show anchor line from menu edge to cursor when outside menu */
+  showAnchorLine?: boolean
+  /** @deprecated Use showTrailPath and showAnchorLine instead */
   showDriftTrace?: boolean
 }
 
 export const TheHelm = forwardRef<HTMLDivElement, TheHelmProps>(
-  function TheHelm({ className = '', showDriftTrace = false, menu: externalMenu, items = [], ...options }, ref) {
+  function TheHelm({ className = '', showTrailPath = false, showAnchorLine = false, showDriftTrace = false, menu: externalMenu, items = [], ...options }, ref) {
+    // Support deprecated showDriftTrace prop (enables both features)
+    const effectiveShowTrailPath = showTrailPath || showDriftTrace
+    const effectiveShowAnchorLine = showAnchorLine || showDriftTrace
     // Use external menu if provided, otherwise create internal state
     const internalMenu = useRadialMenu({ items, ...options })
     const menu = externalMenu || internalMenu
@@ -89,13 +97,15 @@ export const TheHelm = forwardRef<HTMLDivElement, TheHelmProps>(
         aria-label="Radial menu"
       >
         {/* Drift trace effect */}
-        {showDriftTrace && pointerPosition && (
+        {(effectiveShowTrailPath || effectiveShowAnchorLine) && pointerPosition && (
           <DriftTrace
             position={pointerPosition}
             velocity={velocity}
             menuCenter={state.position}
             menuRadius={config.radius}
             hoveredAngle={hoveredAngle}
+            showTrailPath={effectiveShowTrailPath}
+            showAnchorLine={effectiveShowAnchorLine}
           />
         )}
 

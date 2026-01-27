@@ -24,7 +24,7 @@
       "@components/*": ["src/components/*"],
       "@hooks": ["src/hooks/index.ts"],
       "@hooks/*": ["src/hooks/*"],
-      "radial-menu": ["src/index.ts"]
+      "ray-menu": ["src/index.ts"]
     },
 
     /* Linting */

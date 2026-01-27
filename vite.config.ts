@@ -4,35 +4,47 @@ import dts from 'vite-plugin-dts'
 import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'path'
 
+const isWcBuild = process.env.BUILD_TARGET === 'wc'
+
 export default defineConfig({
   plugins: [
-    react(),
+    !isWcBuild && react(),
     tailwindcss(),
     dts({
-      include: ['src'],
+      include: isWcBuild
+        ? ['src/wc', 'src/core']
+        : ['src/index.ts', 'src/core', 'src/components', 'src/hooks'],
       exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'playground'],
-      rollupTypes: true,
+      rollupTypes: false,
       tsconfigPath: './tsconfig.app.json',
     }),
-  ],
+  ].filter(Boolean),
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'RadialMenu',
+      entry: isWcBuild
+        ? resolve(__dirname, 'src/wc/index.ts')
+        : resolve(__dirname, 'src/index.ts'),
+      name: isWcBuild ? 'RayMenu' : 'RayMenuReact',
       formats: ['es', 'cjs'],
-      fileName: (format) => `radial-menu.${format === 'es' ? 'mjs' : 'cjs'}`,
+      fileName: (format) =>
+        isWcBuild
+          ? `ray-menu.${format === 'es' ? 'mjs' : 'cjs'}`
+          : `ray-menu-react.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      external: isWcBuild ? [] : ['react', 'react-dom', 'react/jsx-runtime'],
       output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          'react/jsx-runtime': 'jsxRuntime',
-        },
-        assetFileNames: 'radial-menu.[ext]',
+        globals: isWcBuild
+          ? {}
+          : {
+              react: 'React',
+              'react-dom': 'ReactDOM',
+              'react/jsx-runtime': 'jsxRuntime',
+            },
+        assetFileNames: 'ray-menu.[ext]',
       },
     },
+    outDir: isWcBuild ? 'dist/wc' : 'dist/react',
     sourcemap: true,
     minify: 'esbuild',
   },
