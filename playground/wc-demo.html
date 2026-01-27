@@ -117,6 +117,125 @@
         color: #a1a1aa;
       }
 
+      /* Drag & Drop Demo Styles */
+      .drag-demo {
+        max-width: 800px;
+        margin: 1.5rem auto 0;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+      }
+
+      .drag-demo h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .drag-items {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .drag-item {
+        padding: 0.75rem 1.25rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 0.5rem;
+        cursor: grab;
+        user-select: none;
+        font-weight: 500;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .drag-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      }
+
+      .drag-item:active,
+      .drag-item.dragging {
+        cursor: grabbing;
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
+      }
+
+      .drop-zone {
+        height: 600px;
+        margin-top: 1rem;
+        padding: 2rem;
+        border: 2px dashed #3f3f46;
+        border-radius: 0.5rem;
+        text-align: center;
+        color: #71717a;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+
+      .drop-zone.drag-over {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+      }
+
+      /* Instant drag demo */
+      .instant-drag-demo {
+        max-width: 800px;
+        margin: 1.5rem auto 0;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+      }
+
+      .instant-drag-demo h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .file-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: rgba(63, 63, 70, 0.5);
+        border-radius: 0.5rem;
+        cursor: grab;
+        user-select: none;
+        transition: background 0.15s;
+      }
+
+      .file-item:hover {
+        background: rgba(63, 63, 70, 0.8);
+      }
+
+      .file-item.dragging {
+        opacity: 0.5;
+      }
+
+      .file-icon {
+        font-size: 1.5rem;
+      }
+
+      .file-info {
+        flex: 1;
+      }
+
+      .file-name {
+        font-weight: 500;
+      }
+
+      .file-meta {
+        font-size: 0.75rem;
+        color: #a1a1aa;
+      }
+
       #log {
         max-width: 800px;
         margin: 1.5rem auto 0;
@@ -178,6 +297,56 @@
       </div>
     </div>
 
+    <div class="drag-demo">
+      <h2>Drag & Drop Demo</h2>
+      <p style="color: #a1a1aa; margin-bottom: 1rem; font-size: 0.875rem">
+        Drag items to the drop zone. The radial menu will appear as a drop
+        target.
+      </p>
+      <div class="drag-items">
+        <div class="drag-item" draggable="true" data-action="move">
+          📁 Move to...
+        </div>
+        <div class="drag-item" draggable="true" data-action="copy">
+          📋 Copy to...
+        </div>
+        <div class="drag-item" draggable="true" data-action="link">
+          🔗 Link to...
+        </div>
+      </div>
+      <div class="drop-zone" id="dropZone">Drop here to choose action</div>
+    </div>
+
+    <div class="instant-drag-demo">
+      <h2>Instant Drag Demo</h2>
+      <p style="color: #a1a1aa; margin-bottom: 1rem; font-size: 0.875rem">
+        Drag a file - the menu appears immediately at cursor. Release to select action.
+      </p>
+      <div class="file-list">
+        <div class="file-item" draggable="true" data-file="document.pdf">
+          <span class="file-icon">📄</span>
+          <div class="file-info">
+            <div class="file-name">document.pdf</div>
+            <div class="file-meta">2.4 MB • PDF Document</div>
+          </div>
+        </div>
+        <div class="file-item" draggable="true" data-file="photo.jpg">
+          <span class="file-icon">🖼️</span>
+          <div class="file-info">
+            <div class="file-name">photo.jpg</div>
+            <div class="file-meta">1.8 MB • JPEG Image</div>
+          </div>
+        </div>
+        <div class="file-item" draggable="true" data-file="archive.zip">
+          <span class="file-icon">📦</span>
+          <div class="file-info">
+            <div class="file-name">archive.zip</div>
+            <div class="file-meta">15.2 MB • ZIP Archive</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="log">Last action: none</div>
 
     <!-- The Ray Menu Web Component -->
@@ -202,8 +371,16 @@
         { id: "paste", label: "Paste", shortcut: "⌘+V" },
         { id: "cut", label: "Cut", shortcut: "⌘+X" },
         { id: "delete", label: "Delete", shortcut: "⌦" },
-        { id: "share", label: "Share" },
-        { id: "settings", label: "Settings" },
+        {
+          id: "share",
+          label: "Share",
+          selectable: false, // Only opens submenu, not directly selectable
+          children: [
+            { id: "share-email", label: "Email" },
+            { id: "share-link", label: "Copy Link" },
+          ],
+        },
+        { id: "settings", label: "Settings" }, // Selectable (default)
       ];
 
       // Listen for selection events
@@ -263,6 +440,130 @@
           menu.setAttribute("show-anchor-line", "");
         } else {
           menu.removeAttribute("show-anchor-line");
+        }
+      });
+
+      // --- Drag & Drop Demo ---
+      const dropZone = document.getElementById("dropZone");
+      let draggedData = null;
+
+      // Handle drag start on draggable items
+      document.querySelectorAll(".drag-item").forEach((item) => {
+        item.addEventListener("dragstart", (e) => {
+          draggedData = {
+            action: item.dataset.action,
+            text: item.textContent,
+          };
+          e.dataTransfer.setData("text/plain", JSON.stringify(draggedData));
+          item.classList.add("dragging");
+        });
+
+        item.addEventListener("dragend", (e) => {
+          item.classList.remove("dragging");
+          draggedData = null;
+        });
+      });
+
+      // Handle drop zone events
+      dropZone.addEventListener("dragenter", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+
+        // Open menu as drop target at drop zone center
+        const rect = dropZone.getBoundingClientRect();
+        menu.openAsDropTarget(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+        );
+      });
+
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        // Update menu hover based on cursor position
+        menu.updateHoverFromPoint(e.clientX, e.clientY);
+      });
+
+      dropZone.addEventListener("dragleave", (e) => {
+        // Only handle if actually leaving the drop zone
+        if (!dropZone.contains(e.relatedTarget)) {
+          dropZone.classList.remove("drag-over");
+          menu.cancelDrop();
+        }
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+
+        // Trigger drop on the menu with the dragged data
+        const result = menu.dropOnHovered(draggedData);
+
+        if (result) {
+          log.textContent = `Dropped "${draggedData?.text}" → "${result.label}"`;
+        } else {
+          log.textContent = "Drop cancelled (no selection)";
+        }
+      });
+
+      // Listen for ray-drop events
+      menu.addEventListener("ray-drop", (e) => {
+        console.log("ray-drop event:", e.detail);
+        log.textContent = `Drop: ${e.detail.data?.text} → ${e.detail.item.label}`;
+      });
+
+      // Listen for spring-load events (hovering over item with children)
+      menu.addEventListener("ray-spring-load", (e) => {
+        console.log("ray-spring-load event:", e.detail);
+        log.textContent = `Spring-load triggered: ${e.detail.label}`;
+      });
+
+      // --- Instant Drag Demo ---
+      // Menu appears immediately when drag starts
+      let instantDragData = null;
+
+      document.querySelectorAll(".file-item").forEach((item) => {
+        item.addEventListener("dragstart", (e) => {
+          instantDragData = {
+            file: item.dataset.file,
+            name: item.querySelector(".file-name").textContent,
+          };
+          e.dataTransfer.setData("text/plain", JSON.stringify(instantDragData));
+          item.classList.add("dragging");
+
+          // Open menu immediately at cursor position
+          menu.openAsDropTarget(e.clientX, e.clientY);
+        });
+
+        item.addEventListener("drag", (e) => {
+          // Update menu hover during drag (note: drag event may have 0,0 coords at end)
+          if (e.clientX !== 0 || e.clientY !== 0) {
+            menu.updateHoverFromPoint(e.clientX, e.clientY);
+          }
+        });
+
+        item.addEventListener("dragend", (e) => {
+          item.classList.remove("dragging");
+
+          // Trigger drop on release
+          if (menu.isOpen) {
+            const result = menu.dropOnHovered(instantDragData);
+            if (result) {
+              log.textContent = `File "${instantDragData?.name}" → ${result.label}`;
+            } else {
+              log.textContent = `Drag cancelled for "${instantDragData?.name}"`;
+              menu.cancelDrop();
+            }
+          }
+
+          instantDragData = null;
+        });
+      });
+
+      // Prevent default on document to allow drag anywhere
+      document.addEventListener("dragover", (e) => {
+        // Only prevent default if menu is open as drop target
+        if (menu.isOpen && menu.isDropTarget) {
+          e.preventDefault();
         }
       });
     </script>

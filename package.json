@@ -2,9 +2,18 @@
   "name": "ray-menu",
   "version": "0.1.0",
   "type": "module",
-  "description": "A framework-agnostic radial menu library with Web Component and React bindings",
+  "description": "A framework-agnostic radial (pie) menu library for the modern web.",
   "author": "",
   "license": "MIT",
+  "homepage": "https://github.com/agmmnn/ray-menu",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agmmnn/ray-menu.git",
+    "directory": "/"
+  },
+  "bugs": {
+    "url": "https://github.com/agmmnn/ray-menu/issues"
+  },
   "keywords": [
     "web-component",
     "custom-element",
@@ -75,24 +84,24 @@
     }
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.58.0",
     "@tailwindcss/vite": "^4.1.18",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
+    "@types/node": "^25.0.10",
+    "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "ajv": "^8.17.1",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^17.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4",
+    "typescript-eslint": "^8.54.0",
+    "vite": "^7.3.1",
     "vite-plugin-dts": "^4.5.4"
   }
 }

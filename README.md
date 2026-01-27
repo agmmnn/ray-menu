@@ -134,11 +134,51 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 - `close()` - Close menu
 - `toggle(x: number, y: number)` - Toggle menu at position
 
+**Drag & Drop API** (imperative, works with any drag library)
+
+- `openAsDropTarget(x, y)` - Open menu as a drop target
+- `updateHoverFromPoint(x, y)` - Update selection from drag coordinates
+- `dropOnHovered(data?)` - Trigger drop on current selection, returns selected item
+- `cancelDrop()` - Cancel drop mode
+- `getHoveredItem()` - Get currently hovered item (for preview)
+
 **Web Component Events**
 
-- `ray-select` - Fired when an item is selected. `e.detail.item` contains the selected item.
+- `ray-select` - Fired when an item is selected
+- `ray-drop` - Fired on drop. `e.detail` contains `{ item, data }`
+- `ray-spring-load` - Fired when hovering over submenu item for 500ms
 - `ray-open` - Fired when menu opens
 - `ray-close` - Fired when menu closes
+
+## 🎯 Drag & Drop Integration
+
+RayMenu can act as a drop target for any drag library (HTML5, dnd-kit, react-dnd, etc.):
+
+```js
+const menu = document.querySelector("ray-menu");
+
+dropZone.addEventListener("dragenter", (e) => {
+  // Open menu as drop target
+  menu.openAsDropTarget(e.clientX, e.clientY);
+});
+
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  // Update hover from drag position
+  menu.updateHoverFromPoint(e.clientX, e.clientY);
+});
+
+dropZone.addEventListener("drop", (e) => {
+  // Trigger selection with drag data
+  const item = menu.dropOnHovered({ action: "move", files: e.dataTransfer.files });
+});
+
+menu.addEventListener("ray-drop", (e) => {
+  console.log("Dropped on:", e.detail.item, "Data:", e.detail.data);
+});
+```
+
+**Spring-loading**: Hovering over an item with children for 500ms fires `ray-spring-load`.
 
 ## ✺ Infinite Selection Logic
 

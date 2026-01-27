@@ -18,8 +18,15 @@ import {
   generateTraceTrail,
 } from '../core'
 
+export interface RayMenuDropDetail {
+  item: MenuItem
+  data?: unknown
+}
+
 export interface RayMenuEventMap {
   'ray-select': CustomEvent<MenuItem>
+  'ray-drop': CustomEvent<RayMenuDropDetail>
+  'ray-spring-load': CustomEvent<MenuItem>
   'ray-open': CustomEvent<Point>
   'ray-close': CustomEvent<void>
 }
@@ -48,6 +55,13 @@ export class RayMenu extends HTMLElement {
   private _velocity: Velocity = { vx: 0, vy: 0 }
   private _driftTraceSvg: SVGSVGElement | null = null
 
+  // Drag/drop state
+  private _isDropTarget = false
+  private _springLoadTimer: number | null = null
+  private _springLoadItemId: string | null = null
+  private _springLoadDelay = 500
+
+
   // Config
   private _config: MenuConfig = { ...DEFAULT_CONFIG }
 
@@ -55,6 +69,7 @@ export class RayMenu extends HTMLElement {
   private _handlePointerMove = this._onPointerMove.bind(this)
   private _handleClick = this._onClick.bind(this)
   private _handleKeyDown = this._onKeyDown.bind(this)
+  private _handleDragOver = this._onDragOver.bind(this)
 
   static get observedAttributes() {
     return [
@@ -90,6 +105,10 @@ export class RayMenu extends HTMLElement {
     return this._isOpen
   }
 
+  get isDropTarget(): boolean {
+    return this._isDropTarget
+  }
+
   open(x: number, y: number): void {
     const position = { x, y }
     const viewport = { width: window.innerWidth, height: window.innerHeight }
@@ -120,14 +139,17 @@ export class RayMenu extends HTMLElement {
 
   close(): void {
     this._isOpen = false
+    this._isDropTarget = false
     this._hoveredIndex = -1
     this._pointerPosition = null
     this._positionHistory = []
     this._timestampHistory = []
     this._velocity = { vx: 0, vy: 0 }
+    this._clearSpringLoad()
     this._clearContainer()
     this._removeDriftTrace()
     this._removeGlobalListeners()
+    window.removeEventListener('dragover', this._handleDragOver)
 
     this.dispatchEvent(new CustomEvent('ray-close'))
   }
@@ -137,6 +159,121 @@ export class RayMenu extends HTMLElement {
       this.close()
     } else {
       this.open(x, y)
+    }
+  }
+
+  // --- Drag & Drop API ---
+
+  /**
+   * Open the menu as a drop target at the specified position.
+   * Use this when a drag operation starts and the menu should appear.
+   */
+  openAsDropTarget(x: number, y: number): void {
+    this._isDropTarget = true
+    this.open(x, y)
+    // Add global dragover listener to track cursor even over menu elements
+    window.addEventListener('dragover', this._handleDragOver)
+  }
+
+  /**
+   * Update hover selection from external coordinates.
+   * Call this from your drag library's move handler.
+   * @param x - Client X coordinate
+   * @param y - Client Y coordinate
+   */
+  updateHoverFromPoint(x: number, y: number): void {
+    if (!this._isOpen) return
+
+    this._pointerPosition = { x, y }
+    const newIndex = this._calculateHoveredIndex(this._pointerPosition)
+
+    if (newIndex !== this._hoveredIndex) {
+      this._hoveredIndex = newIndex
+      this._updateHoverState()
+      this._handleSpringLoad()
+    }
+  }
+
+  /**
+   * Trigger a drop on the currently hovered item.
+   * Call this from your drag library's drop/end handler.
+   * @param data - Optional data payload from the drag operation
+   * @returns The selected item, or null if no valid selection
+   */
+  dropOnHovered(data?: unknown): MenuItem | null {
+    if (!this._isOpen || this._hoveredIndex < 0 || this._hoveredIndex >= this._items.length) {
+      this.close()
+      return null
+    }
+
+    const item = this._items[this._hoveredIndex]
+    if (item.disabled) {
+      this.close()
+      return null
+    }
+
+    // Check if item is selectable (defaults to true)
+    if (item.selectable === false) {
+      this.close()
+      return null
+    }
+
+    // Fire ray-drop event with item and data
+    this.dispatchEvent(new CustomEvent('ray-drop', {
+      detail: { item, data }
+    }))
+
+    // Also fire ray-select for consistency
+    item.onSelect?.()
+    this.dispatchEvent(new CustomEvent('ray-select', { detail: item }))
+
+    this.close()
+    return item
+  }
+
+  /**
+   * Cancel the drop target mode without selecting.
+   * Call this when the drag is cancelled.
+   */
+  cancelDrop(): void {
+    this._clearSpringLoad()
+    this.close()
+  }
+
+  /**
+   * Get the currently hovered item (useful for preview during drag).
+   */
+  getHoveredItem(): MenuItem | null {
+    if (this._hoveredIndex >= 0 && this._hoveredIndex < this._items.length) {
+      return this._items[this._hoveredIndex]
+    }
+    return null
+  }
+
+  private _clearSpringLoad(): void {
+    if (this._springLoadTimer !== null) {
+      window.clearTimeout(this._springLoadTimer)
+      this._springLoadTimer = null
+    }
+    this._springLoadItemId = null
+  }
+
+  private _handleSpringLoad(): void {
+    const item = this.getHoveredItem()
+
+    // Clear if no item or item changed
+    if (!item || item.id !== this._springLoadItemId) {
+      this._clearSpringLoad()
+    }
+
+    // Start spring-load timer for items with children
+    if (item?.children?.length && item.id !== this._springLoadItemId) {
+      this._springLoadItemId = item.id
+      this._springLoadTimer = window.setTimeout(() => {
+        console.log('Spring-load: Enter submenu', item.id, item.label)
+        // TODO: Actually open submenu in future
+        this.dispatchEvent(new CustomEvent('ray-spring-load', { detail: item }))
+      }, this._springLoadDelay)
     }
   }
 
@@ -216,6 +353,13 @@ export class RayMenu extends HTMLElement {
     }
   }
 
+  private _onDragOver(e: DragEvent): void {
+    if (!this._isOpen || !this._isDropTarget) return
+
+    // Update hover from drag position (works even when dragging over menu elements)
+    this.updateHoverFromPoint(e.clientX, e.clientY)
+  }
+
   private _onClick(e: MouseEvent): void {
     if (!this._isOpen) return
 
@@ -259,6 +403,26 @@ export class RayMenu extends HTMLElement {
       .ray-menu-container {
         position: absolute;
         pointer-events: auto;
+      }
+      .ray-menu-container[data-drop-target="true"] {
+        pointer-events: none;
+      }
+      .ray-menu-container[data-drop-target="true"]::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+        animation: dropTargetPulse 1.5s ease-in-out infinite;
+        pointer-events: none;
+      }
+      @keyframes dropTargetPulse {
+        0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
       }
       .ray-menu-svg {
         position: absolute;
@@ -370,8 +534,9 @@ export class RayMenu extends HTMLElement {
   }
 
   private _selectItem(item: MenuItem): void {
-    if (item.children && item.children.length > 0) {
-      // TODO: Handle submenus
+    // Check if item is selectable (defaults to true)
+    if (item.selectable === false) {
+      // TODO: Handle submenus for non-selectable items
       return
     }
 
@@ -435,6 +600,10 @@ export class RayMenu extends HTMLElement {
     container.style.left = `${this._position.x}px`
     container.style.top = `${this._position.y}px`
     container.style.transform = `translate(-50%, -50%) ${this._flipState.transform}`
+    // Drop target mode: disable pointer events and add visual feedback
+    if (this._isDropTarget) {
+      container.setAttribute('data-drop-target', 'true')
+    }
 
     // Create SVG
     const svgSize = radius * 2 + 40
@@ -445,6 +614,10 @@ export class RayMenu extends HTMLElement {
     svg.setAttribute('width', String(svgSize))
     svg.setAttribute('height', String(svgSize))
     svg.setAttribute('viewBox', `0 0 ${svgSize} ${svgSize}`)
+    // Disable pointer events in drop target mode
+    if (this._isDropTarget) {
+      svg.style.pointerEvents = 'none'
+    }
 
     // Add defs with glow filter
     const defs = document.createElementNS(svgNS, 'defs')
@@ -525,6 +698,10 @@ export class RayMenu extends HTMLElement {
       label.className = 'ray-menu-label'
       label.style.left = `${labelPos.x}px`
       label.style.top = `${labelPos.y}px`
+      // Disable pointer events in drop target mode
+      if (this._isDropTarget) {
+        label.style.pointerEvents = 'none'
+      }
       label.setAttribute('data-hovered', String(isHovered))
       label.setAttribute('data-disabled', String(item.disabled || false))
       label.setAttribute('data-index', String(index))

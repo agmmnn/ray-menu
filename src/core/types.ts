@@ -10,6 +10,8 @@ export interface MenuItem {
   icon?: React.ReactNode
   shortcut?: string
   disabled?: boolean
+  /** Whether this item can be selected. Defaults to true. Set to false for items that should only open submenus. */
+  selectable?: boolean
   children?: MenuItem[]
   onSelect?: () => void
 }
