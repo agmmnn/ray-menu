@@ -252,6 +252,10 @@
     <header>
       <h1>Ray Menu - Web Component Demo</h1>
       <p>Right-click anywhere in the demo areas to open the radial menu.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a;">
+        <strong>Submenu navigation:</strong> Click items with ▸ to enter submenus.
+        Click center to go back. During drag: swipe outward fast to enter, swipe inward to go back.
+      </p>
     </header>
 
     <div class="controls">
@@ -365,7 +369,7 @@
       const menu = document.getElementById("menu");
       const log = document.getElementById("log");
 
-      // Set menu items
+      // Set menu items with nested submenus
       menu.items = [
         { id: "copy", label: "Copy", shortcut: "⌘+C" },
         { id: "paste", label: "Paste", shortcut: "⌘+V" },
@@ -378,9 +382,29 @@
           children: [
             { id: "share-email", label: "Email" },
             { id: "share-link", label: "Copy Link" },
+            {
+              id: "share-social",
+              label: "Social",
+              selectable: false,
+              children: [
+                { id: "share-twitter", label: "Twitter" },
+                { id: "share-facebook", label: "Facebook" },
+                { id: "share-linkedin", label: "LinkedIn" },
+              ],
+            },
           ],
         },
-        { id: "settings", label: "Settings" }, // Selectable (default)
+        {
+          id: "move",
+          label: "Move to",
+          selectable: false,
+          children: [
+            { id: "move-folder1", label: "Folder 1" },
+            { id: "move-folder2", label: "Folder 2" },
+            { id: "move-folder3", label: "Folder 3" },
+            { id: "move-folder4", label: "Folder 4" },
+          ],
+        },
       ];
 
       // Listen for selection events
@@ -396,6 +420,17 @@
 
       menu.addEventListener("ray-close", () => {
         console.log("Menu closed");
+      });
+
+      // Submenu navigation events
+      menu.addEventListener("ray-submenu-enter", (e) => {
+        log.textContent = `Entered submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`;
+        console.log("ray-submenu-enter", e.detail);
+      });
+
+      menu.addEventListener("ray-submenu-exit", (e) => {
+        log.textContent = `Exited submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`;
+        console.log("ray-submenu-exit", e.detail);
       });
 
       // Context menu triggers

@@ -18,15 +18,34 @@ import {
   generateTraceTrail,
 } from '../core'
 
+/**
+ * Navigation stack entry - tracks menu path for drag-back
+ */
+interface NavStackEntry {
+  /** The parent menu item that was expanded */
+  item: MenuItem
+  /** The angle at which this submenu was entered */
+  entryAngle: number
+  /** The menu items at this level */
+  items: MenuItem[]
+}
+
 export interface RayMenuDropDetail {
   item: MenuItem
   data?: unknown
+}
+
+export interface RayMenuSubmenuDetail {
+  item: MenuItem
+  depth: number
 }
 
 export interface RayMenuEventMap {
   'ray-select': CustomEvent<MenuItem>
   'ray-drop': CustomEvent<RayMenuDropDetail>
   'ray-spring-load': CustomEvent<MenuItem>
+  'ray-submenu-enter': CustomEvent<RayMenuSubmenuDetail>
+  'ray-submenu-exit': CustomEvent<RayMenuSubmenuDetail>
   'ray-open': CustomEvent<Point>
   'ray-close': CustomEvent<void>
 }
@@ -60,6 +79,17 @@ export class RayMenu extends HTMLElement {
   private _springLoadTimer: number | null = null
   private _springLoadItemId: string | null = null
   private _springLoadDelay = 500
+
+  // Submenu navigation state
+  private _navStack: NavStackEntry[] = []
+  private _currentItems: MenuItem[] = []
+  private _submenuEntryConfirmed = false // Whether user has entered the submenu ring
+
+  // Drag-through detection config
+  private _dragThroughVelocityThreshold = 200 // px/s outward velocity to trigger
+  private _dragThroughDistanceThreshold = 0.7 // ratio of radius to trigger
+  private _dragBackAngleThreshold = Math.PI / 3 // ~60 degrees to trigger back
+  private _submenuRadiusStep = 60 // px added per submenu level
 
 
   // Config
@@ -131,6 +161,9 @@ export class RayMenu extends HTMLElement {
 
     this._isOpen = true
     this._hoveredIndex = -1
+    this._navStack = []
+    this._currentItems = [...this._items]
+    this._submenuEntryConfirmed = true // Root menu doesn't need entry confirmation
     this._render()
     this._addGlobalListeners()
 
@@ -145,6 +178,8 @@ export class RayMenu extends HTMLElement {
     this._positionHistory = []
     this._timestampHistory = []
     this._velocity = { vx: 0, vy: 0 }
+    this._navStack = []
+    this._currentItems = []
     this._clearSpringLoad()
     this._clearContainer()
     this._removeDriftTrace()
@@ -185,6 +220,24 @@ export class RayMenu extends HTMLElement {
     if (!this._isOpen) return
 
     this._pointerPosition = { x, y }
+
+    // Track velocity for drag gestures
+    const now = Date.now()
+    this._positionHistory.push({ ...this._pointerPosition })
+    this._timestampHistory.push(now)
+
+    while (this._positionHistory.length > 20) {
+      this._positionHistory.shift()
+      this._timestampHistory.shift()
+    }
+
+    this._velocity = calculateVelocity(this._positionHistory, this._timestampHistory)
+
+    // Check for submenu entry confirmation, then drag gestures
+    this._checkSubmenuEntryConfirmation()
+    this._checkDragThrough()
+    this._checkDragBack()
+
     const newIndex = this._calculateHoveredIndex(this._pointerPosition)
 
     if (newIndex !== this._hoveredIndex) {
@@ -201,12 +254,12 @@ export class RayMenu extends HTMLElement {
    * @returns The selected item, or null if no valid selection
    */
   dropOnHovered(data?: unknown): MenuItem | null {
-    if (!this._isOpen || this._hoveredIndex < 0 || this._hoveredIndex >= this._items.length) {
+    if (!this._isOpen || this._hoveredIndex < 0 || this._hoveredIndex >= this._currentItems.length) {
       this.close()
       return null
     }
 
-    const item = this._items[this._hoveredIndex]
+    const item = this._currentItems[this._hoveredIndex]
     if (item.disabled) {
       this.close()
       return null
@@ -244,8 +297,8 @@ export class RayMenu extends HTMLElement {
    * Get the currently hovered item (useful for preview during drag).
    */
   getHoveredItem(): MenuItem | null {
-    if (this._hoveredIndex >= 0 && this._hoveredIndex < this._items.length) {
-      return this._items[this._hoveredIndex]
+    if (this._hoveredIndex >= 0 && this._hoveredIndex < this._currentItems.length) {
+      return this._currentItems[this._hoveredIndex]
     }
     return null
   }
@@ -256,6 +309,178 @@ export class RayMenu extends HTMLElement {
       this._springLoadTimer = null
     }
     this._springLoadItemId = null
+  }
+
+  /**
+   * Enter a submenu for the given item
+   */
+  private _enterSubmenu(item: MenuItem, entryAngle: number): void {
+    if (!item.children?.length) return
+
+    // Push current level to nav stack
+    this._navStack.push({
+      item,
+      entryAngle,
+      items: [...this._currentItems],
+    })
+
+    // Update current items to submenu
+    this._currentItems = item.children
+    this._hoveredIndex = -1
+    this._submenuEntryConfirmed = false // Require entry confirmation before enabling back
+    this._clearSpringLoad()
+
+    // Re-render with new items
+    this._render()
+
+    // Fire submenu-enter event
+    this.dispatchEvent(new CustomEvent('ray-submenu-enter', {
+      detail: { item, depth: this._navStack.length }
+    }))
+  }
+
+  /**
+   * Go back to parent menu
+   */
+  private _exitSubmenu(): boolean {
+    if (this._navStack.length === 0) return false
+
+    const entry = this._navStack.pop()!
+    this._currentItems = entry.items
+    this._hoveredIndex = -1
+    this._clearSpringLoad()
+
+    // Re-render with parent items
+    this._render()
+
+    // Fire submenu-exit event
+    this.dispatchEvent(new CustomEvent('ray-submenu-exit', {
+      detail: { item: entry.item, depth: this._navStack.length }
+    }))
+    return true
+  }
+
+  /**
+   * Get the current menu radius based on submenu depth
+   */
+  private _getCurrentRadius(): number {
+    return this._config.radius + this._navStack.length * this._submenuRadiusStep
+  }
+
+  /**
+   * Get the inner radius for current level (outer edge of previous level)
+   */
+  private _getCurrentInnerRadius(): number {
+    if (this._navStack.length === 0) {
+      return this._config.innerRadius
+    }
+    // Inner radius is the outer radius of the previous level
+    return this._config.radius + (this._navStack.length - 1) * this._submenuRadiusStep
+  }
+
+  /**
+   * Check if we should trigger drag-through into a submenu
+   */
+  private _checkDragThrough(): void {
+    if (!this._pointerPosition || this._hoveredIndex < 0) return
+
+    const item = this._currentItems[this._hoveredIndex]
+    if (!item?.children?.length) return
+
+    const dist = distance(this._position, this._pointerPosition)
+    const currentRadius = this._getCurrentRadius()
+
+    // Calculate radial velocity (positive = outward)
+    const angle = angleFromCenter(this._position, this._pointerPosition)
+    const radialVelocity = this._velocity.vx * Math.cos(angle) + this._velocity.vy * Math.sin(angle)
+
+    // Trigger conditions:
+    // 1. Outward velocity above threshold
+    // 2. Distance beyond threshold ratio of current radius
+    const velocityTrigger = radialVelocity > this._dragThroughVelocityThreshold
+    const distanceTrigger = dist > currentRadius * this._dragThroughDistanceThreshold
+
+    if (velocityTrigger && distanceTrigger) {
+      this._enterSubmenu(item, angle)
+    }
+  }
+
+  /**
+   * Check if user has confirmed entry into submenu (cursor is within active ring)
+   */
+  private _checkSubmenuEntryConfirmation(): void {
+    if (this._submenuEntryConfirmed || this._navStack.length === 0) return
+    if (!this._pointerPosition) return
+
+    const dist = distance(this._position, this._pointerPosition)
+    const currentInnerRadius = this._getCurrentInnerRadius()
+    const currentRadius = this._getCurrentRadius()
+
+    // Confirm entry when cursor is within the submenu's active ring
+    if (dist >= currentInnerRadius && dist <= currentRadius * 1.2) {
+      this._submenuEntryConfirmed = true
+    }
+  }
+
+  /**
+   * Check if we should trigger drag-back to parent menu
+   */
+  private _checkDragBack(): void {
+    if (!this._pointerPosition || this._navStack.length === 0) return
+
+    // Don't allow back until entry is confirmed (prevents flickering during entry)
+    if (!this._submenuEntryConfirmed) return
+
+    const dist = distance(this._position, this._pointerPosition)
+    const currentInnerRadius = this._getCurrentInnerRadius()
+
+    // Calculate radial velocity (negative = inward)
+    const angle = angleFromCenter(this._position, this._pointerPosition)
+    const radialVelocity = this._velocity.vx * Math.cos(angle) + this._velocity.vy * Math.sin(angle)
+
+    // Inward velocity and inside inner radius = go back
+    if (radialVelocity < -this._dragThroughVelocityThreshold && dist < currentInnerRadius) {
+      // Check angle against entry angle
+      const lastEntry = this._navStack[this._navStack.length - 1]
+      const angleDiff = Math.abs(this._normalizeAngle(angle - lastEntry.entryAngle))
+
+      // If roughly pointing toward entry direction (back), exit
+      if (angleDiff > Math.PI - this._dragBackAngleThreshold) {
+        this._exitSubmenu()
+      }
+    }
+  }
+
+  /**
+   * Normalize angle to [-PI, PI]
+   */
+  private _normalizeAngle(angle: number): number {
+    while (angle > Math.PI) angle -= Math.PI * 2
+    while (angle < -Math.PI) angle += Math.PI * 2
+    return angle
+  }
+
+  /**
+   * Get the current submenu depth (0 = root)
+   */
+  get submenuDepth(): number {
+    return this._navStack.length
+  }
+
+  /**
+   * Programmatically go back to parent menu
+   */
+  goBack(): boolean {
+    return this._exitSubmenu()
+  }
+
+  /**
+   * Programmatically go back to root menu
+   */
+  goToRoot(): void {
+    while (this._navStack.length > 0) {
+      this._exitSubmenu()
+    }
   }
 
   private _handleSpringLoad(): void {
@@ -270,9 +495,9 @@ export class RayMenu extends HTMLElement {
     if (item?.children?.length && item.id !== this._springLoadItemId) {
       this._springLoadItemId = item.id
       this._springLoadTimer = window.setTimeout(() => {
-        console.log('Spring-load: Enter submenu', item.id, item.label)
-        // TODO: Actually open submenu in future
-        this.dispatchEvent(new CustomEvent('ray-spring-load', { detail: item }))
+        // Enter submenu via spring-load (dwell)
+        const angle = angleFromCenter(this._position, this._pointerPosition!)
+        this._enterSubmenu(item, angle)
       }, this._springLoadDelay)
     }
   }
@@ -330,8 +555,9 @@ export class RayMenu extends HTMLElement {
       this._updateHoverState()
     }
 
-    // Track position history for trail/anchor visuals
-    if (this._showTrailPath || this._showAnchorLine) {
+    // Track position history for trail/anchor visuals and gestures
+    const needsVelocity = this._showTrailPath || this._showAnchorLine || this._isDropTarget
+    if (needsVelocity) {
       const now = Date.now()
       this._positionHistory.push({ ...this._pointerPosition })
       this._timestampHistory.push(now)
@@ -345,8 +571,17 @@ export class RayMenu extends HTMLElement {
       // Calculate velocity
       this._velocity = calculateVelocity(this._positionHistory, this._timestampHistory)
 
+      // Check submenu entry confirmation, then drag gestures (only in drop target mode for now)
+      if (this._isDropTarget) {
+        this._checkSubmenuEntryConfirmation()
+        this._checkDragThrough()
+        this._checkDragBack()
+      }
+
       // Update visual traces
-      this._updateDriftTrace()
+      if (this._showTrailPath || this._showAnchorLine) {
+        this._updateDriftTrace()
+      }
     } else if (this._driftTraceSvg) {
       // Clean up if both features disabled
       this._removeDriftTrace()
@@ -364,12 +599,18 @@ export class RayMenu extends HTMLElement {
     if (!this._isOpen) return
 
     const dist = distance(this._position, { x: e.clientX, y: e.clientY })
-    if (dist < this._config.centerDeadzone) {
+    const currentInnerRadius = this._getCurrentInnerRadius()
+
+    // Click in center area - go back if in submenu, otherwise do nothing
+    if (dist < Math.max(this._config.centerDeadzone, currentInnerRadius * 0.7)) {
+      if (this._navStack.length > 0) {
+        this._exitSubmenu()
+      }
       return
     }
 
-    if (this._hoveredIndex >= 0 && this._hoveredIndex < this._items.length) {
-      const item = this._items[this._hoveredIndex]
+    if (this._hoveredIndex >= 0 && this._hoveredIndex < this._currentItems.length) {
+      const item = this._currentItems[this._hoveredIndex]
       if (!item.disabled) {
         this._selectItem(item)
       }
@@ -492,13 +733,17 @@ export class RayMenu extends HTMLElement {
 
   private _calculateHoveredIndex(pointer: Point): number {
     const dist = distance(this._position, pointer)
+    const currentInnerRadius = this._getCurrentInnerRadius()
+    const currentRadius = this._getCurrentRadius()
+
+    // Use current inner radius for deadzone in submenus
     const deadzone = this._config.infiniteSelection
-      ? this._config.centerDeadzone
-      : this._config.innerRadius
+      ? Math.max(this._config.centerDeadzone, currentInnerRadius)
+      : currentInnerRadius
 
     if (dist < deadzone) return -1
 
-    if (!this._config.infiniteSelection && dist > this._config.radius * 1.5) {
+    if (!this._config.infiniteSelection && dist > currentRadius * 1.5) {
       return -1
     }
 
@@ -514,7 +759,7 @@ export class RayMenu extends HTMLElement {
     angle = this._adjustAngleForFlip(angle)
 
     const itemAngles = distributeAngles(
-      this._items.length,
+      this._currentItems.length,
       this._config.startAngle,
       this._config.sweepAngle
     )
@@ -536,7 +781,13 @@ export class RayMenu extends HTMLElement {
   private _selectItem(item: MenuItem): void {
     // Check if item is selectable (defaults to true)
     if (item.selectable === false) {
-      // TODO: Handle submenus for non-selectable items
+      // Non-selectable items with children: enter submenu on click
+      if (item.children?.length) {
+        const angle = this._pointerPosition
+          ? angleFromCenter(this._position, this._pointerPosition)
+          : this._config.startAngle
+        this._enterSubmenu(item, angle)
+      }
       return
     }
 
@@ -560,7 +811,7 @@ export class RayMenu extends HTMLElement {
     const arcs = this.shadowRoot.querySelectorAll('.ray-menu-arc')
     arcs.forEach((arc, index) => {
       const isHovered = index === this._hoveredIndex
-      const item = this._items[index]
+      const item = this._currentItems[index]
       const pathEl = arc as SVGPathElement
 
       pathEl.setAttribute('fill', isHovered ? 'rgba(100, 180, 255, 0.4)' : 'rgba(50, 50, 60, 0.6)')
@@ -583,13 +834,14 @@ export class RayMenu extends HTMLElement {
 
     this._clearContainer()
 
-    if (!this._isOpen || this._items.length === 0) {
+    if (!this._isOpen || this._currentItems.length === 0) {
       return
     }
 
-    const { radius, innerRadius } = this._config
+    const radius = this._getCurrentRadius()
+    const innerRadius = this._getCurrentInnerRadius()
     const itemAngles = distributeAngles(
-      this._items.length,
+      this._currentItems.length,
       this._config.startAngle,
       this._config.sweepAngle
     )
@@ -666,11 +918,14 @@ export class RayMenu extends HTMLElement {
     innerRing.setAttribute('stroke-width', '1')
     svg.appendChild(innerRing)
 
-    // Arc segments and labels
-    this._items.forEach((item, index) => {
+    // Render parent levels as dimmed concentric rings (if in submenu)
+    this._renderParentLevels(container, svg, svgNS, radius)
+
+    // Arc segments and labels for current level
+    this._currentItems.forEach((item, index) => {
       const angle = itemAngles[index]
       const isHovered = index === this._hoveredIndex
-      const segmentAngle = (Math.PI * 2) / this._items.length
+      const segmentAngle = (Math.PI * 2) / this._currentItems.length
       const gap = 0.05
       const startAngle = angle - segmentAngle / 2 + gap / 2
       const endAngle = angle + segmentAngle / 2 - gap / 2
@@ -765,6 +1020,81 @@ export class RayMenu extends HTMLElement {
       `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${endInner.x} ${endInner.y}`,
       'Z',
     ].join(' ')
+  }
+
+  /**
+   * Render parent menu levels as dimmed concentric rings
+   */
+  private _renderParentLevels(
+    _container: HTMLElement,
+    svg: SVGSVGElement,
+    svgNS: string,
+    svgCenter: number
+  ): void {
+    if (this._navStack.length === 0) return
+
+    // Render each parent level
+    this._navStack.forEach((entry, stackIndex) => {
+      const levelRadius = this._config.radius + stackIndex * this._submenuRadiusStep
+      const levelInnerRadius = stackIndex === 0
+        ? this._config.innerRadius
+        : this._config.radius + (stackIndex - 1) * this._submenuRadiusStep
+
+      const parentItems = entry.items
+      const parentAngles = distributeAngles(
+        parentItems.length,
+        this._config.startAngle,
+        this._config.sweepAngle
+      )
+
+      // Find which item was selected to enter this submenu
+      const selectedItemIndex = parentItems.findIndex(i => i.id === entry.item.id)
+
+      parentItems.forEach((_item, index) => {
+        const angle = parentAngles[index]
+        const segmentAngle = (Math.PI * 2) / parentItems.length
+        const gap = 0.05
+        const startAngle = angle - segmentAngle / 2 + gap / 2
+        const endAngle = angle + segmentAngle / 2 - gap / 2
+
+        const isSelected = index === selectedItemIndex
+
+        // Render dimmed arc
+        const path = document.createElementNS(svgNS, 'path')
+        path.setAttribute('d', this._describeArc(
+          svgCenter + 20,
+          svgCenter + 20,
+          levelInnerRadius,
+          levelRadius,
+          startAngle,
+          endAngle
+        ))
+        path.setAttribute('fill', isSelected ? 'rgba(100, 180, 255, 0.2)' : 'rgba(30, 30, 40, 0.3)')
+        path.setAttribute('stroke', isSelected ? 'rgba(100, 180, 255, 0.4)' : 'rgba(255, 255, 255, 0.05)')
+        path.setAttribute('stroke-width', '1')
+        path.setAttribute('opacity', '0.5')
+        svg.appendChild(path)
+      })
+
+      // Add a back indicator at entry angle
+      const backIndicatorAngle = entry.entryAngle + Math.PI // Opposite of entry
+      const backIndicatorRadius = (levelInnerRadius + levelRadius) / 2
+      const backIndicatorPos = {
+        x: svgCenter + 20 + Math.cos(backIndicatorAngle) * backIndicatorRadius,
+        y: svgCenter + 20 + Math.sin(backIndicatorAngle) * backIndicatorRadius,
+      }
+
+      // Small arrow pointing inward
+      const backArrow = document.createElementNS(svgNS, 'text')
+      backArrow.setAttribute('x', String(backIndicatorPos.x))
+      backArrow.setAttribute('y', String(backIndicatorPos.y))
+      backArrow.setAttribute('text-anchor', 'middle')
+      backArrow.setAttribute('dominant-baseline', 'middle')
+      backArrow.setAttribute('fill', 'rgba(255, 255, 255, 0.3)')
+      backArrow.setAttribute('font-size', '14')
+      backArrow.textContent = '◂' // Back arrow
+      svg.appendChild(backArrow)
+    })
   }
 
   private _removeDriftTrace(): void {
@@ -862,7 +1192,7 @@ export class RayMenu extends HTMLElement {
 
     // Calculate hovered angle for anchor line
     const itemAngles = distributeAngles(
-      this._items.length,
+      this._currentItems.length,
       this._config.startAngle,
       this._config.sweepAngle
     )
@@ -870,12 +1200,13 @@ export class RayMenu extends HTMLElement {
 
     // Distance from center
     const distFromCenter = distance(this._position, this._pointerPosition)
+    const currentRadius = this._getCurrentRadius()
 
     // Draw anchor line if enabled and outside menu radius
-    if (this._showAnchorLine && hoveredAngle !== undefined && distFromCenter > this._config.radius) {
+    if (this._showAnchorLine && hoveredAngle !== undefined && distFromCenter > currentRadius) {
       const anchorPoint = {
-        x: this._position.x + Math.cos(hoveredAngle) * this._config.radius,
-        y: this._position.y + Math.sin(hoveredAngle) * this._config.radius,
+        x: this._position.x + Math.cos(hoveredAngle) * currentRadius,
+        y: this._position.y + Math.sin(hoveredAngle) * currentRadius,
       }
 
       // Update anchor gradient positions

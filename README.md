@@ -133,6 +133,12 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 - `open(x: number, y: number)` - Open menu at position
 - `close()` - Close menu
 - `toggle(x: number, y: number)` - Toggle menu at position
+- `goBack()` - Navigate back to parent menu (returns `false` if at root)
+- `goToRoot()` - Navigate back to root menu
+
+**Submenu Navigation**
+
+- `submenuDepth` - Get current submenu depth (0 = root)
 
 **Drag & Drop API** (imperative, works with any drag library)
 
@@ -146,7 +152,8 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 
 - `ray-select` - Fired when an item is selected
 - `ray-drop` - Fired on drop. `e.detail` contains `{ item, data }`
-- `ray-spring-load` - Fired when hovering over submenu item for 500ms
+- `ray-submenu-enter` - Fired when entering a submenu. `e.detail` contains `{ item, depth }`
+- `ray-submenu-exit` - Fired when exiting a submenu. `e.detail` contains `{ item, depth }`
 - `ray-open` - Fired when menu opens
 - `ray-close` - Fired when menu closes
 
@@ -178,7 +185,33 @@ menu.addEventListener("ray-drop", (e) => {
 });
 ```
 
-**Spring-loading**: Hovering over an item with children for 500ms fires `ray-spring-load`.
+**Spring-loading**: Hovering over an item with children for 500ms automatically enters the submenu.
+
+## 🔄 Submenu Navigation
+
+RayMenu supports nested submenus with gesture-based navigation optimized for fast, drag-heavy workflows:
+
+**Click Navigation:**
+- Click items with `▸` indicator to enter submenus
+- Click the center area to go back to parent menu
+
+**Drag-Through Gestures** (during drag operations):
+- **Swipe outward fast** over a submenu item → instantly enters submenu (no wait)
+- **Swipe inward fast** → goes back to parent menu
+- Parent levels are shown as dimmed concentric rings
+
+**Menu Item Options:**
+```js
+{
+  id: "share",
+  label: "Share",
+  selectable: false,  // Only opens submenu, not directly selectable
+  children: [
+    { id: "email", label: "Email" },
+    { id: "link", label: "Copy Link" },
+  ]
+}
+```
 
 ## ✺ Infinite Selection Logic
 
