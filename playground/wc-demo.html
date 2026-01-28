@@ -254,7 +254,7 @@
       <p>Right-click anywhere in the demo areas to open the radial menu.</p>
       <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a;">
         <strong>Submenu navigation:</strong> Click items with ▸ to enter submenus.
-        Click center to go back. During drag: swipe outward fast to enter, swipe inward to go back.
+        Click center to close (or go back if configured). Drag: swipe outward to enter, inward to go back.
       </p>
     </header>
 
@@ -274,6 +274,11 @@
         <label>
           <input type="checkbox" id="anchorLine" />
           <span>Show Anchor Line</span>
+        </label>
+
+        <label>
+          <input type="checkbox" id="centerTransparent" checked />
+          <span>Center Transparent</span>
         </label>
 
         <div class="control-item">
@@ -475,6 +480,14 @@
           menu.setAttribute("show-anchor-line", "");
         } else {
           menu.removeAttribute("show-anchor-line");
+        }
+      });
+
+      document.getElementById("centerTransparent").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.removeAttribute("center-transparent"); // Default is true
+        } else {
+          menu.setAttribute("center-transparent", "false");
         }
       });
 

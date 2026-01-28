@@ -66,6 +66,9 @@ export class RayMenu extends HTMLElement {
   }
   private _pointerPosition: Point | null = null
 
+  // Center area options
+  private _centerTransparent = true // Whether center is transparent (default) or filled
+
   // Drift trace state
   private _showTrailPath = false
   private _showAnchorLine = false
@@ -84,11 +87,11 @@ export class RayMenu extends HTMLElement {
   private _navStack: NavStackEntry[] = []
   private _currentItems: MenuItem[] = []
   private _submenuEntryConfirmed = false // Whether user has entered the submenu ring
+  private _backGestureReady = false // Whether user can trigger back (must exit inner area first after back)
 
   // Drag-through detection config
   private _dragThroughVelocityThreshold = 200 // px/s outward velocity to trigger
   private _dragThroughDistanceThreshold = 0.7 // ratio of radius to trigger
-  private _dragBackAngleThreshold = Math.PI / 3 // ~60 degrees to trigger back
   private _submenuRadiusStep = 60 // px added per submenu level
 
 
@@ -111,6 +114,7 @@ export class RayMenu extends HTMLElement {
       'edge-behavior',
       'show-trail-path',
       'show-anchor-line',
+      'center-transparent',
     ]
   }
 
@@ -328,6 +332,7 @@ export class RayMenu extends HTMLElement {
     this._currentItems = item.children
     this._hoveredIndex = -1
     this._submenuEntryConfirmed = false // Require entry confirmation before enabling back
+    this._backGestureReady = false // Must enter ring before back is allowed
     this._clearSpringLoad()
 
     // Re-render with new items
@@ -424,6 +429,7 @@ export class RayMenu extends HTMLElement {
 
   /**
    * Check if we should trigger drag-back to parent menu
+   * Triggers when cursor enters the inner ring area (parent level)
    */
   private _checkDragBack(): void {
     if (!this._pointerPosition || this._navStack.length === 0) return
@@ -433,31 +439,18 @@ export class RayMenu extends HTMLElement {
 
     const dist = distance(this._position, this._pointerPosition)
     const currentInnerRadius = this._getCurrentInnerRadius()
+    const currentRadius = this._getCurrentRadius()
 
-    // Calculate radial velocity (negative = inward)
-    const angle = angleFromCenter(this._position, this._pointerPosition)
-    const radialVelocity = this._velocity.vx * Math.cos(angle) + this._velocity.vy * Math.sin(angle)
-
-    // Inward velocity and inside inner radius = go back
-    if (radialVelocity < -this._dragThroughVelocityThreshold && dist < currentInnerRadius) {
-      // Check angle against entry angle
-      const lastEntry = this._navStack[this._navStack.length - 1]
-      const angleDiff = Math.abs(this._normalizeAngle(angle - lastEntry.entryAngle))
-
-      // If roughly pointing toward entry direction (back), exit
-      if (angleDiff > Math.PI - this._dragBackAngleThreshold) {
-        this._exitSubmenu()
-      }
+    // Track when cursor exits inner area (enables back gesture)
+    if (dist >= currentInnerRadius && dist <= currentRadius) {
+      this._backGestureReady = true
     }
-  }
 
-  /**
-   * Normalize angle to [-PI, PI]
-   */
-  private _normalizeAngle(angle: number): number {
-    while (angle > Math.PI) angle -= Math.PI * 2
-    while (angle < -Math.PI) angle += Math.PI * 2
-    return angle
+    // If cursor is inside the inner radius (parent ring area) and back is ready, go back
+    if (this._backGestureReady && dist < currentInnerRadius) {
+      this._backGestureReady = false // Reset to prevent rapid triggers
+      this._exitSubmenu()
+    }
   }
 
   /**
@@ -538,6 +531,10 @@ export class RayMenu extends HTMLElement {
       case 'show-anchor-line':
         this._showAnchorLine = newValue !== null && newValue !== 'false'
         break
+      case 'center-transparent':
+        // Default is true, so false only when explicitly set to 'false'
+        this._centerTransparent = newValue !== 'false'
+        break
     }
     if (this._isOpen) this._render()
   }
@@ -601,10 +598,12 @@ export class RayMenu extends HTMLElement {
     const dist = distance(this._position, { x: e.clientX, y: e.clientY })
     const currentInnerRadius = this._getCurrentInnerRadius()
 
-    // Click in center area - go back if in submenu, otherwise do nothing
-    if (dist < Math.max(this._config.centerDeadzone, currentInnerRadius * 0.7)) {
+    // Click in center/inner area - context-aware: go back if in submenu, close if at root
+    if (dist < currentInnerRadius) {
       if (this._navStack.length > 0) {
         this._exitSubmenu()
+      } else {
+        this.close()
       }
       return
     }
@@ -913,7 +912,7 @@ export class RayMenu extends HTMLElement {
     innerRing.setAttribute('cx', String(radius + 20))
     innerRing.setAttribute('cy', String(radius + 20))
     innerRing.setAttribute('r', String(innerRadius))
-    innerRing.setAttribute('fill', 'rgba(0,0,0,0.85)')
+    innerRing.setAttribute('fill', this._centerTransparent ? 'transparent' : 'rgba(0,0,0,0.85)')
     innerRing.setAttribute('stroke', 'rgba(255,255,255,0.1)')
     innerRing.setAttribute('stroke-width', '1')
     svg.appendChild(innerRing)
