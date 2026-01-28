@@ -88,6 +88,11 @@ export class RayMenu extends HTMLElement {
   private _currentItems: MenuItem[] = []
   private _submenuEntryConfirmed = false // Whether user has entered the submenu ring
   private _backGestureReady = false // Whether user can trigger back (must exit inner area first after back)
+  private _backDwellTimer: number | null = null // Timer for dwell-based back
+  private _backDwellPosition: Point | null = null // Position when dwell started
+  private _centerSafeZone = 25 // px - center area that can be passed through safely
+  private _backDwellDelay = 150 // ms - how long to stop in back zone to trigger
+  private _backMovementThreshold = 5 // px - movement beyond this resets dwell
 
   // Drag-through detection config
   private _dragThroughVelocityThreshold = 200 // px/s outward velocity to trigger
@@ -185,6 +190,7 @@ export class RayMenu extends HTMLElement {
     this._navStack = []
     this._currentItems = []
     this._clearSpringLoad()
+    this._clearBackDwell()
     this._clearContainer()
     this._removeDriftTrace()
     this._removeGlobalListeners()
@@ -334,6 +340,7 @@ export class RayMenu extends HTMLElement {
     this._submenuEntryConfirmed = false // Require entry confirmation before enabling back
     this._backGestureReady = false // Must enter ring before back is allowed
     this._clearSpringLoad()
+    this._clearBackDwell()
 
     // Re-render with new items
     this._render()
@@ -428,8 +435,20 @@ export class RayMenu extends HTMLElement {
   }
 
   /**
+   * Clear back dwell timer and position
+   */
+  private _clearBackDwell(): void {
+    if (this._backDwellTimer !== null) {
+      window.clearTimeout(this._backDwellTimer)
+      this._backDwellTimer = null
+    }
+    this._backDwellPosition = null
+  }
+
+  /**
    * Check if we should trigger drag-back to parent menu
-   * Triggers when cursor enters the inner ring area (parent level)
+   * Uses stop detection in CENTER area only (not parent rings)
+   * Only triggers when cursor actually stops moving in the center
    */
   private _checkDragBack(): void {
     if (!this._pointerPosition || this._navStack.length === 0) return
@@ -438,18 +457,53 @@ export class RayMenu extends HTMLElement {
     if (!this._submenuEntryConfirmed) return
 
     const dist = distance(this._position, this._pointerPosition)
-    const currentInnerRadius = this._getCurrentInnerRadius()
     const currentRadius = this._getCurrentRadius()
+    const currentInnerRadius = this._getCurrentInnerRadius()
+    // Back zone is only the original center area, not parent rings
+    const backZoneOuter = this._config.innerRadius
 
-    // Track when cursor exits inner area (enables back gesture)
+    // Track when cursor is in active ring (enables back gesture)
     if (dist >= currentInnerRadius && dist <= currentRadius) {
       this._backGestureReady = true
+      this._clearBackDwell() // Cancel any pending back
+      return
     }
 
-    // If cursor is inside the inner radius (parent ring area) and back is ready, go back
-    if (this._backGestureReady && dist < currentInnerRadius) {
-      this._backGestureReady = false // Reset to prevent rapid triggers
-      this._exitSubmenu()
+    // Center safe-zone: can pass through without triggering back
+    if (dist < this._centerSafeZone) {
+      this._clearBackDwell()
+      return
+    }
+
+    // Back zone: only the CENTER area (between safe-zone and original inner radius)
+    // Parent rings are NOT back zones - only visual
+    // Use stop detection - must actually stop moving to trigger back
+    if (this._backGestureReady && dist < backZoneOuter && dist >= this._centerSafeZone) {
+      // Check if cursor has moved since dwell started
+      if (this._backDwellPosition !== null) {
+        const moved = distance(this._backDwellPosition, this._pointerPosition)
+        if (moved > this._backMovementThreshold) {
+          // Cursor moved - reset timer and update position
+          this._clearBackDwell()
+          this._backDwellPosition = { ...this._pointerPosition }
+          this._backDwellTimer = window.setTimeout(() => {
+            this._backDwellTimer = null
+            this._backGestureReady = false
+            this._exitSubmenu()
+          }, this._backDwellDelay)
+        }
+        // If not moved, let existing timer continue
+      } else {
+        // First time in back zone - start tracking
+        this._backDwellPosition = { ...this._pointerPosition }
+        this._backDwellTimer = window.setTimeout(() => {
+          this._backDwellTimer = null
+          this._backGestureReady = false
+          this._exitSubmenu()
+        }, this._backDwellDelay)
+      }
+    } else {
+      this._clearBackDwell()
     }
   }
 
