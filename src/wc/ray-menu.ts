@@ -16,7 +16,12 @@ import {
 } from '../core'
 
 import type { NavStackEntry } from './ray-menu-types'
-export type { RayMenuDropDetail, RayMenuSubmenuDetail, RayMenuEventMap } from './ray-menu-types'
+export type {
+  RayMenuDropDetail,
+  RayMenuSubmenuDetail,
+  RayMenuLoadErrorDetail,
+  RayMenuEventMap,
+} from './ray-menu-types'
 
 import { RAY_MENU_STYLES } from './ray-menu-styles'
 import {
@@ -83,6 +88,12 @@ export class RayMenu extends HTMLElement {
   private _focusedIndex = -1
   private _keyboardActive = false
 
+  // Async loading state
+  private _isLoading = false
+  private _loadingItemId: string | null = null
+  private _loadError: Error | null = null
+  private _loadingIndicatorEl: HTMLElement | null = null
+
   // Config
   private _config: MenuConfig = { ...DEFAULT_CONFIG }
 
@@ -132,6 +143,10 @@ export class RayMenu extends HTMLElement {
     return this._isDropTarget
   }
 
+  get isLoading(): boolean {
+    return this._isLoading
+  }
+
   get submenuDepth(): number {
     return this._navStack.length
   }
@@ -171,6 +186,9 @@ export class RayMenu extends HTMLElement {
     this._hoveredIndex = -1
     this._focusedIndex = -1
     this._keyboardActive = false
+    this._isLoading = false
+    this._loadingItemId = null
+    this._loadError = null
     this._pointerPosition = null
     this._positionHistory = []
     this._timestampHistory = []
@@ -180,6 +198,7 @@ export class RayMenu extends HTMLElement {
     this._clearSpringLoad()
     this._clearBackDwell()
     this._removeBackIndicator()
+    this._removeLoadingIndicator()
     this._clearContainer()
     this._removeDriftTrace()
     this._removeGlobalListeners()
@@ -566,8 +585,11 @@ export class RayMenu extends HTMLElement {
   }
 
   private _selectItem(item: MenuItem): void {
+    const hasChildren = item.children && item.children.length > 0
+    const canLoadChildren = typeof item.loadChildren === 'function'
+
     if (item.selectable === false) {
-      if (item.children?.length) {
+      if (hasChildren || canLoadChildren) {
         const angle = this._pointerPosition
           ? angleFromCenter(this._position, this._pointerPosition)
           : this._config.startAngle
@@ -591,7 +613,82 @@ export class RayMenu extends HTMLElement {
     this._springLoadItemId = null
   }
 
-  private _enterSubmenu(item: MenuItem, entryAngle: number, confirmedEntry = false): void {
+  private async _enterSubmenu(item: MenuItem, entryAngle: number, confirmedEntry = false): Promise<void> {
+    // Check if we need to load children
+    const hasChildren = item.children && item.children.length > 0
+    const canLoadChildren = typeof item.loadChildren === 'function'
+
+    if (!hasChildren && !canLoadChildren) return
+
+    // If children need to be loaded
+    if (!hasChildren && canLoadChildren) {
+      await this._loadChildrenAsync(item, entryAngle, confirmedEntry)
+      return
+    }
+
+    // Children already exist, enter directly
+    this._performSubmenuEntry(item, entryAngle, confirmedEntry)
+  }
+
+  private async _loadChildrenAsync(item: MenuItem, entryAngle: number, confirmedEntry: boolean): Promise<void> {
+    if (!item.loadChildren) return
+
+    // Show loading state
+    this._isLoading = true
+    this._loadingItemId = item.id
+    this._loadError = null
+    this._showLoadingIndicator(item)
+
+    this.dispatchEvent(new CustomEvent('ray-load-start', { detail: item }))
+
+    try {
+      const children = await item.loadChildren()
+
+      // Check if menu is still open and we're still loading this item
+      if (!this._isOpen || this._loadingItemId !== item.id) {
+        return
+      }
+
+      // Cache the loaded children on the item
+      item.children = children
+
+      this._isLoading = false
+      this._loadingItemId = null
+      this._removeLoadingIndicator()
+
+      this.dispatchEvent(new CustomEvent('ray-load-complete', { detail: item }))
+
+      // Now enter the submenu with loaded children
+      if (children.length > 0) {
+        this._performSubmenuEntry(item, entryAngle, confirmedEntry)
+      }
+    } catch (error) {
+      if (!this._isOpen || this._loadingItemId !== item.id) {
+        return
+      }
+
+      this._isLoading = false
+      this._loadingItemId = null
+      this._loadError = error instanceof Error ? error : new Error(String(error))
+      this._showErrorIndicator(this._loadError)
+
+      this.dispatchEvent(
+        new CustomEvent('ray-load-error', {
+          detail: { item, error: this._loadError },
+        })
+      )
+
+      // Auto-clear error after delay
+      setTimeout(() => {
+        if (this._loadError) {
+          this._loadError = null
+          this._removeLoadingIndicator()
+        }
+      }, 2000)
+    }
+  }
+
+  private _performSubmenuEntry(item: MenuItem, entryAngle: number, confirmedEntry: boolean): void {
     if (!item.children?.length) return
 
     this._navStack.push({
@@ -641,7 +738,10 @@ export class RayMenu extends HTMLElement {
     if (!this._pointerPosition || this._hoveredIndex < 0) return
 
     const item = this._currentItems[this._hoveredIndex]
-    if (!item?.children?.length) return
+    const hasChildren = item?.children && item.children.length > 0
+    const canLoadChildren = typeof item?.loadChildren === 'function'
+
+    if (!hasChildren && !canLoadChildren) return
 
     const dist = distance(this._position, this._pointerPosition)
     const currentRadius = this._getCurrentRadius()
@@ -715,7 +815,11 @@ export class RayMenu extends HTMLElement {
       this._clearSpringLoad()
     }
 
-    if (item?.children?.length && item.id !== this._springLoadItemId) {
+    // Check if item has children or can load children
+    const hasChildren = item?.children && item.children.length > 0
+    const canLoadChildren = typeof item?.loadChildren === 'function'
+
+    if ((hasChildren || canLoadChildren) && item && item.id !== this._springLoadItemId) {
       this._springLoadItemId = item.id
       this._springLoadTimer = window.setTimeout(() => {
         const angle = angleFromCenter(this._position, this._pointerPosition!)
@@ -748,6 +852,87 @@ export class RayMenu extends HTMLElement {
       this._backIndicatorEl.remove()
       this._backIndicatorEl = null
     }
+  }
+
+  // --- Loading Indicator ---
+
+  private _showLoadingIndicator(item: MenuItem): void {
+    this._removeLoadingIndicator()
+
+    if (!this.shadowRoot) return
+    const container = this.shadowRoot.querySelector('.ray-menu-container')
+    if (!container) return
+
+    // Mark the item label as loading
+    const labels = container.querySelectorAll('.ray-menu-label')
+    labels.forEach((label) => {
+      const index = parseInt(label.getAttribute('data-index') || '-1', 10)
+      if (index >= 0 && this._currentItems[index]?.id === item.id) {
+        label.setAttribute('data-loading', 'true')
+        // Add spinner to label
+        const spinner = document.createElement('span')
+        spinner.className = 'ray-menu-label-spinner'
+        label.appendChild(spinner)
+      }
+    })
+
+    // Create center loading indicator
+    const indicator = document.createElement('div')
+    indicator.className = 'ray-menu-loading-indicator'
+
+    const spinner = document.createElement('div')
+    spinner.className = 'ray-menu-loading-spinner'
+
+    const text = document.createElement('div')
+    text.className = 'ray-menu-loading-text'
+    text.textContent = 'Loading...'
+
+    indicator.appendChild(spinner)
+    indicator.appendChild(text)
+    container.appendChild(indicator)
+
+    this._loadingIndicatorEl = indicator
+  }
+
+  private _showErrorIndicator(error: Error): void {
+    this._removeLoadingIndicator()
+
+    if (!this.shadowRoot) return
+    const container = this.shadowRoot.querySelector('.ray-menu-container')
+    if (!container) return
+
+    const indicator = document.createElement('div')
+    indicator.className = 'ray-menu-error-indicator'
+
+    const icon = document.createElement('div')
+    icon.className = 'ray-menu-error-icon'
+    icon.textContent = '⚠'
+
+    const text = document.createElement('div')
+    text.className = 'ray-menu-error-text'
+    text.textContent = error.message || 'Failed to load'
+
+    indicator.appendChild(icon)
+    indicator.appendChild(text)
+    container.appendChild(indicator)
+
+    this._loadingIndicatorEl = indicator
+  }
+
+  private _removeLoadingIndicator(): void {
+    if (this._loadingIndicatorEl) {
+      this._loadingIndicatorEl.remove()
+      this._loadingIndicatorEl = null
+    }
+
+    // Remove loading state from labels
+    if (!this.shadowRoot) return
+    const labels = this.shadowRoot.querySelectorAll('.ray-menu-label[data-loading="true"]')
+    labels.forEach((label) => {
+      label.removeAttribute('data-loading')
+      const spinner = label.querySelector('.ray-menu-label-spinner')
+      if (spinner) spinner.remove()
+    })
   }
 
   // --- Rendering ---

@@ -264,6 +264,10 @@
         <strong>Keyboard:</strong> ←/→ navigate items, ↓/Enter/Space select,
         ↑/Backspace go back, Escape close, 1-9 quick select.
       </p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Async Loading:</strong> "Move to" loads folders from API.
+        "Recent" demonstrates error handling.
+      </p>
     </header>
 
     <div class="controls">
@@ -388,7 +392,20 @@
       const menu = document.getElementById("menu");
       const log = document.getElementById("log");
 
-      // Set menu items with nested submenus
+      // Simulate async API calls
+      const simulateApiCall = (items, delay = 800) => {
+        return new Promise((resolve) => {
+          setTimeout(() => resolve(items), delay);
+        });
+      };
+
+      const simulateApiError = (message, delay = 500) => {
+        return new Promise((_, reject) => {
+          setTimeout(() => reject(new Error(message)), delay);
+        });
+      };
+
+      // Set menu items with nested submenus (including async children)
       menu.items = [
         { id: "copy", label: "Copy", shortcut: "⌘+C" },
         { id: "paste", label: "Paste", shortcut: "⌘+V" },
@@ -397,7 +414,7 @@
         {
           id: "share",
           label: "Share",
-          selectable: false, // Only opens submenu, not directly selectable
+          selectable: false,
           children: [
             { id: "share-email", label: "Email" },
             { id: "share-link", label: "Copy Link" },
@@ -417,12 +434,38 @@
           id: "move",
           label: "Move to",
           selectable: false,
-          children: [
-            { id: "move-folder1", label: "Folder 1" },
-            { id: "move-folder2", label: "Folder 2" },
-            { id: "move-folder3", label: "Folder 3" },
-            { id: "move-folder4", label: "Folder 4" },
-          ],
+          // Async children loading - simulates fetching folders from API
+          loadChildren: async () => {
+            log.textContent = "Loading folders...";
+            return simulateApiCall([
+              { id: "move-docs", label: "Documents" },
+              { id: "move-photos", label: "Photos" },
+              { id: "move-downloads", label: "Downloads" },
+              {
+                id: "move-projects",
+                label: "Projects",
+                selectable: false,
+                // Nested async loading
+                loadChildren: async () => {
+                  return simulateApiCall([
+                    { id: "proj-web", label: "Web App" },
+                    { id: "proj-mobile", label: "Mobile App" },
+                    { id: "proj-api", label: "API Server" },
+                  ], 600);
+                },
+              },
+            ]);
+          },
+        },
+        {
+          id: "recent",
+          label: "Recent",
+          selectable: false,
+          // This will fail to demonstrate error handling
+          loadChildren: async () => {
+            log.textContent = "Loading recent files...";
+            return simulateApiError("Network error: Unable to fetch recent files");
+          },
         },
       ];
 
@@ -450,6 +493,22 @@
       menu.addEventListener("ray-submenu-exit", (e) => {
         log.textContent = `Exited submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`;
         console.log("ray-submenu-exit", e.detail);
+      });
+
+      // Async loading events
+      menu.addEventListener("ray-load-start", (e) => {
+        log.textContent = `Loading children for: ${e.detail.label}...`;
+        console.log("ray-load-start", e.detail);
+      });
+
+      menu.addEventListener("ray-load-complete", (e) => {
+        log.textContent = `Loaded children for: ${e.detail.label}`;
+        console.log("ray-load-complete", e.detail);
+      });
+
+      menu.addEventListener("ray-load-error", (e) => {
+        log.textContent = `Error loading: ${e.detail.error.message}`;
+        console.error("ray-load-error", e.detail);
       });
 
       // Context menu triggers

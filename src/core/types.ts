@@ -13,6 +13,8 @@ export interface MenuItem {
   /** Whether this item can be selected. Defaults to true. Set to false for items that should only open submenus. */
   selectable?: boolean
   children?: MenuItem[]
+  /** Async function to load children dynamically. Called when submenu is entered if children is empty. */
+  loadChildren?: () => Promise<MenuItem[]>
   onSelect?: () => void
 }
 

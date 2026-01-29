@@ -7,10 +7,12 @@
 ## Key Features
 
 - **⚛️ Framework Agnostic:** Built as a pure Web Component. Works in React, Vue, Svelte, or vanilla HTML.
-- **🪶 Zero Dependencies:** Written in pure TypeScript with **0** runtime dependencies. Only **19KB**.
+- **🪶 Zero Dependencies:** Written in pure TypeScript with **0** runtime dependencies.
 - **🌀 Infinite Radial Selection:** Select items based on angle, not distance. Flick your wrist to select.
 - **🧠 Smart Edge Detection:** Context-aware positioning. The menu flips or shifts automatically when near screen edges.
-- **🎨 Squishy Visuals:** Optiona cursor trails and anchor lines for satisfying tactile feedback.
+- **⌨️ Full Keyboard Support:** Navigate with arrow keys, quick-select with 1-9, full accessibility.
+- **⏳ Async Children:** Load submenu items on-demand from APIs with loading states and error handling.
+- **🎨 Squishy Visuals:** Optional cursor trails and anchor lines for satisfying tactile feedback.
 
 ## 🚀 Installation
 
@@ -148,12 +150,22 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 - `cancelDrop()` - Cancel drop mode
 - `getHoveredItem()` - Get currently hovered item (for preview)
 
+**Web Component Properties (read-only)**
+
+- `isOpen` - Whether menu is open
+- `isLoading` - Whether async children are loading
+- `isDropTarget` - Whether menu is in drop target mode
+- `submenuDepth` - Current submenu depth (0 = root)
+
 **Web Component Events**
 
 - `ray-select` - Fired when an item is selected
 - `ray-drop` - Fired on drop. `e.detail` contains `{ item, data }`
 - `ray-submenu-enter` - Fired when entering a submenu. `e.detail` contains `{ item, depth }`
 - `ray-submenu-exit` - Fired when exiting a submenu. `e.detail` contains `{ item, depth }`
+- `ray-load-start` - Fired when async loading starts. `e.detail` is the item
+- `ray-load-complete` - Fired when async loading completes. `e.detail` is the item
+- `ray-load-error` - Fired on load error. `e.detail` contains `{ item, error }`
 - `ray-open` - Fired when menu opens
 - `ray-close` - Fired when menu closes
 
@@ -195,6 +207,8 @@ RayMenu supports nested submenus with gesture-based navigation optimized for fas
 - Click items with `▸` indicator to enter submenus
 - Click the center area to go back to parent menu
 
+**Keyboard:** `↓`/`Enter` to enter, `↑`/`Backspace` to go back (see Keyboard Navigation)
+
 **Drag-Through Gestures** (during drag operations):
 - **Swipe outward fast** over a submenu item → instantly enters submenu (no wait)
 - **Swipe inward fast** → goes back to parent menu
@@ -212,6 +226,50 @@ RayMenu supports nested submenus with gesture-based navigation optimized for fas
   ]
 }
 ```
+
+## ⌨️ Keyboard Navigation
+
+Full keyboard support for accessibility and power users:
+
+| Key | Action |
+|-----|--------|
+| `←` `→` | Navigate between items |
+| `↓` `Enter` `Space` | Select item / enter submenu |
+| `↑` `Backspace` | Go back (or close at root) |
+| `Escape` | Close menu |
+| `Home` `End` | Jump to first/last item |
+| `1`-`9` | Quick select by number |
+
+Number hints appear on items when keyboard mode is active.
+
+## ⏳ Async Children Loading
+
+Load submenu items dynamically from APIs:
+
+```js
+menu.items = [
+  {
+    id: "folders",
+    label: "Move to",
+    selectable: false,
+    loadChildren: async () => {
+      const res = await fetch("/api/folders");
+      return res.json();
+    }
+  }
+];
+```
+
+**Features:**
+- Loading spinner shown during fetch
+- Error state with auto-dismiss
+- Results cached after first load
+- Supports nested async at any depth
+
+**Events:**
+- `ray-load-start` - Loading begins
+- `ray-load-complete` - Loading succeeded
+- `ray-load-error` - Loading failed (`e.detail.error`)
 
 ## ✺ Infinite Selection Logic
 

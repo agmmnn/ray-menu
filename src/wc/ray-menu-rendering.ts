@@ -216,7 +216,11 @@ export function createLabel(options: CreateLabelOptions): HTMLDivElement {
     label.appendChild(shortcut)
   }
 
-  if (item.children && item.children.length > 0) {
+  // Show submenu indicator for items with children or loadChildren
+  const hasChildren = item.children && item.children.length > 0
+  const canLoadChildren = typeof item.loadChildren === 'function'
+
+  if (hasChildren || canLoadChildren) {
     const indicator = document.createElement('span')
     indicator.className = 'ray-menu-submenu-indicator'
     indicator.textContent = '▸'

@@ -22,12 +22,20 @@ export interface RayMenuSubmenuDetail {
   depth: number
 }
 
+export interface RayMenuLoadErrorDetail {
+  item: MenuItem
+  error: Error
+}
+
 export interface RayMenuEventMap {
   'ray-select': CustomEvent<MenuItem>
   'ray-drop': CustomEvent<RayMenuDropDetail>
   'ray-spring-load': CustomEvent<MenuItem>
   'ray-submenu-enter': CustomEvent<RayMenuSubmenuDetail>
   'ray-submenu-exit': CustomEvent<RayMenuSubmenuDetail>
+  'ray-load-start': CustomEvent<MenuItem>
+  'ray-load-complete': CustomEvent<MenuItem>
+  'ray-load-error': CustomEvent<RayMenuLoadErrorDetail>
   'ray-open': CustomEvent<Point>
   'ray-close': CustomEvent<void>
 }
