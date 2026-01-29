@@ -74,9 +74,38 @@ export const RAY_MENU_STYLES = `
     transform: translate(-50%, -50%) scale(1.1);
     box-shadow: 0 0 20px rgba(100, 180, 255, 0.4);
   }
+  .ray-menu-label[data-focused="true"] {
+    background: rgba(100, 180, 255, 0.85);
+    color: white;
+    transform: translate(-50%, -50%) scale(1.05);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 20px rgba(100, 180, 255, 0.4);
+  }
+  .ray-menu-label[data-hovered="true"][data-focused="true"] {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
   .ray-menu-label[data-disabled="true"] {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  .ray-menu-label .ray-menu-key-hint {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 18px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    color: rgba(30, 30, 40, 0.95);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  .ray-menu-container[data-keyboard-active="true"] .ray-menu-label .ray-menu-key-hint {
+    opacity: 1;
   }
   .ray-menu-back-indicator {
     position: absolute;

@@ -153,18 +153,34 @@ export function createArcPath(
   return path
 }
 
+export interface CreateLabelOptions {
+  item: MenuItem
+  angle: number
+  innerRadius: number
+  outerRadius: number
+  isHovered: boolean
+  isFocused: boolean
+  isDropTarget: boolean
+  index: number
+  showKeyHint: boolean
+}
+
 /**
  * Create a label element for a menu item
  */
-export function createLabel(
-  item: MenuItem,
-  angle: number,
-  innerRadius: number,
-  outerRadius: number,
-  isHovered: boolean,
-  isDropTarget: boolean,
-  index: number
-): HTMLDivElement {
+export function createLabel(options: CreateLabelOptions): HTMLDivElement {
+  const {
+    item,
+    angle,
+    innerRadius,
+    outerRadius,
+    isHovered,
+    isFocused,
+    isDropTarget,
+    index,
+    showKeyHint,
+  } = options
+
   const labelPos = toCartesian({ x: 0, y: 0 }, { angle, distance: (innerRadius + outerRadius) / 2 })
 
   const label = document.createElement('div')
@@ -177,8 +193,17 @@ export function createLabel(
   }
 
   label.setAttribute('data-hovered', String(isHovered))
+  label.setAttribute('data-focused', String(isFocused))
   label.setAttribute('data-disabled', String(item.disabled || false))
   label.setAttribute('data-index', String(index))
+
+  // Key hint for keyboard navigation (1-9)
+  if (showKeyHint && index < 9) {
+    const keyHint = document.createElement('span')
+    keyHint.className = 'ray-menu-key-hint'
+    keyHint.textContent = String(index + 1)
+    label.appendChild(keyHint)
+  }
 
   const labelText = document.createElement('span')
   labelText.textContent = item.label

@@ -79,6 +79,10 @@ export class RayMenu extends HTMLElement {
   private _submenuRadiusStep = 60
   private _instantDragThrough = false
 
+  // Keyboard navigation state
+  private _focusedIndex = -1
+  private _keyboardActive = false
+
   // Config
   private _config: MenuConfig = { ...DEFAULT_CONFIG }
 
@@ -165,6 +169,8 @@ export class RayMenu extends HTMLElement {
     this._isOpen = false
     this._isDropTarget = false
     this._hoveredIndex = -1
+    this._focusedIndex = -1
+    this._keyboardActive = false
     this._pointerPosition = null
     this._positionHistory = []
     this._timestampHistory = []
@@ -221,7 +227,7 @@ export class RayMenu extends HTMLElement {
 
     if (newIndex !== this._hoveredIndex) {
       this._hoveredIndex = newIndex
-      this._updateHoverState()
+      this._updateSelectionState()
       this._handleSpringLoad()
     }
   }
@@ -312,9 +318,16 @@ export class RayMenu extends HTMLElement {
     this._pointerPosition = { x: e.clientX, y: e.clientY }
     const newIndex = this._calculateHoveredIndex(this._pointerPosition)
 
+    // Deactivate keyboard mode when mouse moves significantly
+    if (this._keyboardActive) {
+      this._keyboardActive = false
+      this._focusedIndex = -1
+      this._setKeyboardActiveAttribute(false)
+    }
+
     if (newIndex !== this._hoveredIndex) {
       this._hoveredIndex = newIndex
-      this._updateHoverState()
+      this._updateSelectionState()
     }
 
     const needsVelocity = this._showTrailPath || this._showAnchorLine || this._isDropTarget
@@ -366,8 +379,96 @@ export class RayMenu extends HTMLElement {
   }
 
   private _onKeyDown(e: KeyboardEvent): void {
-    if (e.key === 'Escape' && this._isOpen) {
-      this.close()
+    if (!this._isOpen) return
+
+    const itemCount = this._currentItems.length
+    if (itemCount === 0) return
+
+    switch (e.key) {
+      case 'Escape':
+        this.close()
+        e.preventDefault()
+        break
+
+      case 'ArrowLeft':
+        this._activateKeyboardMode()
+        this._moveFocus(-1)
+        e.preventDefault()
+        break
+
+      case 'ArrowRight':
+        this._activateKeyboardMode()
+        this._moveFocus(1)
+        e.preventDefault()
+        break
+
+      case 'ArrowUp':
+        // Go back to parent or close
+        if (this._navStack.length > 0) {
+          this._exitSubmenu()
+        } else {
+          this.close()
+        }
+        e.preventDefault()
+        break
+
+      case 'ArrowDown':
+      case 'Enter':
+      case ' ':
+        // Select focused item or enter submenu
+        if (this._focusedIndex >= 0 && this._focusedIndex < itemCount) {
+          const item = this._currentItems[this._focusedIndex]
+          if (!item.disabled) {
+            this._selectItem(item)
+          }
+        } else if (this._keyboardActive && itemCount > 0) {
+          // No focus yet, focus first item
+          this._focusedIndex = 0
+          this._updateSelectionState()
+        } else {
+          // Activate keyboard mode
+          this._activateKeyboardMode()
+        }
+        e.preventDefault()
+        break
+
+      case 'Home':
+        this._activateKeyboardMode()
+        this._focusedIndex = 0
+        this._updateSelectionState()
+        e.preventDefault()
+        break
+
+      case 'End':
+        this._activateKeyboardMode()
+        this._focusedIndex = itemCount - 1
+        this._updateSelectionState()
+        e.preventDefault()
+        break
+
+      case 'Backspace':
+        // Go back to parent menu
+        if (this._navStack.length > 0) {
+          this._exitSubmenu()
+        }
+        e.preventDefault()
+        break
+
+      default:
+        // Number keys 1-9 for quick select
+        if (e.key >= '1' && e.key <= '9') {
+          const index = parseInt(e.key, 10) - 1
+          if (index < itemCount) {
+            this._activateKeyboardMode()
+            this._focusedIndex = index
+            const item = this._currentItems[index]
+            if (!item.disabled) {
+              this._selectItem(item)
+            }
+          }
+          e.preventDefault()
+        }
+        break
     }
   }
 
@@ -501,6 +602,7 @@ export class RayMenu extends HTMLElement {
 
     this._currentItems = item.children
     this._hoveredIndex = -1
+    this._focusedIndex = this._keyboardActive ? 0 : -1
     this._submenuEntryConfirmed = confirmedEntry
     this._clearSpringLoad()
     this._clearBackDwell()
@@ -519,6 +621,10 @@ export class RayMenu extends HTMLElement {
     const entry = this._navStack.pop()!
     this._currentItems = entry.items
     this._hoveredIndex = -1
+    // Focus the parent item we came from when using keyboard
+    this._focusedIndex = this._keyboardActive
+      ? this._currentItems.findIndex((i) => i.id === entry.item.id)
+      : -1
     this._clearSpringLoad()
     this._render()
 
@@ -654,26 +760,69 @@ export class RayMenu extends HTMLElement {
     }
   }
 
-  private _updateHoverState(): void {
+  private _activateKeyboardMode(): void {
+    if (!this._keyboardActive) {
+      this._keyboardActive = true
+      this._setKeyboardActiveAttribute(true)
+      // Start focus at first item if not already set
+      if (this._focusedIndex < 0) {
+        this._focusedIndex = 0
+      }
+      this._updateSelectionState()
+    }
+  }
+
+  private _moveFocus(delta: number): void {
+    const itemCount = this._currentItems.length
+    if (itemCount === 0) return
+
+    // Find next non-disabled item
+    let newIndex = this._focusedIndex
+    let attempts = 0
+
+    do {
+      newIndex = (newIndex + delta + itemCount) % itemCount
+      attempts++
+    } while (this._currentItems[newIndex]?.disabled && attempts < itemCount)
+
+    if (newIndex !== this._focusedIndex) {
+      this._focusedIndex = newIndex
+      this._updateSelectionState()
+    }
+  }
+
+  private _setKeyboardActiveAttribute(active: boolean): void {
+    if (!this.shadowRoot) return
+    const container = this.shadowRoot.querySelector('.ray-menu-container')
+    if (container) {
+      container.setAttribute('data-keyboard-active', String(active))
+    }
+  }
+
+  private _updateSelectionState(): void {
     if (!this.shadowRoot) return
 
     const arcs = this.shadowRoot.querySelectorAll('.ray-menu-arc')
     arcs.forEach((arc, index) => {
       const isHovered = index === this._hoveredIndex
+      const isFocused = index === this._focusedIndex && this._keyboardActive
+      const isActive = isHovered || isFocused
       const item = this._currentItems[index]
       const pathEl = arc as SVGPathElement
 
-      pathEl.setAttribute('fill', isHovered ? 'rgba(100, 180, 255, 0.4)' : 'rgba(50, 50, 60, 0.6)')
-      pathEl.setAttribute('stroke', isHovered ? 'rgba(100, 180, 255, 0.7)' : 'rgba(255, 255, 255, 0.1)')
-      pathEl.setAttribute('stroke-width', isHovered ? '2' : '1')
-      pathEl.setAttribute('opacity', item?.disabled ? '0.3' : isHovered ? '1' : '0.6')
-      pathEl.setAttribute('filter', isHovered ? 'url(#glow)' : '')
+      pathEl.setAttribute('fill', isActive ? 'rgba(100, 180, 255, 0.4)' : 'rgba(50, 50, 60, 0.6)')
+      pathEl.setAttribute('stroke', isActive ? 'rgba(100, 180, 255, 0.7)' : 'rgba(255, 255, 255, 0.1)')
+      pathEl.setAttribute('stroke-width', isActive ? '2' : '1')
+      pathEl.setAttribute('opacity', item?.disabled ? '0.3' : isActive ? '1' : '0.6')
+      pathEl.setAttribute('filter', isActive ? 'url(#glow)' : '')
     })
 
     const labels = this.shadowRoot.querySelectorAll('.ray-menu-label')
     labels.forEach((label, index) => {
       const isHovered = index === this._hoveredIndex
+      const isFocused = index === this._focusedIndex && this._keyboardActive
       label.setAttribute('data-hovered', String(isHovered))
+      label.setAttribute('data-focused', String(isFocused))
     })
   }
 
@@ -705,6 +854,10 @@ export class RayMenu extends HTMLElement {
       container.setAttribute('data-drop-target', 'true')
     }
 
+    if (this._keyboardActive) {
+      container.setAttribute('data-keyboard-active', 'true')
+    }
+
     // Create SVG
     const svg = createMenuSvg(radius, this._isDropTarget)
     svg.appendChild(createOuterRing(radius))
@@ -717,6 +870,7 @@ export class RayMenu extends HTMLElement {
     this._currentItems.forEach((item, index) => {
       const angle = itemAngles[index]
       const isHovered = index === this._hoveredIndex
+      const isFocused = index === this._focusedIndex && this._keyboardActive
       const segmentAngle = (Math.PI * 2) / this._currentItems.length
       const gap = 0.05
       const startAngle = angle - segmentAngle / 2 + gap / 2
@@ -729,13 +883,23 @@ export class RayMenu extends HTMLElement {
         radius,
         startAngle,
         endAngle,
-        isHovered,
+        isHovered || isFocused,
         item.disabled || false,
         index
       )
       svg.appendChild(path)
 
-      const label = createLabel(item, angle, innerRadius, radius, isHovered, this._isDropTarget, index)
+      const label = createLabel({
+        item,
+        angle,
+        innerRadius,
+        outerRadius: radius,
+        isHovered,
+        isFocused,
+        isDropTarget: this._isDropTarget,
+        index,
+        showKeyHint: true,
+      })
       container.appendChild(label)
     })
 
