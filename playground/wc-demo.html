@@ -281,6 +281,11 @@
           <span>Center Transparent</span>
         </label>
 
+        <label>
+          <input type="checkbox" id="instantDragThrough" />
+          <span>Instant Drag-Through</span>
+        </label>
+
         <div class="control-item">
           <span>Center Deadzone: <output id="deadzoneValue">30</output>px</span>
           <input type="range" id="deadzone" min="10" max="60" value="30" />
@@ -488,6 +493,14 @@
           menu.removeAttribute("center-transparent"); // Default is true
         } else {
           menu.setAttribute("center-transparent", "false");
+        }
+      });
+
+      document.getElementById("instantDragThrough").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("instant-drag-through", ""); // Enable instant entry
+        } else {
+          menu.removeAttribute("instant-drag-through"); // Default is false (dwell only)
         }
       });
 

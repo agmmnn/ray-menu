@@ -86,8 +86,7 @@ export class RayMenu extends HTMLElement {
   // Submenu navigation state
   private _navStack: NavStackEntry[] = []
   private _currentItems: MenuItem[] = []
-  private _submenuEntryConfirmed = false // Whether user has entered the submenu ring
-  private _backGestureReady = false // Whether user can trigger back (must exit inner area first after back)
+  private _submenuEntryConfirmed = false // Whether user has entered the submenu ring (prevents flicker on entry)
   private _backDwellTimer: number | null = null // Timer for dwell-based back
   private _backDwellPosition: Point | null = null // Position when dwell started
   private _centerSafeZone = 25 // px - center area that can be passed through safely
@@ -98,6 +97,7 @@ export class RayMenu extends HTMLElement {
   private _dragThroughVelocityThreshold = 200 // px/s outward velocity to trigger
   private _dragThroughDistanceThreshold = 0.7 // ratio of radius to trigger
   private _submenuRadiusStep = 60 // px added per submenu level
+  private _instantDragThrough = false // true = velocity-based instant entry, false = dwell only (default)
 
 
   // Config
@@ -120,6 +120,7 @@ export class RayMenu extends HTMLElement {
       'show-trail-path',
       'show-anchor-line',
       'center-transparent',
+      'instant-drag-through',
     ]
   }
 
@@ -338,7 +339,6 @@ export class RayMenu extends HTMLElement {
     this._currentItems = item.children
     this._hoveredIndex = -1
     this._submenuEntryConfirmed = false // Require entry confirmation before enabling back
-    this._backGestureReady = false // Must enter ring before back is allowed
     this._clearSpringLoad()
     this._clearBackDwell()
 
@@ -392,8 +392,12 @@ export class RayMenu extends HTMLElement {
 
   /**
    * Check if we should trigger drag-through into a submenu
+   * Only triggers if instant-drag-through is enabled (default: true)
    */
   private _checkDragThrough(): void {
+    // Skip if instant drag-through is disabled (dwell-only mode)
+    if (!this._instantDragThrough) return
+
     if (!this._pointerPosition || this._hoveredIndex < 0) return
 
     const item = this._currentItems[this._hoveredIndex]
@@ -457,17 +461,8 @@ export class RayMenu extends HTMLElement {
     if (!this._submenuEntryConfirmed) return
 
     const dist = distance(this._position, this._pointerPosition)
-    const currentRadius = this._getCurrentRadius()
-    const currentInnerRadius = this._getCurrentInnerRadius()
     // Back zone is only the original center area, not parent rings
     const backZoneOuter = this._config.innerRadius
-
-    // Track when cursor is in active ring (enables back gesture)
-    if (dist >= currentInnerRadius && dist <= currentRadius) {
-      this._backGestureReady = true
-      this._clearBackDwell() // Cancel any pending back
-      return
-    }
 
     // Center safe-zone: can pass through without triggering back
     if (dist < this._centerSafeZone) {
@@ -478,7 +473,7 @@ export class RayMenu extends HTMLElement {
     // Back zone: only the CENTER area (between safe-zone and original inner radius)
     // Parent rings are NOT back zones - only visual
     // Use stop detection - must actually stop moving to trigger back
-    if (this._backGestureReady && dist < backZoneOuter && dist >= this._centerSafeZone) {
+    if (dist < backZoneOuter && dist >= this._centerSafeZone) {
       // Check if cursor has moved since dwell started
       if (this._backDwellPosition !== null) {
         const moved = distance(this._backDwellPosition, this._pointerPosition)
@@ -488,7 +483,6 @@ export class RayMenu extends HTMLElement {
           this._backDwellPosition = { ...this._pointerPosition }
           this._backDwellTimer = window.setTimeout(() => {
             this._backDwellTimer = null
-            this._backGestureReady = false
             this._exitSubmenu()
           }, this._backDwellDelay)
         }
@@ -498,7 +492,6 @@ export class RayMenu extends HTMLElement {
         this._backDwellPosition = { ...this._pointerPosition }
         this._backDwellTimer = window.setTimeout(() => {
           this._backDwellTimer = null
-          this._backGestureReady = false
           this._exitSubmenu()
         }, this._backDwellDelay)
       }
@@ -588,6 +581,10 @@ export class RayMenu extends HTMLElement {
       case 'center-transparent':
         // Default is true, so false only when explicitly set to 'false'
         this._centerTransparent = newValue !== 'false'
+        break
+      case 'instant-drag-through':
+        // Default is false (dwell only), true = velocity-based instant entry
+        this._instantDragThrough = newValue !== null && newValue !== 'false'
         break
     }
     if (this._isOpen) this._render()

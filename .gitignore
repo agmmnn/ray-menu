@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .DS_Store
+other
 test-results
 playwright-report
