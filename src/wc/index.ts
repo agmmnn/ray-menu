@@ -3,5 +3,6 @@
  * Framework-agnostic radial menu
  */
 
-export { RayMenu, type RayMenuEventMap } from './ray-menu'
+export { RayMenu } from './ray-menu'
+export type { RayMenuEventMap, RayMenuDropDetail, RayMenuSubmenuDetail } from './ray-menu-types'
 export * from '../core'

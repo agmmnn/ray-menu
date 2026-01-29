@@ -159,6 +159,9 @@
         cursor: grabbing;
         transform: scale(1.05);
         box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.1);
       }
 
       .drop-zone {
@@ -216,7 +219,7 @@
       }
 
       .file-item.dragging {
-        opacity: 0.5;
+        opacity: 0.03;
       }
 
       .file-icon {
@@ -252,9 +255,10 @@
     <header>
       <h1>Ray Menu - Web Component Demo</h1>
       <p>Right-click anywhere in the demo areas to open the radial menu.</p>
-      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a;">
-        <strong>Submenu navigation:</strong> Click items with ▸ to enter submenus.
-        Click center to close (or go back if configured). Drag: swipe outward to enter, inward to go back.
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Submenu navigation:</strong> Click items with ▸ to enter
+        submenus. Click center to close (or go back if configured). Drag: swipe
+        outward to enter, inward to go back.
       </p>
     </header>
 
@@ -334,7 +338,8 @@
     <div class="instant-drag-demo">
       <h2>Instant Drag Demo</h2>
       <p style="color: #a1a1aa; margin-bottom: 1rem; font-size: 0.875rem">
-        Drag a file - the menu appears immediately at cursor. Release to select action.
+        Drag a file - the menu appears immediately at cursor. Release to select
+        action.
       </p>
       <div class="file-list">
         <div class="file-item" draggable="true" data-file="document.pdf">
@@ -488,21 +493,25 @@
         }
       });
 
-      document.getElementById("centerTransparent").addEventListener("change", (e) => {
-        if (e.target.checked) {
-          menu.removeAttribute("center-transparent"); // Default is true
-        } else {
-          menu.setAttribute("center-transparent", "false");
-        }
-      });
+      document
+        .getElementById("centerTransparent")
+        .addEventListener("change", (e) => {
+          if (e.target.checked) {
+            menu.removeAttribute("center-transparent"); // Default is true
+          } else {
+            menu.setAttribute("center-transparent", "false");
+          }
+        });
 
-      document.getElementById("instantDragThrough").addEventListener("change", (e) => {
-        if (e.target.checked) {
-          menu.setAttribute("instant-drag-through", ""); // Enable instant entry
-        } else {
-          menu.removeAttribute("instant-drag-through"); // Default is false (dwell only)
-        }
-      });
+      document
+        .getElementById("instantDragThrough")
+        .addEventListener("change", (e) => {
+          if (e.target.checked) {
+            menu.setAttribute("instant-drag-through", ""); // Enable instant entry
+          } else {
+            menu.removeAttribute("instant-drag-through"); // Default is false (dwell only)
+          }
+        });
 
       // --- Drag & Drop Demo ---
       const dropZone = document.getElementById("dropZone");
