@@ -109,28 +109,77 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 | **WC**    | `ray-menu`       | The `<ray-menu>` Web Component. Zero-dep & Shadow DOM isolated. |
 | **React** | `ray-menu/react` | Typed hooks and components for the React ecosystem.             |
 
+## 🎨 Theming via CSS Variables
+
+All visual properties can be customized using CSS variables with the `--ray-*` prefix. These variables pierce the Shadow DOM, enabling external styling.
+
+### Quick Start
+
+```css
+ray-menu {
+  --ray-bg: #1a1a2e;
+  --ray-text: #ffffff;
+  --ray-accent: #ff6b6b;
+  --ray-accent-text: white;
+}
+```
+
+### Shadcn UI / Radix Integration
+
+```css
+ray-menu {
+  --ray-bg: hsl(var(--popover));
+  --ray-text: hsl(var(--popover-foreground));
+  --ray-accent: hsl(var(--accent));
+  --ray-accent-text: hsl(var(--accent-foreground));
+  --ray-border: hsl(var(--border));
+  --ray-radius: var(--radius);
+}
+```
+
+### Available CSS Variables
+
+| Variable               | Default                                | Description            |
+| ---------------------- | -------------------------------------- | ---------------------- |
+| `--ray-bg`             | `rgba(30, 30, 40, 0.95)`               | Label background       |
+| `--ray-text`           | `#e4e4e7`                              | Label text color       |
+| `--ray-border`         | `rgba(255, 255, 255, 0.15)`            | Label border           |
+| `--ray-accent`         | `rgba(100, 180, 255, 0.95)`            | Hover/focus background |
+| `--ray-accent-text`    | `white`                                | Hover/focus text       |
+| `--ray-accent-glow`    | `rgba(100, 180, 255, 0.4)`             | Glow effect            |
+| `--ray-muted`          | `rgba(255, 255, 255, 0.6)`             | Muted text/icons       |
+| `--ray-radius`         | `8px`                                  | Border radius          |
+| `--ray-shadow`         | `0 4px 12px rgba(0,0,0,0.3)`           | Box shadow             |
+| `--ray-font-family`    | `system-ui, -apple-system, sans-serif` | Font family            |
+| `--ray-font-size`      | `14px`                                 | Font size              |
+| `--ray-arc-fill`       | `rgba(50, 50, 60, 0.6)`                | Arc segment fill       |
+| `--ray-arc-fill-hover` | `rgba(100, 180, 255, 0.4)`             | Arc hover fill         |
+| `--ray-arc-stroke`     | `rgba(255, 255, 255, 0.1)`             | Arc stroke             |
+| `--ray-center-fill`    | `rgba(0, 0, 0, 0.85)`                  | Center circle fill     |
+| `--ray-error`          | `#f87171`                              | Error state color      |
+
 ## ⚙️ Configuration
 
 **Web Component Attributes**
 
-| Attribute / Prop     | Type      | Default  | Description                                     |
-| -------------------- | --------- | -------- | ----------------------------------------------- |
-| `radius`             | `number`  | `120`    | Outer radius in pixels.                         |
-| `inner-radius`       | `number`  | `40`     | Inner "dead zone" for the center.               |
-| `gap`                | `number`  | `0.05`   | Gap between items in radians.                   |
-| `start-angle`        | `number`  | `-π/2`   | Start angle (default: -π/2, top)                |
-| `sweep-angle`        | `number`  | `2π`     | Total arc span (default: 2π, full circle)       |
-| `animation-duration` | `number`  | `200`    | Animation ms (default: 200)                     |
-| `edge-detection`     | `boolean` | `true`   | Enable edge repositioning (default: true)       |
-| `smart-flip`         | `boolean` | `true`   | Enable flip behavior (default: true)            |
-| `edge-behavior`      | `string`  | `'flip'` | Edge handling mode: `flip`, `shift`, or `none`. |
-| `infinite-selection` | `boolean` | `true`   | Selection extends beyond the menu radius.       |
-| `center-deadzone`    | `number`  | `30`     | No selection within this radius                 |
-| `infinite-threshold` | `number`  | `0`      | Max selection distance (0 = infinite)           |
-| `show-trail-path`    | `boolean` | `false`  | Enables the "Drift Trace" cursor trail.         |
-| `show-anchor-line`   | `boolean` | `false`  | Show line from menu edge to cursor.             |
-| `scroll-behavior`    | `string`  | `'close'`| Scroll handling: `close`, `keep`, `lock`, `none`|
-| `scroll-threshold`   | `number`  | `10`     | Scroll distance (px) before close (close mode)  |
+| Attribute / Prop     | Type      | Default   | Description                                      |
+| -------------------- | --------- | --------- | ------------------------------------------------ |
+| `radius`             | `number`  | `120`     | Outer radius in pixels.                          |
+| `inner-radius`       | `number`  | `40`      | Inner "dead zone" for the center.                |
+| `gap`                | `number`  | `0.05`    | Gap between items in radians.                    |
+| `start-angle`        | `number`  | `-π/2`    | Start angle (default: -π/2, top)                 |
+| `sweep-angle`        | `number`  | `2π`      | Total arc span (default: 2π, full circle)        |
+| `animation-duration` | `number`  | `200`     | Animation ms (default: 200)                      |
+| `edge-detection`     | `boolean` | `true`    | Enable edge repositioning (default: true)        |
+| `smart-flip`         | `boolean` | `true`    | Enable flip behavior (default: true)             |
+| `edge-behavior`      | `string`  | `'flip'`  | Edge handling mode: `flip`, `shift`, or `none`.  |
+| `infinite-selection` | `boolean` | `true`    | Selection extends beyond the menu radius.        |
+| `center-deadzone`    | `number`  | `30`      | No selection within this radius                  |
+| `infinite-threshold` | `number`  | `0`       | Max selection distance (0 = infinite)            |
+| `show-trail-path`    | `boolean` | `false`   | Enables the "Drift Trace" cursor trail.          |
+| `show-anchor-line`   | `boolean` | `false`   | Show line from menu edge to cursor.              |
+| `scroll-behavior`    | `string`  | `'close'` | Scroll handling: `close`, `keep`, `lock`, `none` |
+| `scroll-threshold`   | `number`  | `10`      | Scroll distance (px) before close (close mode)   |
 
 **Web Component Methods**
 
@@ -191,7 +240,10 @@ dropZone.addEventListener("dragover", (e) => {
 
 dropZone.addEventListener("drop", (e) => {
   // Trigger selection with drag data
-  const item = menu.dropOnHovered({ action: "move", files: e.dataTransfer.files });
+  const item = menu.dropOnHovered({
+    action: "move",
+    files: e.dataTransfer.files,
+  });
 });
 
 menu.addEventListener("ray-drop", (e) => {
@@ -206,17 +258,20 @@ menu.addEventListener("ray-drop", (e) => {
 RayMenu supports nested submenus with gesture-based navigation optimized for fast, drag-heavy workflows:
 
 **Click Navigation:**
+
 - Click items with `▸` indicator to enter submenus
 - Click the center area to go back to parent menu
 
 **Keyboard:** `↓`/`Enter` to enter, `↑`/`Backspace` to go back (see Keyboard Navigation)
 
 **Drag-Through Gestures** (during drag operations):
+
 - **Swipe outward fast** over a submenu item → instantly enters submenu (no wait)
 - **Swipe inward fast** → goes back to parent menu
 - Parent levels are shown as dimmed concentric rings
 
 **Menu Item Options:**
+
 ```js
 {
   id: "share",
@@ -233,14 +288,14 @@ RayMenu supports nested submenus with gesture-based navigation optimized for fas
 
 Full keyboard support for accessibility and power users:
 
-| Key | Action |
-|-----|--------|
-| `←` `→` | Navigate between items |
+| Key                 | Action                      |
+| ------------------- | --------------------------- |
+| `←` `→`             | Navigate between items      |
 | `↓` `Enter` `Space` | Select item / enter submenu |
-| `↑` `Backspace` | Go back (or close at root) |
-| `Escape` | Close menu |
-| `Home` `End` | Jump to first/last item |
-| `1`-`9` | Quick select by number |
+| `↑` `Backspace`     | Go back (or close at root)  |
+| `Escape`            | Close menu                  |
+| `Home` `End`        | Jump to first/last item     |
+| `1`-`9`             | Quick select by number      |
 
 Number hints appear on items when keyboard mode is active.
 
@@ -257,18 +312,20 @@ menu.items = [
     loadChildren: async () => {
       const res = await fetch("/api/folders");
       return res.json();
-    }
-  }
+    },
+  },
 ];
 ```
 
 **Features:**
+
 - Loading spinner shown during fetch
 - Error state with auto-dismiss
 - Results cached after first load
 - Supports nested async at any depth
 
 **Events:**
+
 - `ray-load-start` - Loading begins
 - `ray-load-complete` - Loading succeeded
 - `ray-load-error` - Loading failed (`e.detail.error`)
@@ -277,12 +334,12 @@ menu.items = [
 
 Control how the menu behaves when the page scrolls:
 
-| Mode | Description |
-|------|-------------|
-| `close` | **(default)** Close menu when scroll exceeds threshold |
-| `keep` | Menu stays fixed to its document position (scrolls with page) |
-| `lock` | Prevent scrolling while menu is open (with scrollbar compensation) |
-| `none` | Do nothing, menu stays at viewport position |
+| Mode    | Description                                                        |
+| ------- | ------------------------------------------------------------------ |
+| `close` | **(default)** Close menu when scroll exceeds threshold             |
+| `keep`  | Menu stays fixed to its document position (scrolls with page)      |
+| `lock`  | Prevent scrolling while menu is open (with scrollbar compensation) |
+| `none`  | Do nothing, menu stays at viewport position                        |
 
 ```html
 <!-- Close on scroll (default) -->

@@ -101,13 +101,10 @@ export function createMenuSvg(
  */
 export function createOuterRing(radius: number): SVGCircleElement {
   const ring = document.createElementNS(SVG_NS, "circle");
+  ring.setAttribute("class", "ray-menu-outer-ring");
   ring.setAttribute("cx", String(radius + 20));
   ring.setAttribute("cy", String(radius + 20));
   ring.setAttribute("r", String(radius));
-  ring.setAttribute("fill", "none");
-  ring.setAttribute("stroke", "rgba(255,255,255,0.15)");
-  ring.setAttribute("stroke-width", "2");
-  ring.setAttribute("opacity", "0.5");
   return ring;
 }
 
@@ -120,12 +117,11 @@ export function createInnerRing(
   transparent: boolean,
 ): SVGCircleElement {
   const ring = document.createElementNS(SVG_NS, "circle");
+  ring.setAttribute("class", "ray-menu-inner-ring");
   ring.setAttribute("cx", String(radius + 20));
   ring.setAttribute("cy", String(radius + 20));
   ring.setAttribute("r", String(innerRadius));
-  ring.setAttribute("fill", transparent ? "transparent" : "rgba(0,0,0,0.85)");
-  ring.setAttribute("stroke", "rgba(255,255,255,0.1)");
-  ring.setAttribute("stroke-width", "1");
+  ring.setAttribute("data-transparent", String(transparent));
   return ring;
 }
 
@@ -156,19 +152,9 @@ export function createArcPath(
       endAngle,
     ),
   );
-  path.setAttribute(
-    "fill",
-    isHovered ? "rgba(100, 180, 255, 0.4)" : "rgba(50, 50, 60, 0.6)",
-  );
-  path.setAttribute(
-    "stroke",
-    isHovered ? "rgba(100, 180, 255, 0.7)" : "rgba(255, 255, 255, 0.1)",
-  );
-  path.setAttribute("stroke-width", isHovered ? "2" : "1");
-  path.setAttribute("opacity", isDisabled ? "0.3" : isHovered ? "1" : "0.6");
+  path.setAttribute("data-hovered", String(isHovered));
   path.setAttribute("data-disabled", String(isDisabled));
   path.setAttribute("data-index", String(index));
-  if (isHovered) path.setAttribute("filter", "url(#glow)");
   return path;
 }
 
@@ -326,6 +312,7 @@ export function renderParentLevels(
       const isSelected = index === selectedItemIndex;
 
       const path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("class", "ray-menu-parent-arc");
       path.setAttribute(
         "d",
         describeArc(
@@ -337,16 +324,7 @@ export function renderParentLevels(
           endAngle,
         ),
       );
-      path.setAttribute(
-        "fill",
-        isSelected ? "rgba(100, 180, 255, 0.2)" : "rgba(30, 30, 40, 0.3)",
-      );
-      path.setAttribute(
-        "stroke",
-        isSelected ? "rgba(100, 180, 255, 0.4)" : "rgba(255, 255, 255, 0.05)",
-      );
-      path.setAttribute("stroke-width", "1");
-      path.setAttribute("opacity", "0.5");
+      path.setAttribute("data-selected", String(isSelected));
       svg.appendChild(path);
     });
 
@@ -359,12 +337,9 @@ export function renderParentLevels(
     };
 
     const backArrow = document.createElementNS(SVG_NS, "text");
+    backArrow.setAttribute("class", "ray-menu-back-arrow");
     backArrow.setAttribute("x", String(backIndicatorPos.x));
     backArrow.setAttribute("y", String(backIndicatorPos.y));
-    backArrow.setAttribute("text-anchor", "middle");
-    backArrow.setAttribute("dominant-baseline", "middle");
-    backArrow.setAttribute("fill", "rgba(255, 255, 255, 0.3)");
-    backArrow.setAttribute("font-size", "14");
     backArrow.textContent = "◂";
     svg.appendChild(backArrow);
   });
