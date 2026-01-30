@@ -215,4 +215,4 @@ export const RAY_MENU_STYLES = `
     border-radius: 50%;
     animation: loadingSpin 0.8s linear infinite;
   }
-`
+`;

@@ -268,6 +268,10 @@
         <strong>Async Loading:</strong> "Move to" loads folders from API.
         "Recent" demonstrates error handling.
       </p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Scroll Behavior:</strong> Test how menu behaves when scrolling
+        (page is intentionally tall).
+      </p>
     </header>
 
     <div class="controls">
@@ -311,15 +315,36 @@
             <option value="none">None</option>
           </select>
         </div>
+
+        <div class="control-item">
+          <span>Scroll Behavior</span>
+          <select id="scrollBehavior">
+            <option value="close">Close on Scroll</option>
+            <option value="keep">Keep at Position</option>
+            <option value="lock">Lock Scroll</option>
+            <option value="none">None (Do Nothing)</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <span
+            >Scroll Threshold:
+            <output id="scrollThresholdValue">10</output>px</span
+          >
+          <input
+            type="range"
+            id="scrollThreshold"
+            min="5"
+            max="100"
+            value="10"
+          />
+        </div>
       </div>
     </div>
 
     <div class="demo-area">
       <div class="demo-box" id="demo1">
-        <span>Right-click here</span>
-      </div>
-      <div class="demo-box" id="demo2">
-        <span>Or here - test edge detection</span>
+        <span>Right or left click here</span>
       </div>
     </div>
 
@@ -375,6 +400,27 @@
     </div>
 
     <div id="log">Last action: none</div>
+
+    <!-- Spacer to make page scrollable for scroll behavior testing -->
+    <div
+      style="
+        height: 800px;
+        max-width: 800px;
+        margin: 1.5rem auto;
+        padding: 2rem;
+        background: rgba(39, 39, 42, 0.3);
+        border-radius: 0.5rem;
+        border: 1px dashed #3f3f46;
+      "
+    >
+      <p style="color: #71717a; text-align: center">
+        ↓ Scroll down to test scroll behavior ↓<br />
+        <span style="font-size: 0.75rem"
+          >Try opening the menu and scrolling with different scroll-behavior
+          settings</span
+        >
+      </p>
+    </div>
 
     <!-- The Ray Menu Web Component -->
     <ray-menu
@@ -447,11 +493,14 @@
                 selectable: false,
                 // Nested async loading
                 loadChildren: async () => {
-                  return simulateApiCall([
-                    { id: "proj-web", label: "Web App" },
-                    { id: "proj-mobile", label: "Mobile App" },
-                    { id: "proj-api", label: "API Server" },
-                  ], 600);
+                  return simulateApiCall(
+                    [
+                      { id: "proj-web", label: "Web App" },
+                      { id: "proj-mobile", label: "Mobile App" },
+                      { id: "proj-api", label: "API Server" },
+                    ],
+                    600,
+                  );
                 },
               },
             ]);
@@ -464,7 +513,9 @@
           // This will fail to demonstrate error handling
           loadChildren: async () => {
             log.textContent = "Loading recent files...";
-            return simulateApiError("Network error: Unable to fetch recent files");
+            return simulateApiError(
+              "Network error: Unable to fetch recent files",
+            );
           },
         },
       ];
@@ -515,6 +566,11 @@
       document.querySelectorAll(".demo-box").forEach((box) => {
         box.addEventListener("contextmenu", (e) => {
           e.preventDefault();
+          menu.open(e.clientX, e.clientY);
+        });
+        box.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           menu.open(e.clientX, e.clientY);
         });
       });
@@ -574,6 +630,21 @@
           } else {
             menu.removeAttribute("instant-drag-through"); // Default is false (dwell only)
           }
+        });
+
+      document
+        .getElementById("scrollBehavior")
+        .addEventListener("change", (e) => {
+          menu.setAttribute("scroll-behavior", e.target.value);
+          log.textContent = `Scroll behavior: ${e.target.value}`;
+        });
+
+      document
+        .getElementById("scrollThreshold")
+        .addEventListener("input", (e) => {
+          const value = e.target.value;
+          document.getElementById("scrollThresholdValue").textContent = value;
+          menu.setAttribute("scroll-threshold", value);
         });
 
       // --- Drag & Drop Demo ---

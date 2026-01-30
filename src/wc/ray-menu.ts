@@ -94,6 +94,15 @@ export class RayMenu extends HTMLElement {
   private _loadError: Error | null = null
   private _loadingIndicatorEl: HTMLElement | null = null
 
+  // Scroll behavior state
+  private _scrollBehavior: 'close' | 'keep' | 'lock' | 'none' = 'close'
+  private _scrollCloseThreshold = 10 // px
+  private _initialScrollY = 0
+  private _initialScrollX = 0
+  private _documentPosition: Point = { x: 0, y: 0 } // For 'keep' mode
+  private _savedBodyOverflow = ''
+  private _savedBodyPaddingRight = ''
+
   // Config
   private _config: MenuConfig = { ...DEFAULT_CONFIG }
 
@@ -102,6 +111,7 @@ export class RayMenu extends HTMLElement {
   private _handleClick = this._onClick.bind(this)
   private _handleKeyDown = this._onKeyDown.bind(this)
   private _handleDragOver = this._onDragOver.bind(this)
+  private _handleScroll = this._onScroll.bind(this)
 
   static get observedAttributes() {
     return [
@@ -115,6 +125,8 @@ export class RayMenu extends HTMLElement {
       'show-anchor-line',
       'center-transparent',
       'instant-drag-through',
+      'scroll-behavior',
+      'scroll-threshold',
     ]
   }
 
@@ -174,6 +186,20 @@ export class RayMenu extends HTMLElement {
     this._navStack = []
     this._currentItems = [...this._items]
     this._submenuEntryConfirmed = true
+
+    // Initialize scroll tracking
+    this._initialScrollX = window.scrollX
+    this._initialScrollY = window.scrollY
+    this._documentPosition = {
+      x: this._position.x + this._initialScrollX,
+      y: this._position.y + this._initialScrollY,
+    }
+
+    // Apply scroll behavior
+    if (this._scrollBehavior === 'lock') {
+      this._lockScroll()
+    }
+
     this._render()
     this._addGlobalListeners()
 
@@ -203,6 +229,11 @@ export class RayMenu extends HTMLElement {
     this._removeDriftTrace()
     this._removeGlobalListeners()
     window.removeEventListener('dragover', this._handleDragOver)
+
+    // Restore scroll if locked
+    if (this._scrollBehavior === 'lock') {
+      this._unlockScroll()
+    }
 
     this.dispatchEvent(new CustomEvent('ray-close'))
   }
@@ -325,6 +356,16 @@ export class RayMenu extends HTMLElement {
       case 'instant-drag-through':
         this._instantDragThrough = newValue !== null && newValue !== 'false'
         break
+      case 'scroll-behavior':
+        if (newValue === 'keep' || newValue === 'lock' || newValue === 'none') {
+          this._scrollBehavior = newValue
+        } else {
+          this._scrollBehavior = 'close'
+        }
+        break
+      case 'scroll-threshold':
+        this._scrollCloseThreshold = Number(newValue) || 10
+        break
     }
     if (this._isOpen) this._render()
   }
@@ -395,6 +436,60 @@ export class RayMenu extends HTMLElement {
     } else {
       this.close()
     }
+  }
+
+  private _onScroll(): void {
+    if (!this._isOpen) return
+    if (this._scrollBehavior === 'none' || this._scrollBehavior === 'lock') return
+
+    const currentScrollX = window.scrollX
+    const currentScrollY = window.scrollY
+
+    if (this._scrollBehavior === 'close') {
+      const deltaX = Math.abs(currentScrollX - this._initialScrollX)
+      const deltaY = Math.abs(currentScrollY - this._initialScrollY)
+
+      if (deltaX > this._scrollCloseThreshold || deltaY > this._scrollCloseThreshold) {
+        this.close()
+      }
+    } else if (this._scrollBehavior === 'keep') {
+      // Update menu position to stay fixed to document position
+      const viewportX = this._documentPosition.x - currentScrollX
+      const viewportY = this._documentPosition.y - currentScrollY
+      this._position = { x: viewportX, y: viewportY }
+
+      // Update container position
+      if (this.shadowRoot) {
+        const container = this.shadowRoot.querySelector('.ray-menu-container') as HTMLElement
+        if (container) {
+          container.style.left = `${this._position.x}px`
+          container.style.top = `${this._position.y}px`
+        }
+      }
+    }
+  }
+
+  private _lockScroll(): void {
+    // Calculate scrollbar width
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+
+    // Save current styles
+    this._savedBodyOverflow = document.body.style.overflow
+    this._savedBodyPaddingRight = document.body.style.paddingRight
+
+    // Apply scroll lock with scrollbar compensation
+    document.body.style.overflow = 'hidden'
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    }
+  }
+
+  private _unlockScroll(): void {
+    // Restore original styles
+    document.body.style.overflow = this._savedBodyOverflow
+    document.body.style.paddingRight = this._savedBodyPaddingRight
+    this._savedBodyOverflow = ''
+    this._savedBodyPaddingRight = ''
   }
 
   private _onKeyDown(e: KeyboardEvent): void {
@@ -504,12 +599,16 @@ export class RayMenu extends HTMLElement {
     window.addEventListener('pointermove', this._handlePointerMove)
     window.addEventListener('click', this._handleClick)
     window.addEventListener('keydown', this._handleKeyDown)
+    if (this._scrollBehavior === 'close' || this._scrollBehavior === 'keep') {
+      window.addEventListener('scroll', this._handleScroll, { passive: true })
+    }
   }
 
   private _removeGlobalListeners(): void {
     window.removeEventListener('pointermove', this._handlePointerMove)
     window.removeEventListener('click', this._handleClick)
     window.removeEventListener('keydown', this._handleKeyDown)
+    window.removeEventListener('scroll', this._handleScroll)
   }
 
   private _trackVelocity(): void {

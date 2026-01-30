@@ -129,6 +129,8 @@ RayMenu is split into three distinct layers to provide maximum flexibility:
 | `infinite-threshold` | `number`  | `0`      | Max selection distance (0 = infinite)           |
 | `show-trail-path`    | `boolean` | `false`  | Enables the "Drift Trace" cursor trail.         |
 | `show-anchor-line`   | `boolean` | `false`  | Show line from menu edge to cursor.             |
+| `scroll-behavior`    | `string`  | `'close'`| Scroll handling: `close`, `keep`, `lock`, `none`|
+| `scroll-threshold`   | `number`  | `10`     | Scroll distance (px) before close (close mode)  |
 
 **Web Component Methods**
 
@@ -270,6 +272,28 @@ menu.items = [
 - `ray-load-start` - Loading begins
 - `ray-load-complete` - Loading succeeded
 - `ray-load-error` - Loading failed (`e.detail.error`)
+
+## 📜 Scroll Behavior
+
+Control how the menu behaves when the page scrolls:
+
+| Mode | Description |
+|------|-------------|
+| `close` | **(default)** Close menu when scroll exceeds threshold |
+| `keep` | Menu stays fixed to its document position (scrolls with page) |
+| `lock` | Prevent scrolling while menu is open (with scrollbar compensation) |
+| `none` | Do nothing, menu stays at viewport position |
+
+```html
+<!-- Close on scroll (default) -->
+<ray-menu scroll-behavior="close" scroll-threshold="10"></ray-menu>
+
+<!-- Lock scroll while open -->
+<ray-menu scroll-behavior="lock"></ray-menu>
+
+<!-- Keep at document position -->
+<ray-menu scroll-behavior="keep"></ray-menu>
+```
 
 ## ✺ Infinite Selection Logic
 
