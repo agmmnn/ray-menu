@@ -272,6 +272,10 @@
         <strong>Scroll Behavior:</strong> Test how menu behaves when scrolling
         (page is intentionally tall).
       </p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Fan Layouts:</strong> Use start/sweep angle to create
+        half-circles, quarter-arcs, or custom sectors.
+      </p>
     </header>
 
     <div class="controls">
@@ -338,6 +342,34 @@
             max="100"
             value="10"
           />
+        </div>
+
+        <div class="control-item">
+          <span>Start Angle: <output id="startAngleValue">-90</output>°</span>
+          <input
+            type="range"
+            id="startAngle"
+            min="-180"
+            max="180"
+            value="-90"
+          />
+        </div>
+
+        <div class="control-item">
+          <span>Sweep Angle: <output id="sweepAngleValue">360</output>°</span>
+          <input type="range" id="sweepAngle" min="45" max="360" value="360" />
+        </div>
+
+        <div class="control-item">
+          <span>Quick Presets</span>
+          <select id="fanPreset">
+            <option value="full">● Full Circle (360°)</option>
+            <option value="fan-up">◓ Fan Up (180°)</option>
+            <option value="fan-down">◒ Fan Down (180°)</option>
+            <option value="fan-right">◑ Fan Right (180°)</option>
+            <option value="fan-left">◐ Fan Left (180°)</option>
+            <option value="quarter">◔ Quarter Arc (90°)</option>
+          </select>
         </div>
       </div>
     </div>
@@ -431,12 +463,46 @@
       center-deadzone="30"
     ></ray-menu>
 
+    <!-- Static Dock Demo (Bottom) -->
+    <div
+      style="
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+      "
+    >
+      <ray-menu
+        id="dockMenu"
+        static
+        default-open
+        start-angle="180"
+        sweep-angle="180"
+        radius="100"
+        inner-radius="35"
+      ></ray-menu>
+    </div>
+
     <script type="module">
       // Import from built output (run `bun run build` first)
       import { RayMenu } from "../dist/wc/ray-menu.mjs";
 
       const menu = document.getElementById("menu");
+      const dockMenu = document.getElementById("dockMenu");
       const log = document.getElementById("log");
+
+      // Set dock menu items
+      dockMenu.items = [
+        { id: "home", label: "Home", icon: "🏠" },
+        { id: "search", label: "Search", icon: "🔍" },
+        { id: "settings", label: "Settings", icon: "⚙️" },
+        { id: "profile", label: "Profile", icon: "👤" },
+      ];
+
+      dockMenu.addEventListener("ray-select", (e) => {
+        log.textContent = `Dock: ${e.detail.label}`;
+      });
 
       // Simulate async API calls
       const simulateApiCall = (items, delay = 800) => {
@@ -646,6 +712,44 @@
           document.getElementById("scrollThresholdValue").textContent = value;
           menu.setAttribute("scroll-threshold", value);
         });
+
+      // Fan Layout Controls
+      document.getElementById("startAngle").addEventListener("input", (e) => {
+        const value = e.target.value;
+        document.getElementById("startAngleValue").textContent = value;
+        menu.setAttribute("start-angle", value);
+      });
+
+      document.getElementById("sweepAngle").addEventListener("input", (e) => {
+        const value = e.target.value;
+        document.getElementById("sweepAngleValue").textContent = value;
+        menu.setAttribute("sweep-angle", value);
+      });
+
+      // Fan Preset Selector
+      const fanPresets = {
+        full: { start: -90, sweep: 360 },
+        "fan-up": { start: 180, sweep: 180 },
+        "fan-down": { start: 0, sweep: 180 },
+        "fan-right": { start: -90, sweep: 180 },
+        "fan-left": { start: 90, sweep: 180 },
+        quarter: { start: -90, sweep: 90 },
+      };
+
+      document.getElementById("fanPreset").addEventListener("change", (e) => {
+        const preset = fanPresets[e.target.value];
+        if (preset) {
+          // Update sliders
+          document.getElementById("startAngle").value = preset.start;
+          document.getElementById("startAngleValue").textContent = preset.start;
+          document.getElementById("sweepAngle").value = preset.sweep;
+          document.getElementById("sweepAngleValue").textContent = preset.sweep;
+          // Apply to menu
+          menu.setAttribute("start-angle", preset.start);
+          menu.setAttribute("sweep-angle", preset.sweep);
+          log.textContent = `Preset: ${e.target.value} (${preset.start}° / ${preset.sweep}°)`;
+        }
+      });
 
       // --- Drag & Drop Demo ---
       const dropZone = document.getElementById("dropZone");

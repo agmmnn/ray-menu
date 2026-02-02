@@ -158,6 +158,55 @@ ray-menu {
 | `--ray-center-fill`    | `rgba(0, 0, 0, 0.85)`                  | Center circle fill     |
 | `--ray-error`          | `#f87171`                              | Error state color      |
 
+## 🌀 Fan Layouts & Dock Mode
+
+Ray Menu supports partial arcs (fan layouts) and static positioning for navigation docks.
+
+### Fan Layouts
+
+Use `start-angle` and `sweep-angle` to create half-circles, quarter-arcs, or any custom sector:
+
+```html
+<!-- Half-circle (Fan Up) - Great for bottom navigation -->
+<ray-menu start-angle="180" sweep-angle="180"></ray-menu>
+
+<!-- Quarter arc (Top-Right corner) -->
+<ray-menu start-angle="-90" sweep-angle="90"></ray-menu>
+
+<!-- Side fan (Fan Right) - For sidebar menus -->
+<ray-menu start-angle="-90" sweep-angle="180"></ray-menu>
+```
+
+| Layout          | Start Angle | Sweep Angle | Use Case               |
+| --------------- | ----------- | ----------- | ---------------------- |
+| **Full Circle** | `-90`       | `360`       | Classic radial menu    |
+| **Fan Up**      | `180`       | `180`       | Bottom navigation dock |
+| **Fan Down**    | `0`         | `180`       | Top toolbar            |
+| **Fan Right**   | `-90`       | `180`       | Left sidebar           |
+| **Fan Left**    | `90`        | `180`       | Right sidebar          |
+
+### Dock Mode
+
+Create permanent navigation elements with `static` and `default-open`:
+
+```html
+<footer
+  style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);"
+>
+  <ray-menu
+    static
+    default-open
+    start-angle="180"
+    sweep-angle="180"
+    radius="100"
+  >
+  </ray-menu>
+</footer>
+```
+
+- **`static`**: Uses relative positioning (inline layout instead of fixed overlay)
+- **`default-open`**: Opens automatically and stays open (resets selection instead of closing)
+
 ## ⚙️ Configuration
 
 **Web Component Attributes**
@@ -167,8 +216,10 @@ ray-menu {
 | `radius`             | `number`  | `120`     | Outer radius in pixels.                          |
 | `inner-radius`       | `number`  | `40`      | Inner "dead zone" for the center.                |
 | `gap`                | `number`  | `0.05`    | Gap between items in radians.                    |
-| `start-angle`        | `number`  | `-π/2`    | Start angle (default: -π/2, top)                 |
-| `sweep-angle`        | `number`  | `2π`      | Total arc span (default: 2π, full circle)        |
+| `start-angle`        | `number`  | `-90`     | Start angle in degrees (0=right, -90=top)        |
+| `sweep-angle`        | `number`  | `360`     | Arc span in degrees (360=full, 180=half)         |
+| `static`             | `boolean` | `false`   | Dock mode: relative positioning, inline layout   |
+| `default-open`       | `boolean` | `false`   | Auto-open on mount, stays open (for docks)       |
 | `animation-duration` | `number`  | `200`     | Animation ms (default: 200)                      |
 | `edge-detection`     | `boolean` | `true`    | Enable edge repositioning (default: true)        |
 | `smart-flip`         | `boolean` | `true`    | Enable flip behavior (default: true)             |

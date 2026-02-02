@@ -13,17 +13,17 @@ import {
   detectEdgeConstraints,
   calculateSmartFlip,
   calculateVelocity,
-} from '../core'
+} from "../core";
 
-import type { NavStackEntry } from './ray-menu-types'
+import type { NavStackEntry } from "./ray-menu-types";
 export type {
   RayMenuDropDetail,
   RayMenuSubmenuDetail,
   RayMenuLoadErrorDetail,
   RayMenuEventMap,
-} from './ray-menu-types'
+} from "./ray-menu-types";
 
-import { RAY_MENU_STYLES } from './ray-menu-styles'
+import { RAY_MENU_STYLES } from "./ray-menu-styles";
 import {
   createMenuSvg,
   createOuterRing,
@@ -32,438 +32,549 @@ import {
   createLabel,
   createBackIndicator,
   renderParentLevels,
-} from './ray-menu-rendering'
-import { createDriftTraceSvg, updateDriftTrace } from './ray-menu-drift-trace'
+} from "./ray-menu-rendering";
+import { createDriftTraceSvg, updateDriftTrace } from "./ray-menu-drift-trace";
 
 export class RayMenu extends HTMLElement {
   // State
-  private _items: MenuItem[] = []
-  private _isOpen = false
-  private _position: Point = { x: 0, y: 0 }
-  private _hoveredIndex = -1
+  private _items: MenuItem[] = [];
+  private _isOpen = false;
+  private _position: Point = { x: 0, y: 0 };
+  private _hoveredIndex = -1;
   private _flipState: FlipState = {
-    mode: 'none',
+    mode: "none",
     flipX: false,
     flipY: false,
     scaleX: 1,
     scaleY: 1,
-    transform: 'scale(1, 1)',
-  }
-  private _pointerPosition: Point | null = null
+    transform: "scale(1, 1)",
+  };
+  private _pointerPosition: Point | null = null;
 
   // Center area options
-  private _centerTransparent = true
+  private _centerTransparent = true;
 
   // Drift trace state
-  private _showTrailPath = false
-  private _showAnchorLine = false
-  private _positionHistory: Point[] = []
-  private _timestampHistory: number[] = []
-  private _velocity: Velocity = { vx: 0, vy: 0 }
-  private _driftTraceSvg: SVGSVGElement | null = null
+  private _showTrailPath = false;
+  private _showAnchorLine = false;
+  private _positionHistory: Point[] = [];
+  private _timestampHistory: number[] = [];
+  private _velocity: Velocity = { vx: 0, vy: 0 };
+  private _driftTraceSvg: SVGSVGElement | null = null;
 
   // Drag/drop state
-  private _isDropTarget = false
-  private _springLoadTimer: number | null = null
-  private _springLoadItemId: string | null = null
-  private _springLoadDelay = 500
+  private _isDropTarget = false;
+  private _springLoadTimer: number | null = null;
+  private _springLoadItemId: string | null = null;
+  private _springLoadDelay = 500;
 
   // Submenu navigation state
-  private _navStack: NavStackEntry[] = []
-  private _currentItems: MenuItem[] = []
-  private _submenuEntryConfirmed = false
-  private _backDwellTimer: number | null = null
-  private _centerSafeZone = 25
-  private _backDwellDelay = 150
-  private _backIndicatorEl: HTMLElement | null = null
-  private _backProgressRAF: number | null = null
+  private _navStack: NavStackEntry[] = [];
+  private _currentItems: MenuItem[] = [];
+  private _submenuEntryConfirmed = false;
+  private _backDwellTimer: number | null = null;
+  private _centerSafeZone = 25;
+  private _backDwellDelay = 150;
+  private _backIndicatorEl: HTMLElement | null = null;
+  private _backProgressRAF: number | null = null;
 
   // Drag-through detection config
-  private _dragThroughVelocityThreshold = 200
-  private _dragThroughDistanceThreshold = 0.7
-  private _submenuRadiusStep = 60
-  private _instantDragThrough = false
+  private _dragThroughVelocityThreshold = 200;
+  private _dragThroughDistanceThreshold = 0.7;
+  private _submenuRadiusStep = 60;
+  private _instantDragThrough = false;
 
   // Keyboard navigation state
-  private _focusedIndex = -1
-  private _keyboardActive = false
+  private _focusedIndex = -1;
+  private _keyboardActive = false;
 
   // Async loading state
-  private _isLoading = false
-  private _loadingItemId: string | null = null
-  private _loadError: Error | null = null
-  private _loadingIndicatorEl: HTMLElement | null = null
+  private _isLoading = false;
+  private _loadingItemId: string | null = null;
+  private _loadError: Error | null = null;
+  private _loadingIndicatorEl: HTMLElement | null = null;
 
   // Scroll behavior state
-  private _scrollBehavior: 'close' | 'keep' | 'lock' | 'none' = 'close'
-  private _scrollCloseThreshold = 10 // px
-  private _initialScrollY = 0
-  private _initialScrollX = 0
-  private _documentPosition: Point = { x: 0, y: 0 } // For 'keep' mode
-  private _savedBodyOverflow = ''
-  private _savedBodyPaddingRight = ''
+  private _scrollBehavior: "close" | "keep" | "lock" | "none" = "close";
+  private _scrollCloseThreshold = 10; // px
+  private _initialScrollY = 0;
+  private _initialScrollX = 0;
+  private _documentPosition: Point = { x: 0, y: 0 }; // For 'keep' mode
+  private _savedBodyOverflow = "";
+  private _savedBodyPaddingRight = "";
+
+  // Static/Dock mode state
+  private _isStatic = false;
+  private _defaultOpen = false;
 
   // Config
-  private _config: MenuConfig = { ...DEFAULT_CONFIG }
+  private _config: MenuConfig = { ...DEFAULT_CONFIG };
 
   // Bound handlers
-  private _handlePointerMove = this._onPointerMove.bind(this)
-  private _handleClick = this._onClick.bind(this)
-  private _handleKeyDown = this._onKeyDown.bind(this)
-  private _handleDragOver = this._onDragOver.bind(this)
-  private _handleScroll = this._onScroll.bind(this)
+  private _handlePointerMove = this._onPointerMove.bind(this);
+  private _handleClick = this._onClick.bind(this);
+  private _handleKeyDown = this._onKeyDown.bind(this);
+  private _handleDragOver = this._onDragOver.bind(this);
+  private _handleScroll = this._onScroll.bind(this);
 
   static get observedAttributes() {
     return [
-      'radius',
-      'inner-radius',
-      'infinite-selection',
-      'center-deadzone',
-      'infinite-threshold',
-      'edge-behavior',
-      'show-trail-path',
-      'show-anchor-line',
-      'center-transparent',
-      'instant-drag-through',
-      'scroll-behavior',
-      'scroll-threshold',
-    ]
+      "radius",
+      "inner-radius",
+      "infinite-selection",
+      "center-deadzone",
+      "infinite-threshold",
+      "edge-behavior",
+      "show-trail-path",
+      "show-anchor-line",
+      "center-transparent",
+      "instant-drag-through",
+      "scroll-behavior",
+      "scroll-threshold",
+      "start-angle",
+      "sweep-angle",
+      "static",
+      "default-open",
+    ];
   }
 
   constructor() {
-    super()
-    this.attachShadow({ mode: 'open' })
-    this._initStyles()
+    super();
+    this.attachShadow({ mode: "open" });
+    this._initStyles();
   }
 
   // --- Public API ---
 
   get items(): MenuItem[] {
-    return this._items
+    return this._items;
   }
 
   set items(value: MenuItem[]) {
-    this._items = value
-    if (this._isOpen) this._render()
+    this._items = value;
+    if (this._isOpen) this._render();
   }
 
   get isOpen(): boolean {
-    return this._isOpen
+    return this._isOpen;
   }
 
   get isDropTarget(): boolean {
-    return this._isDropTarget
+    return this._isDropTarget;
   }
 
   get isLoading(): boolean {
-    return this._isLoading
+    return this._isLoading;
   }
 
   get submenuDepth(): number {
-    return this._navStack.length
+    return this._navStack.length;
   }
 
   open(x: number, y: number): void {
-    const position = { x, y }
-    const viewport = { width: window.innerWidth, height: window.innerHeight }
-    const edgeState = detectEdgeConstraints(position, this._config.radius, viewport)
+    const position = { x, y };
+    const viewport = { width: window.innerWidth, height: window.innerHeight };
+    const edgeState = detectEdgeConstraints(
+      position,
+      this._config.radius,
+      viewport,
+    );
 
-    if (this._config.edgeBehavior === 'flip' || this._config.smartFlip) {
-      this._flipState = calculateSmartFlip(position, this._config.radius, edgeState)
+    if (this._config.edgeBehavior === "flip" || this._config.smartFlip) {
+      this._flipState = calculateSmartFlip(
+        position,
+        this._config.radius,
+        edgeState,
+      );
     }
 
-    if (this._config.edgeBehavior === 'shift' || this._config.edgeDetection) {
+    if (this._config.edgeBehavior === "shift" || this._config.edgeDetection) {
       this._position = {
         x: position.x + edgeState.offset.x,
         y: position.y + edgeState.offset.y,
-      }
+      };
     } else {
-      this._position = position
+      this._position = position;
     }
 
-    this._isOpen = true
-    this._hoveredIndex = -1
-    this._navStack = []
-    this._currentItems = [...this._items]
-    this._submenuEntryConfirmed = true
+    this._isOpen = true;
+    this._hoveredIndex = -1;
+    this._navStack = [];
+    this._currentItems = [...this._items];
+    this._submenuEntryConfirmed = true;
 
     // Initialize scroll tracking
-    this._initialScrollX = window.scrollX
-    this._initialScrollY = window.scrollY
+    this._initialScrollX = window.scrollX;
+    this._initialScrollY = window.scrollY;
     this._documentPosition = {
       x: this._position.x + this._initialScrollX,
       y: this._position.y + this._initialScrollY,
-    }
+    };
 
     // Apply scroll behavior
-    if (this._scrollBehavior === 'lock') {
-      this._lockScroll()
+    if (this._scrollBehavior === "lock") {
+      this._lockScroll();
     }
 
-    this._render()
-    this._addGlobalListeners()
+    this._render();
+    this._addGlobalListeners();
 
-    this.dispatchEvent(new CustomEvent('ray-open', { detail: this._position }))
+    this.dispatchEvent(new CustomEvent("ray-open", { detail: this._position }));
   }
 
   close(): void {
-    this._isOpen = false
-    this._isDropTarget = false
-    this._hoveredIndex = -1
-    this._focusedIndex = -1
-    this._keyboardActive = false
-    this._isLoading = false
-    this._loadingItemId = null
-    this._loadError = null
-    this._pointerPosition = null
-    this._positionHistory = []
-    this._timestampHistory = []
-    this._velocity = { vx: 0, vy: 0 }
-    this._navStack = []
-    this._currentItems = []
-    this._clearSpringLoad()
-    this._clearBackDwell()
-    this._removeBackIndicator()
-    this._removeLoadingIndicator()
-    this._clearContainer()
-    this._removeDriftTrace()
-    this._removeGlobalListeners()
-    window.removeEventListener('dragover', this._handleDragOver)
-
-    // Restore scroll if locked
-    if (this._scrollBehavior === 'lock') {
-      this._unlockScroll()
+    // In default-open (dock) mode, just reset selection state don't actually close
+    if (this._defaultOpen && this._isStatic) {
+      this._hoveredIndex = -1;
+      this._focusedIndex = -1;
+      this._keyboardActive = false;
+      this._navStack = [];
+      this._currentItems = [...this._items];
+      this._render();
+      return;
     }
 
-    this.dispatchEvent(new CustomEvent('ray-close'))
+    this._isOpen = false;
+    this._isDropTarget = false;
+    this._hoveredIndex = -1;
+    this._focusedIndex = -1;
+    this._keyboardActive = false;
+    this._isLoading = false;
+    this._loadingItemId = null;
+    this._loadError = null;
+    this._pointerPosition = null;
+    this._positionHistory = [];
+    this._timestampHistory = [];
+    this._velocity = { vx: 0, vy: 0 };
+    this._navStack = [];
+    this._currentItems = [];
+    this._clearSpringLoad();
+    this._clearBackDwell();
+    this._removeBackIndicator();
+    this._removeLoadingIndicator();
+    this._clearContainer();
+    this._removeDriftTrace();
+    this._removeGlobalListeners();
+    window.removeEventListener("dragover", this._handleDragOver);
+
+    // Restore scroll if locked
+    if (this._scrollBehavior === "lock") {
+      this._unlockScroll();
+    }
+
+    this.dispatchEvent(new CustomEvent("ray-close"));
   }
 
   toggle(x: number, y: number): void {
     if (this._isOpen) {
-      this.close()
+      this.close();
     } else {
-      this.open(x, y)
+      this.open(x, y);
     }
   }
 
   goBack(): boolean {
-    return this._exitSubmenu()
+    return this._exitSubmenu();
   }
 
   goToRoot(): void {
     while (this._navStack.length > 0) {
-      this._exitSubmenu()
+      this._exitSubmenu();
     }
   }
 
   // --- Drag & Drop API ---
 
   openAsDropTarget(x: number, y: number): void {
-    this._isDropTarget = true
-    this.open(x, y)
-    window.addEventListener('dragover', this._handleDragOver)
+    this._isDropTarget = true;
+    this.open(x, y);
+    window.addEventListener("dragover", this._handleDragOver);
   }
 
   updateHoverFromPoint(x: number, y: number): void {
-    if (!this._isOpen) return
+    if (!this._isOpen) return;
 
-    this._pointerPosition = { x, y }
-    this._trackVelocity()
-    this._checkSubmenuEntryConfirmation()
-    this._checkDragThrough()
-    this._checkDragBack()
+    this._pointerPosition = { x, y };
+    this._trackVelocity();
+    this._checkSubmenuEntryConfirmation();
+    this._checkDragThrough();
+    this._checkDragBack();
 
-    const newIndex = this._calculateHoveredIndex(this._pointerPosition)
+    const newIndex = this._calculateHoveredIndex(this._pointerPosition);
 
     if (newIndex !== this._hoveredIndex) {
-      this._hoveredIndex = newIndex
-      this._updateSelectionState()
-      this._handleSpringLoad()
+      this._hoveredIndex = newIndex;
+      this._updateSelectionState();
+      this._handleSpringLoad();
     }
   }
 
   dropOnHovered(data?: unknown): MenuItem | null {
-    if (!this._isOpen || this._hoveredIndex < 0 || this._hoveredIndex >= this._currentItems.length) {
-      this.close()
-      return null
+    if (
+      !this._isOpen ||
+      this._hoveredIndex < 0 ||
+      this._hoveredIndex >= this._currentItems.length
+    ) {
+      this.close();
+      return null;
     }
 
-    const item = this._currentItems[this._hoveredIndex]
+    const item = this._currentItems[this._hoveredIndex];
     if (item.disabled || item.selectable === false) {
-      this.close()
-      return null
+      this.close();
+      return null;
     }
 
-    this.dispatchEvent(new CustomEvent('ray-drop', { detail: { item, data } }))
-    item.onSelect?.()
-    this.dispatchEvent(new CustomEvent('ray-select', { detail: item }))
+    this.dispatchEvent(new CustomEvent("ray-drop", { detail: { item, data } }));
+    item.onSelect?.();
+    this.dispatchEvent(new CustomEvent("ray-select", { detail: item }));
 
-    this.close()
-    return item
+    this.close();
+    return item;
   }
 
   cancelDrop(): void {
-    this._clearSpringLoad()
-    this.close()
+    this._clearSpringLoad();
+    this.close();
   }
 
   getHoveredItem(): MenuItem | null {
-    if (this._hoveredIndex >= 0 && this._hoveredIndex < this._currentItems.length) {
-      return this._currentItems[this._hoveredIndex]
+    if (
+      this._hoveredIndex >= 0 &&
+      this._hoveredIndex < this._currentItems.length
+    ) {
+      return this._currentItems[this._hoveredIndex];
     }
-    return null
+    return null;
   }
 
   // --- Lifecycle ---
 
   connectedCallback(): void {
-    this._render()
+    // Apply static mode if attribute is set
+    if (this.hasAttribute("static")) {
+      this._isStatic = true;
+      this._updateStaticMode();
+    }
+
+    // Handle default-open attribute
+    if (this.hasAttribute("default-open")) {
+      this._defaultOpen = true;
+      // Open at center of component or computed position
+      requestAnimationFrame(() => {
+        const rect = this.getBoundingClientRect();
+        this.open(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      });
+    }
+
+    this._render();
+  }
+
+  private _updateStaticMode(): void {
+    if (!this.shadowRoot) return;
+
+    const host = this.shadowRoot.host as HTMLElement;
+    if (this._isStatic) {
+      // Switch to relative positioning for dock mode
+      host.style.position = "relative";
+      host.style.width = "auto";
+      host.style.height = "auto";
+      host.style.top = "auto";
+      host.style.left = "auto";
+    } else {
+      // Reset to fixed overlay mode
+      host.style.position = "";
+      host.style.width = "";
+      host.style.height = "";
+      host.style.top = "";
+      host.style.left = "";
+    }
   }
 
   disconnectedCallback(): void {
-    this._removeGlobalListeners()
+    this._removeGlobalListeners();
   }
 
-  attributeChangedCallback(name: string, _oldValue: string, newValue: string): void {
+  attributeChangedCallback(
+    name: string,
+    _oldValue: string,
+    newValue: string,
+  ): void {
     switch (name) {
-      case 'radius':
-        this._config.radius = Number(newValue) || DEFAULT_CONFIG.radius
-        break
-      case 'inner-radius':
-        this._config.innerRadius = Number(newValue) || DEFAULT_CONFIG.innerRadius
-        break
-      case 'infinite-selection':
-        this._config.infiniteSelection = newValue !== null && newValue !== 'false'
-        break
-      case 'center-deadzone':
-        this._config.centerDeadzone = Number(newValue) || DEFAULT_CONFIG.centerDeadzone
-        break
-      case 'infinite-threshold':
-        this._config.infiniteThreshold = Number(newValue) || DEFAULT_CONFIG.infiniteThreshold
-        break
-      case 'edge-behavior':
-        this._config.edgeBehavior = (newValue as EdgeBehavior) || DEFAULT_CONFIG.edgeBehavior
-        break
-      case 'show-trail-path':
-        this._showTrailPath = newValue !== null && newValue !== 'false'
-        break
-      case 'show-anchor-line':
-        this._showAnchorLine = newValue !== null && newValue !== 'false'
-        break
-      case 'center-transparent':
-        this._centerTransparent = newValue !== 'false'
-        break
-      case 'instant-drag-through':
-        this._instantDragThrough = newValue !== null && newValue !== 'false'
-        break
-      case 'scroll-behavior':
-        if (newValue === 'keep' || newValue === 'lock' || newValue === 'none') {
-          this._scrollBehavior = newValue
+      case "radius":
+        this._config.radius = Number(newValue) || DEFAULT_CONFIG.radius;
+        break;
+      case "inner-radius":
+        this._config.innerRadius =
+          Number(newValue) || DEFAULT_CONFIG.innerRadius;
+        break;
+      case "infinite-selection":
+        this._config.infiniteSelection =
+          newValue !== null && newValue !== "false";
+        break;
+      case "center-deadzone":
+        this._config.centerDeadzone =
+          Number(newValue) || DEFAULT_CONFIG.centerDeadzone;
+        break;
+      case "infinite-threshold":
+        this._config.infiniteThreshold =
+          Number(newValue) || DEFAULT_CONFIG.infiniteThreshold;
+        break;
+      case "edge-behavior":
+        this._config.edgeBehavior =
+          (newValue as EdgeBehavior) || DEFAULT_CONFIG.edgeBehavior;
+        break;
+      case "show-trail-path":
+        this._showTrailPath = newValue !== null && newValue !== "false";
+        break;
+      case "show-anchor-line":
+        this._showAnchorLine = newValue !== null && newValue !== "false";
+        break;
+      case "center-transparent":
+        this._centerTransparent = newValue !== "false";
+        break;
+      case "instant-drag-through":
+        this._instantDragThrough = newValue !== null && newValue !== "false";
+        break;
+      case "scroll-behavior":
+        if (newValue === "keep" || newValue === "lock" || newValue === "none") {
+          this._scrollBehavior = newValue;
         } else {
-          this._scrollBehavior = 'close'
+          this._scrollBehavior = "close";
         }
-        break
-      case 'scroll-threshold':
-        this._scrollCloseThreshold = Number(newValue) || 10
-        break
+        break;
+      case "scroll-threshold":
+        this._scrollCloseThreshold = Number(newValue) || 10;
+        break;
+      case "start-angle":
+        // Convert degrees to radians, default is -90 (top)
+        this._config.startAngle =
+          newValue !== null
+            ? (Number(newValue) * Math.PI) / 180
+            : DEFAULT_CONFIG.startAngle;
+        break;
+      case "sweep-angle":
+        // Convert degrees to radians, default is 360 (full circle)
+        this._config.sweepAngle =
+          newValue !== null
+            ? (Number(newValue) * Math.PI) / 180
+            : DEFAULT_CONFIG.sweepAngle;
+        break;
+      case "static":
+        this._isStatic = newValue !== null && newValue !== "false";
+        this._updateStaticMode();
+        break;
+      case "default-open":
+        this._defaultOpen = newValue !== null && newValue !== "false";
+        break;
     }
-    if (this._isOpen) this._render()
+    if (this._isOpen) this._render();
   }
 
   // --- Event Handlers ---
 
   private _onPointerMove(e: PointerEvent): void {
-    if (!this._isOpen) return
+    if (!this._isOpen) return;
 
-    this._pointerPosition = { x: e.clientX, y: e.clientY }
-    const newIndex = this._calculateHoveredIndex(this._pointerPosition)
+    this._pointerPosition = { x: e.clientX, y: e.clientY };
+    const newIndex = this._calculateHoveredIndex(this._pointerPosition);
 
     // Deactivate keyboard mode when mouse moves significantly
     if (this._keyboardActive) {
-      this._keyboardActive = false
-      this._focusedIndex = -1
-      this._setKeyboardActiveAttribute(false)
+      this._keyboardActive = false;
+      this._focusedIndex = -1;
+      this._setKeyboardActiveAttribute(false);
     }
 
     if (newIndex !== this._hoveredIndex) {
-      this._hoveredIndex = newIndex
-      this._updateSelectionState()
+      this._hoveredIndex = newIndex;
+      this._updateSelectionState();
     }
 
-    const needsVelocity = this._showTrailPath || this._showAnchorLine || this._isDropTarget
+    const needsVelocity =
+      this._showTrailPath || this._showAnchorLine || this._isDropTarget;
     if (needsVelocity) {
-      this._trackVelocity()
+      this._trackVelocity();
 
       if (this._isDropTarget) {
-        this._checkSubmenuEntryConfirmation()
-        this._checkDragThrough()
-        this._checkDragBack()
+        this._checkSubmenuEntryConfirmation();
+        this._checkDragThrough();
+        this._checkDragBack();
       }
 
       if (this._showTrailPath || this._showAnchorLine) {
-        this._updateDriftTrace()
+        this._updateDriftTrace();
       }
     } else if (this._driftTraceSvg) {
-      this._removeDriftTrace()
+      this._removeDriftTrace();
     }
   }
 
   private _onDragOver(e: DragEvent): void {
-    if (!this._isOpen || !this._isDropTarget) return
-    this.updateHoverFromPoint(e.clientX, e.clientY)
+    if (!this._isOpen || !this._isDropTarget) return;
+    this.updateHoverFromPoint(e.clientX, e.clientY);
   }
 
   private _onClick(e: MouseEvent): void {
-    if (!this._isOpen) return
+    if (!this._isOpen) return;
 
-    const dist = distance(this._position, { x: e.clientX, y: e.clientY })
-    const currentInnerRadius = this._getCurrentInnerRadius()
+    const dist = distance(this._position, { x: e.clientX, y: e.clientY });
+    const currentInnerRadius = this._getCurrentInnerRadius();
 
     if (dist < currentInnerRadius) {
       if (this._navStack.length > 0) {
-        this._exitSubmenu()
+        this._exitSubmenu();
       } else {
-        this.close()
+        this.close();
       }
-      return
+      return;
     }
 
-    if (this._hoveredIndex >= 0 && this._hoveredIndex < this._currentItems.length) {
-      const item = this._currentItems[this._hoveredIndex]
+    if (
+      this._hoveredIndex >= 0 &&
+      this._hoveredIndex < this._currentItems.length
+    ) {
+      const item = this._currentItems[this._hoveredIndex];
       if (!item.disabled) {
-        this._selectItem(item)
+        this._selectItem(item);
       }
     } else {
-      this.close()
+      this.close();
     }
   }
 
   private _onScroll(): void {
-    if (!this._isOpen) return
-    if (this._scrollBehavior === 'none' || this._scrollBehavior === 'lock') return
+    if (!this._isOpen) return;
+    if (this._scrollBehavior === "none" || this._scrollBehavior === "lock")
+      return;
 
-    const currentScrollX = window.scrollX
-    const currentScrollY = window.scrollY
+    const currentScrollX = window.scrollX;
+    const currentScrollY = window.scrollY;
 
-    if (this._scrollBehavior === 'close') {
-      const deltaX = Math.abs(currentScrollX - this._initialScrollX)
-      const deltaY = Math.abs(currentScrollY - this._initialScrollY)
+    if (this._scrollBehavior === "close") {
+      const deltaX = Math.abs(currentScrollX - this._initialScrollX);
+      const deltaY = Math.abs(currentScrollY - this._initialScrollY);
 
-      if (deltaX > this._scrollCloseThreshold || deltaY > this._scrollCloseThreshold) {
-        this.close()
+      if (
+        deltaX > this._scrollCloseThreshold ||
+        deltaY > this._scrollCloseThreshold
+      ) {
+        this.close();
       }
-    } else if (this._scrollBehavior === 'keep') {
+    } else if (this._scrollBehavior === "keep") {
       // Update menu position to stay fixed to document position
-      const viewportX = this._documentPosition.x - currentScrollX
-      const viewportY = this._documentPosition.y - currentScrollY
-      this._position = { x: viewportX, y: viewportY }
+      const viewportX = this._documentPosition.x - currentScrollX;
+      const viewportY = this._documentPosition.y - currentScrollY;
+      this._position = { x: viewportX, y: viewportY };
 
       // Update container position
       if (this.shadowRoot) {
-        const container = this.shadowRoot.querySelector('.ray-menu-container') as HTMLElement
+        const container = this.shadowRoot.querySelector(
+          ".ray-menu-container",
+        ) as HTMLElement;
         if (container) {
-          container.style.left = `${this._position.x}px`
-          container.style.top = `${this._position.y}px`
+          container.style.left = `${this._position.x}px`;
+          container.style.top = `${this._position.y}px`;
         }
       }
     }
@@ -471,185 +582,194 @@ export class RayMenu extends HTMLElement {
 
   private _lockScroll(): void {
     // Calculate scrollbar width
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
 
     // Save current styles
-    this._savedBodyOverflow = document.body.style.overflow
-    this._savedBodyPaddingRight = document.body.style.paddingRight
+    this._savedBodyOverflow = document.body.style.overflow;
+    this._savedBodyPaddingRight = document.body.style.paddingRight;
 
     // Apply scroll lock with scrollbar compensation
-    document.body.style.overflow = 'hidden'
+    document.body.style.overflow = "hidden";
     if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
   }
 
   private _unlockScroll(): void {
     // Restore original styles
-    document.body.style.overflow = this._savedBodyOverflow
-    document.body.style.paddingRight = this._savedBodyPaddingRight
-    this._savedBodyOverflow = ''
-    this._savedBodyPaddingRight = ''
+    document.body.style.overflow = this._savedBodyOverflow;
+    document.body.style.paddingRight = this._savedBodyPaddingRight;
+    this._savedBodyOverflow = "";
+    this._savedBodyPaddingRight = "";
   }
 
   private _onKeyDown(e: KeyboardEvent): void {
-    if (!this._isOpen) return
+    if (!this._isOpen) return;
 
-    const itemCount = this._currentItems.length
-    if (itemCount === 0) return
+    const itemCount = this._currentItems.length;
+    if (itemCount === 0) return;
 
     switch (e.key) {
-      case 'Escape':
-        this.close()
-        e.preventDefault()
-        break
+      case "Escape":
+        this.close();
+        e.preventDefault();
+        break;
 
-      case 'ArrowLeft':
-        this._activateKeyboardMode()
-        this._moveFocus(-1)
-        e.preventDefault()
-        break
+      case "ArrowLeft":
+        this._activateKeyboardMode();
+        this._moveFocus(-1);
+        e.preventDefault();
+        break;
 
-      case 'ArrowRight':
-        this._activateKeyboardMode()
-        this._moveFocus(1)
-        e.preventDefault()
-        break
+      case "ArrowRight":
+        this._activateKeyboardMode();
+        this._moveFocus(1);
+        e.preventDefault();
+        break;
 
-      case 'ArrowUp':
+      case "ArrowUp":
         // Go back to parent or close
         if (this._navStack.length > 0) {
-          this._exitSubmenu()
+          this._exitSubmenu();
         } else {
-          this.close()
+          this.close();
         }
-        e.preventDefault()
-        break
+        e.preventDefault();
+        break;
 
-      case 'ArrowDown':
-      case 'Enter':
-      case ' ':
+      case "ArrowDown":
+      case "Enter":
+      case " ":
         // Select focused item or enter submenu
         if (this._focusedIndex >= 0 && this._focusedIndex < itemCount) {
-          const item = this._currentItems[this._focusedIndex]
+          const item = this._currentItems[this._focusedIndex];
           if (!item.disabled) {
-            this._selectItem(item)
+            this._selectItem(item);
           }
         } else if (this._keyboardActive && itemCount > 0) {
           // No focus yet, focus first item
-          this._focusedIndex = 0
-          this._updateSelectionState()
+          this._focusedIndex = 0;
+          this._updateSelectionState();
         } else {
           // Activate keyboard mode
-          this._activateKeyboardMode()
+          this._activateKeyboardMode();
         }
-        e.preventDefault()
-        break
+        e.preventDefault();
+        break;
 
-      case 'Home':
-        this._activateKeyboardMode()
-        this._focusedIndex = 0
-        this._updateSelectionState()
-        e.preventDefault()
-        break
+      case "Home":
+        this._activateKeyboardMode();
+        this._focusedIndex = 0;
+        this._updateSelectionState();
+        e.preventDefault();
+        break;
 
-      case 'End':
-        this._activateKeyboardMode()
-        this._focusedIndex = itemCount - 1
-        this._updateSelectionState()
-        e.preventDefault()
-        break
+      case "End":
+        this._activateKeyboardMode();
+        this._focusedIndex = itemCount - 1;
+        this._updateSelectionState();
+        e.preventDefault();
+        break;
 
-      case 'Backspace':
+      case "Backspace":
         // Go back to parent menu
         if (this._navStack.length > 0) {
-          this._exitSubmenu()
+          this._exitSubmenu();
         }
-        e.preventDefault()
-        break
+        e.preventDefault();
+        break;
 
       default:
         // Number keys 1-9 for quick select
-        if (e.key >= '1' && e.key <= '9') {
-          const index = parseInt(e.key, 10) - 1
+        if (e.key >= "1" && e.key <= "9") {
+          const index = parseInt(e.key, 10) - 1;
           if (index < itemCount) {
-            this._activateKeyboardMode()
-            this._focusedIndex = index
-            const item = this._currentItems[index]
+            this._activateKeyboardMode();
+            this._focusedIndex = index;
+            const item = this._currentItems[index];
             if (!item.disabled) {
-              this._selectItem(item)
+              this._selectItem(item);
             }
           }
-          e.preventDefault()
+          e.preventDefault();
         }
-        break
+        break;
     }
   }
 
   // --- Private Methods ---
 
   private _initStyles(): void {
-    if (!this.shadowRoot) return
-    const style = document.createElement('style')
-    style.textContent = RAY_MENU_STYLES
-    this.shadowRoot.appendChild(style)
+    if (!this.shadowRoot) return;
+    const style = document.createElement("style");
+    style.textContent = RAY_MENU_STYLES;
+    this.shadowRoot.appendChild(style);
   }
 
   private _addGlobalListeners(): void {
-    window.addEventListener('pointermove', this._handlePointerMove)
-    window.addEventListener('click', this._handleClick)
-    window.addEventListener('keydown', this._handleKeyDown)
-    if (this._scrollBehavior === 'close' || this._scrollBehavior === 'keep') {
-      window.addEventListener('scroll', this._handleScroll, { passive: true })
+    window.addEventListener("pointermove", this._handlePointerMove);
+    window.addEventListener("click", this._handleClick);
+    window.addEventListener("keydown", this._handleKeyDown);
+    if (this._scrollBehavior === "close" || this._scrollBehavior === "keep") {
+      window.addEventListener("scroll", this._handleScroll, { passive: true });
     }
   }
 
   private _removeGlobalListeners(): void {
-    window.removeEventListener('pointermove', this._handlePointerMove)
-    window.removeEventListener('click', this._handleClick)
-    window.removeEventListener('keydown', this._handleKeyDown)
-    window.removeEventListener('scroll', this._handleScroll)
+    window.removeEventListener("pointermove", this._handlePointerMove);
+    window.removeEventListener("click", this._handleClick);
+    window.removeEventListener("keydown", this._handleKeyDown);
+    window.removeEventListener("scroll", this._handleScroll);
   }
 
   private _trackVelocity(): void {
-    if (!this._pointerPosition) return
+    if (!this._pointerPosition) return;
 
-    const now = Date.now()
-    this._positionHistory.push({ ...this._pointerPosition })
-    this._timestampHistory.push(now)
+    const now = Date.now();
+    this._positionHistory.push({ ...this._pointerPosition });
+    this._timestampHistory.push(now);
 
     while (this._positionHistory.length > 20) {
-      this._positionHistory.shift()
-      this._timestampHistory.shift()
+      this._positionHistory.shift();
+      this._timestampHistory.shift();
     }
 
-    this._velocity = calculateVelocity(this._positionHistory, this._timestampHistory)
+    this._velocity = calculateVelocity(
+      this._positionHistory,
+      this._timestampHistory,
+    );
   }
 
   private _getCurrentRadius(): number {
-    return this._config.radius + this._navStack.length * this._submenuRadiusStep
+    return (
+      this._config.radius + this._navStack.length * this._submenuRadiusStep
+    );
   }
 
   private _getCurrentInnerRadius(): number {
     if (this._navStack.length === 0) {
-      return this._config.innerRadius
+      return this._config.innerRadius;
     }
-    return this._config.radius + (this._navStack.length - 1) * this._submenuRadiusStep
+    return (
+      this._config.radius +
+      (this._navStack.length - 1) * this._submenuRadiusStep
+    );
   }
 
   private _calculateHoveredIndex(pointer: Point): number {
-    const dist = distance(this._position, pointer)
-    const currentInnerRadius = this._getCurrentInnerRadius()
-    const currentRadius = this._getCurrentRadius()
+    const dist = distance(this._position, pointer);
+    const currentInnerRadius = this._getCurrentInnerRadius();
+    const currentRadius = this._getCurrentRadius();
 
     const deadzone = this._config.infiniteSelection
       ? Math.max(this._config.centerDeadzone, currentInnerRadius)
-      : currentInnerRadius
+      : currentInnerRadius;
 
-    if (dist < deadzone) return -1
+    if (dist < deadzone) return -1;
 
     if (!this._config.infiniteSelection && dist > currentRadius * 1.5) {
-      return -1
+      return -1;
     }
 
     if (
@@ -657,273 +777,294 @@ export class RayMenu extends HTMLElement {
       this._config.infiniteThreshold > 0 &&
       dist > this._config.infiniteThreshold
     ) {
-      return -1
+      return -1;
     }
 
-    let angle = angleFromCenter(this._position, pointer)
-    angle = this._adjustAngleForFlip(angle)
+    let angle = angleFromCenter(this._position, pointer);
+    angle = this._adjustAngleForFlip(angle);
 
     const itemAngles = distributeAngles(
       this._currentItems.length,
       this._config.startAngle,
-      this._config.sweepAngle
-    )
+      this._config.sweepAngle,
+    );
 
-    return getClosestItemIndex(angle, itemAngles)
+    return getClosestItemIndex(angle, itemAngles);
   }
 
   private _adjustAngleForFlip(angle: number): number {
-    let adjusted = angle
+    let adjusted = angle;
     if (this._flipState.flipX) {
-      adjusted = Math.PI - adjusted
+      adjusted = Math.PI - adjusted;
     }
     if (this._flipState.flipY) {
-      adjusted = -adjusted
+      adjusted = -adjusted;
     }
-    return adjusted
+    return adjusted;
   }
 
   private _selectItem(item: MenuItem): void {
-    const hasChildren = item.children && item.children.length > 0
-    const canLoadChildren = typeof item.loadChildren === 'function'
+    const hasChildren = item.children && item.children.length > 0;
+    const canLoadChildren = typeof item.loadChildren === "function";
 
     if (item.selectable === false) {
       if (hasChildren || canLoadChildren) {
         const angle = this._pointerPosition
           ? angleFromCenter(this._position, this._pointerPosition)
-          : this._config.startAngle
-        this._enterSubmenu(item, angle, true)
+          : this._config.startAngle;
+        this._enterSubmenu(item, angle, true);
       }
-      return
+      return;
     }
 
-    item.onSelect?.()
-    this.dispatchEvent(new CustomEvent('ray-select', { detail: item }))
-    this.close()
+    item.onSelect?.();
+    this.dispatchEvent(new CustomEvent("ray-select", { detail: item }));
+    this.close();
   }
 
   // --- Submenu Navigation ---
 
   private _clearSpringLoad(): void {
     if (this._springLoadTimer !== null) {
-      window.clearTimeout(this._springLoadTimer)
-      this._springLoadTimer = null
+      window.clearTimeout(this._springLoadTimer);
+      this._springLoadTimer = null;
     }
-    this._springLoadItemId = null
+    this._springLoadItemId = null;
   }
 
-  private async _enterSubmenu(item: MenuItem, entryAngle: number, confirmedEntry = false): Promise<void> {
+  private async _enterSubmenu(
+    item: MenuItem,
+    entryAngle: number,
+    confirmedEntry = false,
+  ): Promise<void> {
     // Check if we need to load children
-    const hasChildren = item.children && item.children.length > 0
-    const canLoadChildren = typeof item.loadChildren === 'function'
+    const hasChildren = item.children && item.children.length > 0;
+    const canLoadChildren = typeof item.loadChildren === "function";
 
-    if (!hasChildren && !canLoadChildren) return
+    if (!hasChildren && !canLoadChildren) return;
 
     // If children need to be loaded
     if (!hasChildren && canLoadChildren) {
-      await this._loadChildrenAsync(item, entryAngle, confirmedEntry)
-      return
+      await this._loadChildrenAsync(item, entryAngle, confirmedEntry);
+      return;
     }
 
     // Children already exist, enter directly
-    this._performSubmenuEntry(item, entryAngle, confirmedEntry)
+    this._performSubmenuEntry(item, entryAngle, confirmedEntry);
   }
 
-  private async _loadChildrenAsync(item: MenuItem, entryAngle: number, confirmedEntry: boolean): Promise<void> {
-    if (!item.loadChildren) return
+  private async _loadChildrenAsync(
+    item: MenuItem,
+    entryAngle: number,
+    confirmedEntry: boolean,
+  ): Promise<void> {
+    if (!item.loadChildren) return;
 
     // Show loading state
-    this._isLoading = true
-    this._loadingItemId = item.id
-    this._loadError = null
-    this._showLoadingIndicator(item)
+    this._isLoading = true;
+    this._loadingItemId = item.id;
+    this._loadError = null;
+    this._showLoadingIndicator(item);
 
-    this.dispatchEvent(new CustomEvent('ray-load-start', { detail: item }))
+    this.dispatchEvent(new CustomEvent("ray-load-start", { detail: item }));
 
     try {
-      const children = await item.loadChildren()
+      const children = await item.loadChildren();
 
       // Check if menu is still open and we're still loading this item
       if (!this._isOpen || this._loadingItemId !== item.id) {
-        return
+        return;
       }
 
       // Cache the loaded children on the item
-      item.children = children
+      item.children = children;
 
-      this._isLoading = false
-      this._loadingItemId = null
-      this._removeLoadingIndicator()
+      this._isLoading = false;
+      this._loadingItemId = null;
+      this._removeLoadingIndicator();
 
-      this.dispatchEvent(new CustomEvent('ray-load-complete', { detail: item }))
+      this.dispatchEvent(
+        new CustomEvent("ray-load-complete", { detail: item }),
+      );
 
       // Now enter the submenu with loaded children
       if (children.length > 0) {
-        this._performSubmenuEntry(item, entryAngle, confirmedEntry)
+        this._performSubmenuEntry(item, entryAngle, confirmedEntry);
       }
     } catch (error) {
       if (!this._isOpen || this._loadingItemId !== item.id) {
-        return
+        return;
       }
 
-      this._isLoading = false
-      this._loadingItemId = null
-      this._loadError = error instanceof Error ? error : new Error(String(error))
-      this._showErrorIndicator(this._loadError)
+      this._isLoading = false;
+      this._loadingItemId = null;
+      this._loadError =
+        error instanceof Error ? error : new Error(String(error));
+      this._showErrorIndicator(this._loadError);
 
       this.dispatchEvent(
-        new CustomEvent('ray-load-error', {
+        new CustomEvent("ray-load-error", {
           detail: { item, error: this._loadError },
-        })
-      )
+        }),
+      );
 
       // Auto-clear error after delay
       setTimeout(() => {
         if (this._loadError) {
-          this._loadError = null
-          this._removeLoadingIndicator()
+          this._loadError = null;
+          this._removeLoadingIndicator();
         }
-      }, 2000)
+      }, 2000);
     }
   }
 
-  private _performSubmenuEntry(item: MenuItem, entryAngle: number, confirmedEntry: boolean): void {
-    if (!item.children?.length) return
+  private _performSubmenuEntry(
+    item: MenuItem,
+    entryAngle: number,
+    confirmedEntry: boolean,
+  ): void {
+    if (!item.children?.length) return;
 
     this._navStack.push({
       item,
       entryAngle,
       items: [...this._currentItems],
-    })
+    });
 
-    this._currentItems = item.children
-    this._hoveredIndex = -1
-    this._focusedIndex = this._keyboardActive ? 0 : -1
-    this._submenuEntryConfirmed = confirmedEntry
-    this._clearSpringLoad()
-    this._clearBackDwell()
-    this._render()
+    this._currentItems = item.children;
+    this._hoveredIndex = -1;
+    this._focusedIndex = this._keyboardActive ? 0 : -1;
+    this._submenuEntryConfirmed = confirmedEntry;
+    this._clearSpringLoad();
+    this._clearBackDwell();
+    this._render();
 
     this.dispatchEvent(
-      new CustomEvent('ray-submenu-enter', {
+      new CustomEvent("ray-submenu-enter", {
         detail: { item, depth: this._navStack.length },
-      })
-    )
+      }),
+    );
   }
 
   private _exitSubmenu(): boolean {
-    if (this._navStack.length === 0) return false
+    if (this._navStack.length === 0) return false;
 
-    const entry = this._navStack.pop()!
-    this._currentItems = entry.items
-    this._hoveredIndex = -1
+    const entry = this._navStack.pop()!;
+    this._currentItems = entry.items;
+    this._hoveredIndex = -1;
     // Focus the parent item we came from when using keyboard
     this._focusedIndex = this._keyboardActive
       ? this._currentItems.findIndex((i) => i.id === entry.item.id)
-      : -1
-    this._clearSpringLoad()
-    this._render()
+      : -1;
+    this._clearSpringLoad();
+    this._render();
 
     this.dispatchEvent(
-      new CustomEvent('ray-submenu-exit', {
+      new CustomEvent("ray-submenu-exit", {
         detail: { item: entry.item, depth: this._navStack.length },
-      })
-    )
-    return true
+      }),
+    );
+    return true;
   }
 
   private _checkDragThrough(): void {
-    if (!this._instantDragThrough) return
-    if (!this._pointerPosition || this._hoveredIndex < 0) return
+    if (!this._instantDragThrough) return;
+    if (!this._pointerPosition || this._hoveredIndex < 0) return;
 
-    const item = this._currentItems[this._hoveredIndex]
-    const hasChildren = item?.children && item.children.length > 0
-    const canLoadChildren = typeof item?.loadChildren === 'function'
+    const item = this._currentItems[this._hoveredIndex];
+    const hasChildren = item?.children && item.children.length > 0;
+    const canLoadChildren = typeof item?.loadChildren === "function";
 
-    if (!hasChildren && !canLoadChildren) return
+    if (!hasChildren && !canLoadChildren) return;
 
-    const dist = distance(this._position, this._pointerPosition)
-    const currentRadius = this._getCurrentRadius()
+    const dist = distance(this._position, this._pointerPosition);
+    const currentRadius = this._getCurrentRadius();
 
-    const angle = angleFromCenter(this._position, this._pointerPosition)
-    const radialVelocity = this._velocity.vx * Math.cos(angle) + this._velocity.vy * Math.sin(angle)
+    const angle = angleFromCenter(this._position, this._pointerPosition);
+    const radialVelocity =
+      this._velocity.vx * Math.cos(angle) + this._velocity.vy * Math.sin(angle);
 
-    const velocityTrigger = radialVelocity > this._dragThroughVelocityThreshold
-    const distanceTrigger = dist > currentRadius * this._dragThroughDistanceThreshold
+    const velocityTrigger = radialVelocity > this._dragThroughVelocityThreshold;
+    const distanceTrigger =
+      dist > currentRadius * this._dragThroughDistanceThreshold;
 
     if (velocityTrigger && distanceTrigger) {
-      this._enterSubmenu(item, angle)
+      this._enterSubmenu(item, angle);
     }
   }
 
   private _checkSubmenuEntryConfirmation(): void {
-    if (this._submenuEntryConfirmed || this._navStack.length === 0) return
-    if (!this._pointerPosition) return
+    if (this._submenuEntryConfirmed || this._navStack.length === 0) return;
+    if (!this._pointerPosition) return;
 
-    const dist = distance(this._position, this._pointerPosition)
-    const currentInnerRadius = this._getCurrentInnerRadius()
-    const currentRadius = this._getCurrentRadius()
+    const dist = distance(this._position, this._pointerPosition);
+    const currentInnerRadius = this._getCurrentInnerRadius();
+    const currentRadius = this._getCurrentRadius();
 
     if (dist >= currentInnerRadius && dist <= currentRadius * 1.2) {
-      this._submenuEntryConfirmed = true
+      this._submenuEntryConfirmed = true;
     }
   }
 
   private _clearBackDwell(): void {
     if (this._backDwellTimer !== null) {
-      window.clearTimeout(this._backDwellTimer)
-      this._backDwellTimer = null
+      window.clearTimeout(this._backDwellTimer);
+      this._backDwellTimer = null;
     }
     if (this._backProgressRAF !== null) {
-      cancelAnimationFrame(this._backProgressRAF)
-      this._backProgressRAF = null
+      cancelAnimationFrame(this._backProgressRAF);
+      this._backProgressRAF = null;
     }
-    this._updateBackIndicator(false)
+    this._updateBackIndicator(false);
   }
 
   private _checkDragBack(): void {
-    if (!this._pointerPosition || this._navStack.length === 0) return
-    if (!this._submenuEntryConfirmed) return
+    if (!this._pointerPosition || this._navStack.length === 0) return;
+    if (!this._submenuEntryConfirmed) return;
 
-    const dist = distance(this._position, this._pointerPosition)
-    const backZoneOuter = this._config.innerRadius
+    const dist = distance(this._position, this._pointerPosition);
+    const backZoneOuter = this._config.innerRadius;
 
     if (dist < this._centerSafeZone) {
-      this._clearBackDwell()
-      return
+      this._clearBackDwell();
+      return;
     }
 
     if (dist < backZoneOuter && dist >= this._centerSafeZone) {
-      this._updateBackIndicator(true)
+      this._updateBackIndicator(true);
 
       if (this._backDwellTimer === null) {
         this._backDwellTimer = window.setTimeout(() => {
-          this._backDwellTimer = null
-          this._exitSubmenu()
-        }, this._backDwellDelay)
+          this._backDwellTimer = null;
+          this._exitSubmenu();
+        }, this._backDwellDelay);
       }
     } else {
-      this._clearBackDwell()
+      this._clearBackDwell();
     }
   }
 
   private _handleSpringLoad(): void {
-    const item = this.getHoveredItem()
+    const item = this.getHoveredItem();
 
     if (!item || item.id !== this._springLoadItemId) {
-      this._clearSpringLoad()
+      this._clearSpringLoad();
     }
 
     // Check if item has children or can load children
-    const hasChildren = item?.children && item.children.length > 0
-    const canLoadChildren = typeof item?.loadChildren === 'function'
+    const hasChildren = item?.children && item.children.length > 0;
+    const canLoadChildren = typeof item?.loadChildren === "function";
 
-    if ((hasChildren || canLoadChildren) && item && item.id !== this._springLoadItemId) {
-      this._springLoadItemId = item.id
+    if (
+      (hasChildren || canLoadChildren) &&
+      item &&
+      item.id !== this._springLoadItemId
+    ) {
+      this._springLoadItemId = item.id;
       this._springLoadTimer = window.setTimeout(() => {
-        const angle = angleFromCenter(this._position, this._pointerPosition!)
-        this._enterSubmenu(item, angle, true)
-      }, this._springLoadDelay)
+        const angle = angleFromCenter(this._position, this._pointerPosition!);
+        this._enterSubmenu(item, angle, true);
+      }, this._springLoadDelay);
     }
   }
 
@@ -931,234 +1072,264 @@ export class RayMenu extends HTMLElement {
 
   private _createBackIndicator(container: HTMLElement): void {
     if (this._navStack.length === 0) {
-      this._removeBackIndicator()
-      return
+      this._removeBackIndicator();
+      return;
     }
 
-    const indicator = createBackIndicator(this._config.innerRadius, this._centerSafeZone)
-    container.appendChild(indicator)
-    this._backIndicatorEl = indicator
+    const indicator = createBackIndicator(
+      this._config.innerRadius,
+      this._centerSafeZone,
+    );
+    container.appendChild(indicator);
+    this._backIndicatorEl = indicator;
   }
 
   private _updateBackIndicator(active: boolean): void {
     if (this._backIndicatorEl) {
-      this._backIndicatorEl.setAttribute('data-active', String(active))
+      this._backIndicatorEl.setAttribute("data-active", String(active));
     }
   }
 
   private _removeBackIndicator(): void {
     if (this._backIndicatorEl) {
-      this._backIndicatorEl.remove()
-      this._backIndicatorEl = null
+      this._backIndicatorEl.remove();
+      this._backIndicatorEl = null;
     }
   }
 
   // --- Loading Indicator ---
 
   private _showLoadingIndicator(item: MenuItem): void {
-    this._removeLoadingIndicator()
+    this._removeLoadingIndicator();
 
-    if (!this.shadowRoot) return
-    const container = this.shadowRoot.querySelector('.ray-menu-container')
-    if (!container) return
+    if (!this.shadowRoot) return;
+    const container = this.shadowRoot.querySelector(".ray-menu-container");
+    if (!container) return;
 
     // Mark the item label as loading
-    const labels = container.querySelectorAll('.ray-menu-label')
+    const labels = container.querySelectorAll(".ray-menu-label");
     labels.forEach((label) => {
-      const index = parseInt(label.getAttribute('data-index') || '-1', 10)
+      const index = parseInt(label.getAttribute("data-index") || "-1", 10);
       if (index >= 0 && this._currentItems[index]?.id === item.id) {
-        label.setAttribute('data-loading', 'true')
+        label.setAttribute("data-loading", "true");
         // Add spinner to label
-        const spinner = document.createElement('span')
-        spinner.className = 'ray-menu-label-spinner'
-        label.appendChild(spinner)
+        const spinner = document.createElement("span");
+        spinner.className = "ray-menu-label-spinner";
+        label.appendChild(spinner);
       }
-    })
+    });
 
     // Create center loading indicator
-    const indicator = document.createElement('div')
-    indicator.className = 'ray-menu-loading-indicator'
+    const indicator = document.createElement("div");
+    indicator.className = "ray-menu-loading-indicator";
 
-    const spinner = document.createElement('div')
-    spinner.className = 'ray-menu-loading-spinner'
+    const spinner = document.createElement("div");
+    spinner.className = "ray-menu-loading-spinner";
 
-    const text = document.createElement('div')
-    text.className = 'ray-menu-loading-text'
-    text.textContent = 'Loading...'
+    const text = document.createElement("div");
+    text.className = "ray-menu-loading-text";
+    text.textContent = "Loading...";
 
-    indicator.appendChild(spinner)
-    indicator.appendChild(text)
-    container.appendChild(indicator)
+    indicator.appendChild(spinner);
+    indicator.appendChild(text);
+    container.appendChild(indicator);
 
-    this._loadingIndicatorEl = indicator
+    this._loadingIndicatorEl = indicator;
   }
 
   private _showErrorIndicator(error: Error): void {
-    this._removeLoadingIndicator()
+    this._removeLoadingIndicator();
 
-    if (!this.shadowRoot) return
-    const container = this.shadowRoot.querySelector('.ray-menu-container')
-    if (!container) return
+    if (!this.shadowRoot) return;
+    const container = this.shadowRoot.querySelector(".ray-menu-container");
+    if (!container) return;
 
-    const indicator = document.createElement('div')
-    indicator.className = 'ray-menu-error-indicator'
+    const indicator = document.createElement("div");
+    indicator.className = "ray-menu-error-indicator";
 
-    const icon = document.createElement('div')
-    icon.className = 'ray-menu-error-icon'
-    icon.textContent = '⚠'
+    const icon = document.createElement("div");
+    icon.className = "ray-menu-error-icon";
+    icon.textContent = "⚠";
 
-    const text = document.createElement('div')
-    text.className = 'ray-menu-error-text'
-    text.textContent = error.message || 'Failed to load'
+    const text = document.createElement("div");
+    text.className = "ray-menu-error-text";
+    text.textContent = error.message || "Failed to load";
 
-    indicator.appendChild(icon)
-    indicator.appendChild(text)
-    container.appendChild(indicator)
+    indicator.appendChild(icon);
+    indicator.appendChild(text);
+    container.appendChild(indicator);
 
-    this._loadingIndicatorEl = indicator
+    this._loadingIndicatorEl = indicator;
   }
 
   private _removeLoadingIndicator(): void {
     if (this._loadingIndicatorEl) {
-      this._loadingIndicatorEl.remove()
-      this._loadingIndicatorEl = null
+      this._loadingIndicatorEl.remove();
+      this._loadingIndicatorEl = null;
     }
 
     // Remove loading state from labels
-    if (!this.shadowRoot) return
-    const labels = this.shadowRoot.querySelectorAll('.ray-menu-label[data-loading="true"]')
+    if (!this.shadowRoot) return;
+    const labels = this.shadowRoot.querySelectorAll(
+      '.ray-menu-label[data-loading="true"]',
+    );
     labels.forEach((label) => {
-      label.removeAttribute('data-loading')
-      const spinner = label.querySelector('.ray-menu-label-spinner')
-      if (spinner) spinner.remove()
-    })
+      label.removeAttribute("data-loading");
+      const spinner = label.querySelector(".ray-menu-label-spinner");
+      if (spinner) spinner.remove();
+    });
   }
 
   // --- Rendering ---
 
   private _clearContainer(): void {
-    if (!this.shadowRoot) return
-    const container = this.shadowRoot.querySelector('.ray-menu-container')
+    if (!this.shadowRoot) return;
+    const container = this.shadowRoot.querySelector(".ray-menu-container");
     if (container) {
-      container.remove()
+      container.remove();
     }
   }
 
   private _activateKeyboardMode(): void {
     if (!this._keyboardActive) {
-      this._keyboardActive = true
-      this._setKeyboardActiveAttribute(true)
+      this._keyboardActive = true;
+      this._setKeyboardActiveAttribute(true);
       // Start focus at first item if not already set
       if (this._focusedIndex < 0) {
-        this._focusedIndex = 0
+        this._focusedIndex = 0;
       }
-      this._updateSelectionState()
+      this._updateSelectionState();
     }
   }
 
   private _moveFocus(delta: number): void {
-    const itemCount = this._currentItems.length
-    if (itemCount === 0) return
+    const itemCount = this._currentItems.length;
+    if (itemCount === 0) return;
 
     // Find next non-disabled item
-    let newIndex = this._focusedIndex
-    let attempts = 0
+    let newIndex = this._focusedIndex;
+    let attempts = 0;
 
     do {
-      newIndex = (newIndex + delta + itemCount) % itemCount
-      attempts++
-    } while (this._currentItems[newIndex]?.disabled && attempts < itemCount)
+      newIndex = (newIndex + delta + itemCount) % itemCount;
+      attempts++;
+    } while (this._currentItems[newIndex]?.disabled && attempts < itemCount);
 
     if (newIndex !== this._focusedIndex) {
-      this._focusedIndex = newIndex
-      this._updateSelectionState()
+      this._focusedIndex = newIndex;
+      this._updateSelectionState();
     }
   }
 
   private _setKeyboardActiveAttribute(active: boolean): void {
-    if (!this.shadowRoot) return
-    const container = this.shadowRoot.querySelector('.ray-menu-container')
+    if (!this.shadowRoot) return;
+    const container = this.shadowRoot.querySelector(".ray-menu-container");
     if (container) {
-      container.setAttribute('data-keyboard-active', String(active))
+      container.setAttribute("data-keyboard-active", String(active));
     }
   }
 
   private _updateSelectionState(): void {
-    if (!this.shadowRoot) return
+    if (!this.shadowRoot) return;
 
-    const arcs = this.shadowRoot.querySelectorAll('.ray-menu-arc')
+    const arcs = this.shadowRoot.querySelectorAll(".ray-menu-arc");
     arcs.forEach((arc, index) => {
-      const isHovered = index === this._hoveredIndex
-      const isFocused = index === this._focusedIndex && this._keyboardActive
-      const isActive = isHovered || isFocused
-      const item = this._currentItems[index]
-      const pathEl = arc as SVGPathElement
+      const isHovered = index === this._hoveredIndex;
+      const isFocused = index === this._focusedIndex && this._keyboardActive;
+      const isActive = isHovered || isFocused;
+      const item = this._currentItems[index];
+      const pathEl = arc as SVGPathElement;
 
-      pathEl.setAttribute('fill', isActive ? 'rgba(100, 180, 255, 0.4)' : 'rgba(50, 50, 60, 0.6)')
-      pathEl.setAttribute('stroke', isActive ? 'rgba(100, 180, 255, 0.7)' : 'rgba(255, 255, 255, 0.1)')
-      pathEl.setAttribute('stroke-width', isActive ? '2' : '1')
-      pathEl.setAttribute('opacity', item?.disabled ? '0.3' : isActive ? '1' : '0.6')
-      pathEl.setAttribute('filter', isActive ? 'url(#glow)' : '')
-    })
+      pathEl.setAttribute(
+        "fill",
+        isActive ? "rgba(100, 180, 255, 0.4)" : "rgba(50, 50, 60, 0.6)",
+      );
+      pathEl.setAttribute(
+        "stroke",
+        isActive ? "rgba(100, 180, 255, 0.7)" : "rgba(255, 255, 255, 0.1)",
+      );
+      pathEl.setAttribute("stroke-width", isActive ? "2" : "1");
+      pathEl.setAttribute(
+        "opacity",
+        item?.disabled ? "0.3" : isActive ? "1" : "0.6",
+      );
+      pathEl.setAttribute("filter", isActive ? "url(#glow)" : "");
+    });
 
-    const labels = this.shadowRoot.querySelectorAll('.ray-menu-label')
+    const labels = this.shadowRoot.querySelectorAll(".ray-menu-label");
     labels.forEach((label, index) => {
-      const isHovered = index === this._hoveredIndex
-      const isFocused = index === this._focusedIndex && this._keyboardActive
-      label.setAttribute('data-hovered', String(isHovered))
-      label.setAttribute('data-focused', String(isFocused))
-    })
+      const isHovered = index === this._hoveredIndex;
+      const isFocused = index === this._focusedIndex && this._keyboardActive;
+      label.setAttribute("data-hovered", String(isHovered));
+      label.setAttribute("data-focused", String(isFocused));
+    });
   }
 
   private _render(): void {
-    if (!this.shadowRoot) return
+    if (!this.shadowRoot) return;
 
-    this._clearContainer()
+    this._clearContainer();
 
     if (!this._isOpen || this._currentItems.length === 0) {
-      return
+      return;
     }
 
-    const radius = this._getCurrentRadius()
-    const innerRadius = this._getCurrentInnerRadius()
+    const radius = this._getCurrentRadius();
+    const innerRadius = this._getCurrentInnerRadius();
     const itemAngles = distributeAngles(
       this._currentItems.length,
       this._config.startAngle,
-      this._config.sweepAngle
-    )
+      this._config.sweepAngle,
+    );
 
     // Create container
-    const container = document.createElement('div')
-    container.className = 'ray-menu-container'
-    container.style.left = `${this._position.x}px`
-    container.style.top = `${this._position.y}px`
-    container.style.transform = `translate(-50%, -50%) ${this._flipState.transform}`
+    const container = document.createElement("div");
+    container.className = "ray-menu-container";
+    container.style.left = `${this._position.x}px`;
+    container.style.top = `${this._position.y}px`;
+    container.style.transform = `translate(-50%, -50%) ${this._flipState.transform}`;
 
     if (this._isDropTarget) {
-      container.setAttribute('data-drop-target', 'true')
+      container.setAttribute("data-drop-target", "true");
     }
 
     if (this._keyboardActive) {
-      container.setAttribute('data-keyboard-active', 'true')
+      container.setAttribute("data-keyboard-active", "true");
     }
 
     // Create SVG
-    const svg = createMenuSvg(radius, this._isDropTarget)
-    svg.appendChild(createOuterRing(radius))
-    svg.appendChild(createInnerRing(radius, innerRadius, this._centerTransparent))
+    const svg = createMenuSvg(radius, this._isDropTarget);
+    svg.appendChild(
+      createOuterRing(radius, this._config.startAngle, this._config.sweepAngle),
+    );
+    svg.appendChild(
+      createInnerRing(
+        radius,
+        innerRadius,
+        this._centerTransparent,
+        this._config.startAngle,
+        this._config.sweepAngle,
+      ),
+    );
 
     // Render parent levels
-    renderParentLevels(svg, this._navStack, this._config, this._submenuRadiusStep, radius)
+    renderParentLevels(
+      svg,
+      this._navStack,
+      this._config,
+      this._submenuRadiusStep,
+      radius,
+    );
 
     // Arc segments and labels
     this._currentItems.forEach((item, index) => {
-      const angle = itemAngles[index]
-      const isHovered = index === this._hoveredIndex
-      const isFocused = index === this._focusedIndex && this._keyboardActive
-      const segmentAngle = (Math.PI * 2) / this._currentItems.length
-      const gap = 0.05
-      const startAngle = angle - segmentAngle / 2 + gap / 2
-      const endAngle = angle + segmentAngle / 2 - gap / 2
+      const angle = itemAngles[index];
+      const isHovered = index === this._hoveredIndex;
+      const isFocused = index === this._focusedIndex && this._keyboardActive;
+      const segmentAngle = this._config.sweepAngle / this._currentItems.length;
+      const gap = 0.05;
+      const startAngle = angle - segmentAngle / 2 + gap / 2;
+      const endAngle = angle + segmentAngle / 2 - gap / 2;
 
       const path = createArcPath(
         radius + 20,
@@ -1169,9 +1340,9 @@ export class RayMenu extends HTMLElement {
         endAngle,
         isHovered || isFocused,
         item.disabled || false,
-        index
-      )
-      svg.appendChild(path)
+        index,
+      );
+      svg.appendChild(path);
 
       const label = createLabel({
         item,
@@ -1183,30 +1354,30 @@ export class RayMenu extends HTMLElement {
         isDropTarget: this._isDropTarget,
         index,
         showKeyHint: true,
-      })
-      container.appendChild(label)
-    })
+      });
+      container.appendChild(label);
+    });
 
-    container.appendChild(svg)
-    this._createBackIndicator(container)
-    this.shadowRoot.appendChild(container)
+    container.appendChild(svg);
+    this._createBackIndicator(container);
+    this.shadowRoot.appendChild(container);
   }
 
   // --- Drift Trace ---
 
   private _removeDriftTrace(): void {
     if (this._driftTraceSvg) {
-      this._driftTraceSvg.remove()
-      this._driftTraceSvg = null
+      this._driftTraceSvg.remove();
+      this._driftTraceSvg = null;
     }
   }
 
   private _updateDriftTrace(): void {
-    if (!this.shadowRoot || !this._pointerPosition) return
+    if (!this.shadowRoot || !this._pointerPosition) return;
 
     if (!this._driftTraceSvg) {
-      this._driftTraceSvg = createDriftTraceSvg()
-      this.shadowRoot.appendChild(this._driftTraceSvg)
+      this._driftTraceSvg = createDriftTraceSvg();
+      this.shadowRoot.appendChild(this._driftTraceSvg);
     }
 
     updateDriftTrace(this._driftTraceSvg, {
@@ -1222,16 +1393,16 @@ export class RayMenu extends HTMLElement {
       sweepAngle: this._config.sweepAngle,
       showTrailPath: this._showTrailPath,
       showAnchorLine: this._showAnchorLine,
-    })
+    });
   }
 }
 
 // Register the custom element
-customElements.define('ray-menu', RayMenu)
+customElements.define("ray-menu", RayMenu);
 
 // Extend HTMLElementTagNameMap for TypeScript support
 declare global {
   interface HTMLElementTagNameMap {
-    'ray-menu': RayMenu
+    "ray-menu": RayMenu;
   }
 }

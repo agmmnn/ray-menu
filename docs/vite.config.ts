@@ -5,10 +5,18 @@ import tsConfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 import mdx from "fumadocs-mdx/vite";
 import { nitro } from "nitro/vite";
+import path from "path";
 
 export default defineConfig({
   server: {
     port: 3001,
+  },
+  resolve: {
+    alias: {
+      "ray-menu/react": path.resolve(__dirname, "../dist/react/ray-menu-react.mjs"),
+      "ray-menu/core": path.resolve(__dirname, "../dist/wc/ray-menu.mjs"),
+      "ray-menu": path.resolve(__dirname, "../dist/wc/ray-menu.mjs"),
+    },
   },
   plugins: [
     mdx(await import("./source.config")),

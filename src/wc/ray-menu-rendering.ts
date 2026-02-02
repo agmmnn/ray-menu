@@ -97,32 +97,88 @@ export function createMenuSvg(
 }
 
 /**
- * Create outer ring circle
+ * Create outer ring - circle for full 360°, arc path for partial sweeps
  */
-export function createOuterRing(radius: number): SVGCircleElement {
-  const ring = document.createElementNS(SVG_NS, "circle");
-  ring.setAttribute("class", "ray-menu-outer-ring");
-  ring.setAttribute("cx", String(radius + 20));
-  ring.setAttribute("cy", String(radius + 20));
-  ring.setAttribute("r", String(radius));
-  return ring;
+export function createOuterRing(
+  radius: number,
+  startAngle: number = -Math.PI / 2,
+  sweepAngle: number = Math.PI * 2,
+): SVGElement {
+  const center = radius + 20;
+  const isFan = Math.abs(sweepAngle) < Math.PI * 2 - 0.01;
+
+  if (isFan) {
+    // Create arc path for fan layouts
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("class", "ray-menu-outer-ring");
+
+    const endAngle = startAngle + sweepAngle;
+    const startX = center + radius * Math.cos(startAngle);
+    const startY = center + radius * Math.sin(startAngle);
+    const endX = center + radius * Math.cos(endAngle);
+    const endY = center + radius * Math.sin(endAngle);
+    const largeArcFlag = Math.abs(sweepAngle) > Math.PI ? 1 : 0;
+    const sweepFlag = sweepAngle > 0 ? 1 : 0;
+
+    path.setAttribute(
+      "d",
+      `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${endX} ${endY}`,
+    );
+    return path;
+  } else {
+    // Full circle
+    const ring = document.createElementNS(SVG_NS, "circle");
+    ring.setAttribute("class", "ray-menu-outer-ring");
+    ring.setAttribute("cx", String(center));
+    ring.setAttribute("cy", String(center));
+    ring.setAttribute("r", String(radius));
+    return ring;
+  }
 }
 
 /**
- * Create inner ring circle
+ * Create inner ring - circle for full 360°, arc path for partial sweeps
  */
 export function createInnerRing(
   radius: number,
   innerRadius: number,
   transparent: boolean,
-): SVGCircleElement {
-  const ring = document.createElementNS(SVG_NS, "circle");
-  ring.setAttribute("class", "ray-menu-inner-ring");
-  ring.setAttribute("cx", String(radius + 20));
-  ring.setAttribute("cy", String(radius + 20));
-  ring.setAttribute("r", String(innerRadius));
-  ring.setAttribute("data-transparent", String(transparent));
-  return ring;
+  startAngle: number = -Math.PI / 2,
+  sweepAngle: number = Math.PI * 2,
+): SVGElement {
+  const center = radius + 20;
+  const isFan = Math.abs(sweepAngle) < Math.PI * 2 - 0.01;
+
+  if (isFan && !transparent) {
+    // Create filled arc for fan layouts (center background)
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("class", "ray-menu-inner-ring");
+    path.setAttribute("data-transparent", String(transparent));
+
+    // Create a pie-slice from center to innerRadius
+    const endAngle = startAngle + sweepAngle;
+    const startX = center + innerRadius * Math.cos(startAngle);
+    const startY = center + innerRadius * Math.sin(startAngle);
+    const endX = center + innerRadius * Math.cos(endAngle);
+    const endY = center + innerRadius * Math.sin(endAngle);
+    const largeArcFlag = Math.abs(sweepAngle) > Math.PI ? 1 : 0;
+    const sweepFlag = sweepAngle > 0 ? 1 : 0;
+
+    path.setAttribute(
+      "d",
+      `M ${center} ${center} L ${startX} ${startY} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} ${sweepFlag} ${endX} ${endY} Z`,
+    );
+    return path;
+  } else {
+    // Full circle
+    const ring = document.createElementNS(SVG_NS, "circle");
+    ring.setAttribute("class", "ray-menu-inner-ring");
+    ring.setAttribute("cx", String(center));
+    ring.setAttribute("cy", String(center));
+    ring.setAttribute("r", String(innerRadius));
+    ring.setAttribute("data-transparent", String(transparent));
+    return ring;
+  }
 }
 
 /**
