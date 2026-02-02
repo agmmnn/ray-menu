@@ -1,0 +1,142 @@
+---
+title: Styling
+description: Customize the appearance of Ray Menu
+---
+
+# Styling
+
+Ray Menu uses CSS custom properties (variables) for theming, making it easy to customize the appearance.
+
+## CSS Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--ray-menu-bg` | `#ffffff` | Background color |
+| `--ray-menu-bg-hover` | `#f3f4f6` | Hover background |
+| `--ray-menu-text` | `#1f2937` | Text color |
+| `--ray-menu-text-muted` | `#6b7280` | Muted text color |
+| `--ray-menu-border` | `#e5e7eb` | Border color |
+| `--ray-menu-highlight` | `#3b82f6` | Highlight/accent color |
+| `--ray-menu-radius` | `12px` | Border radius |
+| `--ray-menu-shadow` | `0 10px 40px rgba(0,0,0,0.15)` | Box shadow |
+| `--ray-menu-size` | `200px` | Menu diameter |
+| `--ray-menu-item-gap` | `4px` | Gap between items |
+
+## Basic Theming
+
+```css
+ray-menu {
+  --ray-menu-bg: #1a1a2e;
+  --ray-menu-text: #eaeaea;
+  --ray-menu-highlight: #e94560;
+  --ray-menu-border: #16213e;
+}
+```
+
+## Dark Mode
+
+Ray Menu automatically respects `prefers-color-scheme`:
+
+```css
+@media (prefers-color-scheme: dark) {
+  ray-menu {
+    --ray-menu-bg: #1f2937;
+    --ray-menu-text: #f9fafb;
+    --ray-menu-border: #374151;
+    --ray-menu-bg-hover: #374151;
+  }
+}
+```
+
+Or use a class-based approach:
+
+```css
+.dark ray-menu {
+  --ray-menu-bg: #1f2937;
+  --ray-menu-text: #f9fafb;
+}
+```
+
+## React Inline Styles
+
+Pass CSS variables via the `style` prop:
+
+```tsx
+<RayMenu
+  style={{
+    '--ray-menu-bg': '#1a1a2e',
+    '--ray-menu-highlight': '#e94560',
+  } as React.CSSProperties}
+>
+  {/* items */}
+</RayMenu>
+```
+
+## Sizing
+
+Control the menu size:
+
+```css
+ray-menu {
+  --ray-menu-size: 250px;  /* larger menu */
+}
+```
+
+Or per-instance:
+
+```html
+<ray-menu style="--ray-menu-size: 180px">
+  <!-- compact menu -->
+</ray-menu>
+```
+
+## Custom Icons
+
+Style icon slots:
+
+```css
+ray-menu-item [slot="icon"] {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+ray-menu-item:hover [slot="icon"] {
+  fill: var(--ray-menu-highlight);
+}
+```
+
+## Animation
+
+Customize transitions:
+
+```css
+ray-menu {
+  --ray-menu-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+```
+
+## Examples
+
+### Minimal Theme
+
+```css
+ray-menu.minimal {
+  --ray-menu-bg: transparent;
+  --ray-menu-border: transparent;
+  --ray-menu-shadow: none;
+  --ray-menu-text: #333;
+}
+```
+
+### Glassmorphism
+
+```css
+ray-menu.glass {
+  --ray-menu-bg: rgba(255, 255, 255, 0.1);
+  --ray-menu-border: rgba(255, 255, 255, 0.2);
+  --ray-menu-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+```
+

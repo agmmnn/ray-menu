@@ -1,0 +1,208 @@
+---
+title: API Reference
+description: Complete API documentation for Ray Menu
+---
+
+# API Reference
+
+Complete reference for all Ray Menu APIs.
+
+## Web Component
+
+### `<ray-menu>`
+
+The main menu container element.
+
+#### Attributes
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `trigger` | `string` | `"both"` | Trigger method: `"contextmenu"`, `"longpress"`, or `"both"` |
+| `center-deadzone` | `number` | `30` | Pixels from center before selection starts |
+| `infinite-threshold` | `number` | `100` | Distance where infinite selection begins |
+| `edge-behavior` | `string` | `"shift"` | Edge handling: `"shift"`, `"flip"`, or `"none"` |
+| `disabled` | `boolean` | `false` | Disable the menu |
+
+#### Methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `open` | `(x: number, y: number) => void` | Open menu at coordinates |
+| `close` | `() => void` | Close the menu |
+
+#### Events
+
+| Event | Detail | Description |
+|-------|--------|-------------|
+| `ray-menu-select` | `{ value: string }` | Item selected |
+| `ray-menu-open` | `{ x: number, y: number }` | Menu opened |
+| `ray-menu-close` | `{}` | Menu closed |
+| `ray-menu-hover` | `{ value: string \| null }` | Hover changed |
+
+### `<ray-menu-item>`
+
+Individual menu item.
+
+#### Attributes
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `value` | `string` | required | Selection value |
+| `disabled` | `boolean` | `false` | Disable this item |
+
+#### Slots
+
+| Slot | Description |
+|------|-------------|
+| `default` | Item label content |
+| `icon` | Icon element |
+
+### `<ray-menu-submenu>`
+
+Nested submenu container.
+
+#### Attributes
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `label` | `string` | required | Submenu trigger label |
+| `disabled` | `boolean` | `false` | Disable submenu |
+
+---
+
+## React Components
+
+### `<RayMenu>`
+
+```tsx
+import { RayMenu } from 'ray-menu/react';
+```
+
+#### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `onSelect` | `(value: string) => void` | - | Selection callback |
+| `onOpen` | `(x: number, y: number) => void` | - | Open callback |
+| `onClose` | `() => void` | - | Close callback |
+| `onHover` | `(value: string \| null) => void` | - | Hover callback |
+| `trigger` | `"contextmenu" \| "longpress" \| "both"` | `"both"` | Trigger method |
+| `centerDeadzone` | `number` | `30` | Center deadzone |
+| `infiniteThreshold` | `number` | `100` | Infinite threshold |
+| `edgeBehavior` | `"shift" \| "flip" \| "none"` | `"shift"` | Edge behavior |
+| `disabled` | `boolean` | `false` | Disable menu |
+| `style` | `CSSProperties` | - | Inline styles |
+| `className` | `string` | - | CSS class |
+| `children` | `ReactNode` | - | Menu items |
+
+### `<RayMenuItem>`
+
+```tsx
+import { RayMenuItem } from 'ray-menu/react';
+```
+
+#### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `value` | `string` | required | Selection value |
+| `disabled` | `boolean` | `false` | Disable item |
+| `icon` | `ReactNode` | - | Icon element |
+| `children` | `ReactNode` | - | Label content |
+
+### `<RayMenuSubmenu>`
+
+```tsx
+import { RayMenuSubmenu } from 'ray-menu/react';
+```
+
+#### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `label` | `string` | required | Trigger label |
+| `disabled` | `boolean` | `false` | Disable submenu |
+| `loadItems` | `() => Promise<ReactNode>` | - | Async loader |
+| `children` | `ReactNode` | - | Static items |
+
+---
+
+## Hooks
+
+### `useRadialMenu`
+
+```tsx
+import { useRadialMenu } from 'ray-menu/react';
+```
+
+#### Options
+
+```tsx
+interface UseRadialMenuOptions {
+  items: string[];
+  onSelect?: (index: number) => void;
+  centerDeadzone?: number;
+  infiniteThreshold?: number;
+  edgeBehavior?: 'shift' | 'flip' | 'none';
+}
+```
+
+#### Returns
+
+```tsx
+interface UseRadialMenuReturn {
+  isOpen: boolean;
+  position: { x: number; y: number };
+  activeIndex: number | null;
+  items: string[];
+  open: (x: number, y: number) => void;
+  close: () => void;
+  setActiveIndex: (index: number | null) => void;
+  getItemAngle: (index: number) => number;
+  getSectorBounds: (index: number) => { start: number; end: number };
+}
+```
+
+---
+
+## Core Utilities
+
+### `calculateSector`
+
+```tsx
+import { calculateSector } from 'ray-menu/core';
+
+const sector = calculateSector(itemCount, index);
+// { startAngle: number, endAngle: number, midAngle: number }
+```
+
+### `getActiveIndex`
+
+```tsx
+import { getActiveIndex } from 'ray-menu/core';
+
+const index = getActiveIndex({
+  x: cursorX,
+  y: cursorY,
+  centerX: menuX,
+  centerY: menuY,
+  itemCount: 6,
+  deadzone: 30,
+});
+// number | null
+```
+
+### `calculateMenuPosition`
+
+```tsx
+import { calculateMenuPosition } from 'ray-menu/core';
+
+const position = calculateMenuPosition({
+  x: clickX,
+  y: clickY,
+  menuSize: 200,
+  viewport: { width: window.innerWidth, height: window.innerHeight },
+  edgeBehavior: 'shift',
+});
+// { x: number, y: number, flipped: boolean }
+```

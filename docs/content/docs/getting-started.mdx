@@ -1,0 +1,77 @@
+---
+title: Getting Started
+description: Get up and running with Ray Menu in minutes
+---
+
+# Getting Started
+
+This guide will help you add Ray Menu to your project and create your first radial menu.
+
+## Installation
+
+Install Ray Menu using your preferred package manager:
+
+```bash
+npm install ray-menu
+# or
+bun add ray-menu
+# or
+pnpm add ray-menu
+```
+
+## Basic Usage
+
+### Web Component
+
+The Web Component works in any HTML page or framework:
+
+```html
+<script type="module">
+  import 'ray-menu/wc';
+</script>
+
+<ray-menu>
+  <ray-menu-item value="copy">Copy</ray-menu-item>
+  <ray-menu-item value="paste">Paste</ray-menu-item>
+  <ray-menu-item value="cut">Cut</ray-menu-item>
+</ray-menu>
+```
+
+### React
+
+Import the React components for a more integrated experience:
+
+```tsx
+import { RayMenu, RayMenuItem } from 'ray-menu/react';
+
+function App() {
+  const handleSelect = (value: string) => {
+    console.log('Selected:', value);
+  };
+
+  return (
+    <RayMenu onSelect={handleSelect}>
+      <RayMenuItem value="copy">Copy</RayMenuItem>
+      <RayMenuItem value="paste">Paste</RayMenuItem>
+      <RayMenuItem value="cut">Cut</RayMenuItem>
+    </RayMenu>
+  );
+}
+```
+
+## How It Works
+
+Ray Menu uses a radial selection model:
+
+1. **Trigger** - Right-click or long-press to open the menu
+2. **Navigate** - Move your cursor/finger in the direction of the item
+3. **Select** - Release to select the highlighted item
+
+The menu uses **infinite radial selection** - items are selected based on the angle from center, not the distance. This makes selection fast and intuitive.
+
+## Next Steps
+
+- [Installation](/docs/installation) - Detailed installation options
+- [Web Component](/docs/web-component) - Full Web Component documentation
+- [React](/docs/react) - React hooks and components
+- [Styling](/docs/styling) - Customize the appearance

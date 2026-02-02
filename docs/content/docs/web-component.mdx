@@ -1,0 +1,118 @@
+---
+title: Web Component
+description: Using the ray-menu Web Component
+---
+
+# Web Component
+
+The `<ray-menu>` Web Component provides a framework-agnostic way to add radial menus to any web page.
+
+## Import
+
+```javascript
+import 'ray-menu/wc';
+```
+
+Or via script tag:
+
+```html
+<script type="module" src="ray-menu/wc"></script>
+```
+
+## Basic Usage
+
+```html
+<ray-menu>
+  <ray-menu-item value="copy">Copy</ray-menu-item>
+  <ray-menu-item value="paste">Paste</ray-menu-item>
+  <ray-menu-item value="cut">Cut</ray-menu-item>
+  <ray-menu-item value="delete">Delete</ray-menu-item>
+</ray-menu>
+```
+
+## Attributes
+
+### `<ray-menu>`
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `trigger` | `"contextmenu" \| "longpress" \| "both"` | `"both"` | How to trigger the menu |
+| `center-deadzone` | `number` | `30` | Radius of center deadzone in pixels |
+| `disabled` | `boolean` | `false` | Disable the menu |
+
+### `<ray-menu-item>`
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `value` | `string` | required | Value emitted on selection |
+| `disabled` | `boolean` | `false` | Disable this item |
+
+## Events
+
+### `ray-menu-select`
+
+Fired when an item is selected.
+
+```javascript
+document.querySelector('ray-menu').addEventListener('ray-menu-select', (e) => {
+  console.log('Selected:', e.detail.value);
+});
+```
+
+### `ray-menu-open`
+
+Fired when the menu opens.
+
+```javascript
+document.querySelector('ray-menu').addEventListener('ray-menu-open', (e) => {
+  console.log('Menu opened at:', e.detail.x, e.detail.y);
+});
+```
+
+### `ray-menu-close`
+
+Fired when the menu closes.
+
+```javascript
+document.querySelector('ray-menu').addEventListener('ray-menu-close', () => {
+  console.log('Menu closed');
+});
+```
+
+## Icons
+
+Use the `icon` slot to add icons:
+
+```html
+<ray-menu-item value="copy">
+  <svg slot="icon" viewBox="0 0 24 24"><!-- icon SVG --></svg>
+  Copy
+</ray-menu-item>
+```
+
+## Submenus
+
+Create nested menus with `<ray-menu-submenu>`:
+
+```html
+<ray-menu>
+  <ray-menu-item value="copy">Copy</ray-menu-item>
+  <ray-menu-submenu label="More">
+    <ray-menu-item value="option1">Option 1</ray-menu-item>
+    <ray-menu-item value="option2">Option 2</ray-menu-item>
+  </ray-menu-submenu>
+</ray-menu>
+```
+
+## Programmatic Control
+
+```javascript
+const menu = document.querySelector('ray-menu');
+
+// Open at position
+menu.open(100, 200);
+
+// Close
+menu.close();
+```
+

@@ -1,0 +1,62 @@
+---
+title: Installation
+description: How to install Ray Menu in your project
+---
+
+# Installation
+
+Ray Menu can be installed via npm, yarn, pnpm, or bun.
+
+## Package Managers
+
+```bash
+# npm
+npm install ray-menu
+
+# yarn
+yarn add ray-menu
+
+# pnpm
+pnpm add ray-menu
+
+# bun
+bun add ray-menu
+```
+
+## Package Structure
+
+Ray Menu ships with multiple entry points:
+
+| Entry Point | Description |
+|------------|-------------|
+| `ray-menu/wc` | Web Component (zero dependencies) |
+| `ray-menu/react` | React components and hooks |
+| `ray-menu/core` | Core logic (for custom implementations) |
+
+## CDN Usage
+
+You can use Ray Menu directly from a CDN for quick prototyping:
+
+```html
+<script type="module">
+  import 'https://esm.sh/ray-menu/wc';
+</script>
+
+<ray-menu>
+  <ray-menu-item value="action">Action</ray-menu-item>
+</ray-menu>
+```
+
+## TypeScript
+
+Ray Menu includes TypeScript definitions out of the box. No additional `@types` package is needed.
+
+## Peer Dependencies
+
+- **Web Component**: No dependencies
+- **React**: Requires `react` >= 18.0.0
+
+## Next Steps
+
+- [Web Component](/docs/web-component) - Use the Web Component
+- [React](/docs/react) - React integration
