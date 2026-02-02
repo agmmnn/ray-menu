@@ -13,7 +13,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "ray-menu/react": path.resolve(__dirname, "../dist/react/ray-menu-react.mjs"),
+      "ray-menu/react": path.resolve(
+        __dirname,
+        "../dist/react/ray-menu-react.mjs",
+      ),
       "ray-menu/core": path.resolve(__dirname, "../dist/wc/ray-menu.mjs"),
       "ray-menu": path.resolve(__dirname, "../dist/wc/ray-menu.mjs"),
     },
@@ -32,7 +35,7 @@ export default defineConfig({
     react(),
     // please see https://tanstack.com/start/latest/docs/framework/react/guide/hosting#nitro for guides on hosting
     nitro({
-      preset: "vercel",
+      preset: process.env.VERCEL ? "vercel" : "node-server",
       vercel: {
         entryFormat: "node",
       },

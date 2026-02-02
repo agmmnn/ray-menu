@@ -26,3 +26,6 @@ dist-ssr
 other
 test-results
 playwright-report
+.output
+.tanstack
+.vercel
