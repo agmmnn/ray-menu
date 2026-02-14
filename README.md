@@ -1,5 +1,7 @@
 # 𖤓 Ray Menu
 
+https://github.com/user-attachments/assets/a6010441-fcfc-47ee-89ff-f5f37c2f8e4e
+
 > **Infinite, fluid, and framework-agnostic radial menu for the modern web.**
 
 **Ray Menu** is a lightweight, high-performance radial (pie) menu library designed with a "headless-first" philosophy. It combines advanced geometry with smooth 3D-inspired interactions, making it perfect for complex apps, games, or creative tools on the web.
