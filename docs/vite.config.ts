@@ -13,11 +13,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "ray-menu/react": path.resolve(
-        __dirname,
-        "../dist/react/ray-menu-react.mjs",
-      ),
-      "ray-menu/core": path.resolve(__dirname, "../dist/wc/ray-menu.mjs"),
       "ray-menu": path.resolve(__dirname, "../dist/wc/ray-menu.mjs"),
     },
   },

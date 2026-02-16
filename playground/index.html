@@ -2,12 +2,1017 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Radial Menu Playground</title>
+    <title>Ray Menu - Web Component Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #18181b;
+        color: #fafafa;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      header {
+        max-width: 800px;
+        margin: 0 auto 2rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      p {
+        color: #a1a1aa;
+      }
+
+      .demo-area {
+        max-width: 800px;
+        margin: 0 auto;
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .demo-box {
+        height: 200px;
+        background: rgba(39, 39, 42, 0.5);
+        border: 2px dashed #3f3f46;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: context-menu;
+        transition: border-color 0.2s;
+      }
+
+      .demo-box:hover {
+        border-color: #71717a;
+      }
+
+      .demo-box span {
+        color: #71717a;
+      }
+
+      .controls {
+        max-width: 800px;
+        margin: 0 auto 1.5rem;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+      }
+
+      .controls h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .controls-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+      }
+
+      input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+      }
+
+      input[type="range"] {
+        width: 100%;
+      }
+
+      select {
+        background: #3f3f46;
+        color: #fafafa;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+      }
+
+      .control-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .control-item span {
+        font-size: 0.875rem;
+        color: #a1a1aa;
+      }
+
+      /* Drag & Drop Demo Styles */
+      .drag-demo {
+        max-width: 800px;
+        margin: 1.5rem auto 0;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+      }
+
+      .drag-demo h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .drag-items {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .drag-item {
+        padding: 0.75rem 1.25rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 0.5rem;
+        cursor: grab;
+        user-select: none;
+        font-weight: 500;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .drag-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      }
+
+      .drag-item:active,
+      .drag-item.dragging {
+        cursor: grabbing;
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.1);
+      }
+
+      .drop-zone {
+        height: 600px;
+        margin-top: 1rem;
+        padding: 2rem;
+        border: 2px dashed #3f3f46;
+        border-radius: 0.5rem;
+        text-align: center;
+        color: #71717a;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+
+      .drop-zone.drag-over {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+      }
+
+      /* Instant drag demo */
+      .instant-drag-demo {
+        max-width: 800px;
+        margin: 1.5rem auto 0;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+      }
+
+      .instant-drag-demo h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .file-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: rgba(63, 63, 70, 0.5);
+        border-radius: 0.5rem;
+        cursor: grab;
+        user-select: none;
+        transition: background 0.15s;
+      }
+
+      .file-item:hover {
+        background: rgba(63, 63, 70, 0.8);
+      }
+
+      .file-item.dragging {
+        opacity: 0.03;
+      }
+
+      .file-icon {
+        font-size: 1.5rem;
+      }
+
+      .file-info {
+        flex: 1;
+      }
+
+      .file-name {
+        font-weight: 500;
+      }
+
+      .file-meta {
+        font-size: 0.75rem;
+        color: #a1a1aa;
+      }
+
+      /* Icon Drag Demo */
+      .icon-drag-demo {
+        max-width: 800px;
+        margin: 1.5rem auto 0;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+      }
+
+      .icon-drag-demo h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .icon-grid {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .icon-drag-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        cursor: grab;
+        user-select: none;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        transition:
+          transform 0.15s,
+          border-color 0.15s,
+          background 0.15s;
+      }
+
+      .icon-drag-btn:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .icon-drag-btn:active,
+      .icon-drag-btn.dragging {
+        cursor: grabbing;
+        opacity: 0.3;
+        transform: scale(0.95);
+      }
+
+      #log {
+        max-width: 800px;
+        margin: 1.5rem auto 0;
+        padding: 1rem;
+        background: rgba(39, 39, 42, 0.5);
+        border-radius: 0.5rem;
+        font-family: monospace;
+        font-size: 0.875rem;
+        color: #60a5fa;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <header>
+      <h1>Ray Menu - Web Component Demo</h1>
+      <p>Right-click anywhere in the demo areas to open the radial menu.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Submenu navigation:</strong> Click items with ▸ to enter
+        submenus. Click center to close (or go back if configured). Drag: swipe
+        outward to enter, inward to go back.
+      </p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Keyboard:</strong> ←/→ navigate items, ↓/Enter/Space select,
+        ↑/Backspace go back, Escape close, 1-9 quick select.
+      </p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Async Loading:</strong> "Move to" loads folders from API.
+        "Recent" demonstrates error handling.
+      </p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Scroll Behavior:</strong> Test how menu behaves when scrolling
+        (page is intentionally tall).
+      </p>
+      <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #71717a">
+        <strong>Fan Layouts:</strong> Use start/sweep angle to create
+        half-circles, quarter-arcs, or custom sectors.
+      </p>
+    </header>
+
+    <div class="controls">
+      <h2>Configuration</h2>
+      <div class="controls-grid">
+        <label>
+          <input type="checkbox" id="infinite" checked />
+          <span>Infinite Selection</span>
+        </label>
+
+        <label>
+          <input type="checkbox" id="trailPath" />
+          <span>Show Trail Path</span>
+        </label>
+
+        <label>
+          <input type="checkbox" id="anchorLine" />
+          <span>Show Anchor Line</span>
+        </label>
+
+        <label>
+          <input type="checkbox" id="centerTransparent" checked />
+          <span>Center Transparent</span>
+        </label>
+
+        <label>
+          <input type="checkbox" id="instantDragThrough" />
+          <span>Instant Drag-Through</span>
+        </label>
+
+        <div class="control-item">
+          <span>Center Deadzone: <output id="deadzoneValue">30</output>px</span>
+          <input type="range" id="deadzone" min="10" max="60" value="30" />
+        </div>
+
+        <div class="control-item">
+          <span>Edge Behavior</span>
+          <select id="edgeBehavior">
+            <option value="flip">Flip</option>
+            <option value="shift">Shift</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <span>Scroll Behavior</span>
+          <select id="scrollBehavior">
+            <option value="close">Close on Scroll</option>
+            <option value="keep">Keep at Position</option>
+            <option value="lock">Lock Scroll</option>
+            <option value="none">None (Do Nothing)</option>
+          </select>
+        </div>
+
+        <div class="control-item">
+          <span
+            >Scroll Threshold:
+            <output id="scrollThresholdValue">10</output>px</span
+          >
+          <input
+            type="range"
+            id="scrollThreshold"
+            min="5"
+            max="100"
+            value="10"
+          />
+        </div>
+
+        <div class="control-item">
+          <span>Start Angle: <output id="startAngleValue">-90</output>°</span>
+          <input
+            type="range"
+            id="startAngle"
+            min="-180"
+            max="180"
+            value="-90"
+          />
+        </div>
+
+        <div class="control-item">
+          <span>Sweep Angle: <output id="sweepAngleValue">360</output>°</span>
+          <input type="range" id="sweepAngle" min="45" max="360" value="360" />
+        </div>
+
+        <div class="control-item">
+          <span>Quick Presets</span>
+          <select id="fanPreset">
+            <option value="full">● Full Circle (360°)</option>
+            <option value="fan-up">◓ Fan Up (180°)</option>
+            <option value="fan-down">◒ Fan Down (180°)</option>
+            <option value="fan-right">◑ Fan Right (180°)</option>
+            <option value="fan-left">◐ Fan Left (180°)</option>
+            <option value="quarter">◔ Quarter Arc (90°)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-area">
+      <div class="demo-box" id="demo1">
+        <span>Right or left click here</span>
+      </div>
+    </div>
+
+    <div class="drag-demo">
+      <h2>Drag & Drop Demo</h2>
+      <p style="color: #a1a1aa; margin-bottom: 1rem; font-size: 0.875rem">
+        Drag items to the drop zone. The radial menu will appear as a drop
+        target.
+      </p>
+      <div class="drag-items">
+        <div class="drag-item" draggable="true" data-action="move">
+          📁 Move to...
+        </div>
+        <div class="drag-item" draggable="true" data-action="copy">
+          📋 Copy to...
+        </div>
+        <div class="drag-item" draggable="true" data-action="link">
+          🔗 Link to...
+        </div>
+      </div>
+      <div class="drop-zone" id="dropZone">Drop here to choose action</div>
+    </div>
+
+    <div class="instant-drag-demo">
+      <h2>Instant Drag Demo</h2>
+      <p style="color: #a1a1aa; margin-bottom: 1rem; font-size: 0.875rem">
+        Drag a file - the menu appears immediately at cursor. Release to select
+        action.
+      </p>
+      <div class="file-list">
+        <div class="file-item" draggable="true" data-file="document.pdf">
+          <span class="file-icon">📄</span>
+          <div class="file-info">
+            <div class="file-name">document.pdf</div>
+            <div class="file-meta">2.4 MB • PDF Document</div>
+          </div>
+        </div>
+        <div class="file-item" draggable="true" data-file="photo.jpg">
+          <span class="file-icon">🖼️</span>
+          <div class="file-info">
+            <div class="file-name">photo.jpg</div>
+            <div class="file-meta">1.8 MB • JPEG Image</div>
+          </div>
+        </div>
+        <div class="file-item" draggable="true" data-file="archive.zip">
+          <span class="file-icon">📦</span>
+          <div class="file-info">
+            <div class="file-name">archive.zip</div>
+            <div class="file-meta">15.2 MB • ZIP Archive</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="icon-drag-demo">
+      <h2>Icon Drag</h2>
+      <p style="color: #a1a1aa; margin-bottom: 1rem; font-size: 0.875rem">
+        Drag an icon — radial menu appears instantly at cursor.
+      </p>
+      <div class="icon-grid">
+        <div
+          class="icon-drag-btn"
+          draggable="true"
+          data-icon="image"
+          title="Image"
+        >
+          🖼️
+        </div>
+        <div
+          class="icon-drag-btn"
+          draggable="true"
+          data-icon="video"
+          title="Video"
+        >
+          🎬
+        </div>
+        <div
+          class="icon-drag-btn"
+          draggable="true"
+          data-icon="music"
+          title="Music"
+        >
+          🎵
+        </div>
+        <div
+          class="icon-drag-btn"
+          draggable="true"
+          data-icon="doc"
+          title="Document"
+        >
+          📄
+        </div>
+        <div
+          class="icon-drag-btn"
+          draggable="true"
+          data-icon="code"
+          title="Code"
+        >
+          💻
+        </div>
+        <div
+          class="icon-drag-btn"
+          draggable="true"
+          data-icon="link"
+          title="Link"
+        >
+          🔗
+        </div>
+      </div>
+    </div>
+
+    <div id="log">Last action: none</div>
+
+    <!-- Spacer to make page scrollable for scroll behavior testing -->
+    <div
+      style="
+        height: 800px;
+        max-width: 800px;
+        margin: 1.5rem auto;
+        padding: 2rem;
+        background: rgba(39, 39, 42, 0.3);
+        border-radius: 0.5rem;
+        border: 1px dashed #3f3f46;
+      "
+    >
+      <p style="color: #71717a; text-align: center">
+        ↓ Scroll down to test scroll behavior ↓<br />
+        <span style="font-size: 0.75rem"
+          >Try opening the menu and scrolling with different scroll-behavior
+          settings</span
+        >
+      </p>
+    </div>
+
+    <!-- The Ray Menu Web Component -->
+    <ray-menu
+      id="menu"
+      radius="140"
+      inner-radius="45"
+      infinite-selection
+      center-deadzone="30"
+    ></ray-menu>
+
+    <!-- Static Dock Demo (Bottom) -->
+    <div
+      style="
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+      "
+    >
+      <ray-menu
+        id="dockMenu"
+        static
+        default-open
+        start-angle="180"
+        sweep-angle="180"
+        radius="100"
+        inner-radius="35"
+      ></ray-menu>
+    </div>
+
+    <script type="module">
+      import "../src/wc/index.ts";
+
+      const menu = document.getElementById("menu");
+      const dockMenu = document.getElementById("dockMenu");
+      const log = document.getElementById("log");
+
+      // Set dock menu items
+      dockMenu.items = [
+        { id: "home", label: "Home", icon: "🏠" },
+        { id: "search", label: "Search", icon: "🔍" },
+        { id: "settings", label: "Settings", icon: "⚙️" },
+        { id: "profile", label: "Profile", icon: "👤" },
+      ];
+
+      dockMenu.addEventListener("ray-select", (e) => {
+        log.textContent = `Dock: ${e.detail.label}`;
+      });
+
+      // Simulate async API calls
+      const simulateApiCall = (items, delay = 800) => {
+        return new Promise((resolve) => {
+          setTimeout(() => resolve(items), delay);
+        });
+      };
+
+      const simulateApiError = (message, delay = 500) => {
+        return new Promise((_, reject) => {
+          setTimeout(() => reject(new Error(message)), delay);
+        });
+      };
+
+      // Set menu items with nested submenus (including async children)
+      menu.items = [
+        { id: "copy", label: "Copy", shortcut: "⌘+C" },
+        { id: "paste", label: "Paste", shortcut: "⌘+V" },
+        { id: "cut", label: "Cut", shortcut: "⌘+X" },
+        { id: "delete", label: "Delete", shortcut: "⌦" },
+        {
+          id: "share",
+          label: "Share",
+          selectable: false,
+          children: [
+            { id: "share-email", label: "Email" },
+            { id: "share-link", label: "Copy Link" },
+            {
+              id: "share-social",
+              label: "Social",
+              selectable: false,
+              children: [
+                { id: "share-twitter", label: "Twitter" },
+                { id: "share-facebook", label: "Facebook" },
+                { id: "share-linkedin", label: "LinkedIn" },
+              ],
+            },
+          ],
+        },
+        {
+          id: "move",
+          label: "Move to",
+          selectable: false,
+          // Async children loading - simulates fetching folders from API
+          loadChildren: async () => {
+            log.textContent = "Loading folders...";
+            return simulateApiCall([
+              { id: "move-docs", label: "Documents" },
+              { id: "move-photos", label: "Photos" },
+              { id: "move-downloads", label: "Downloads" },
+              {
+                id: "move-projects",
+                label: "Projects",
+                selectable: false,
+                // Nested async loading
+                loadChildren: async () => {
+                  return simulateApiCall(
+                    [
+                      { id: "proj-web", label: "Web App" },
+                      { id: "proj-mobile", label: "Mobile App" },
+                      { id: "proj-api", label: "API Server" },
+                    ],
+                    600,
+                  );
+                },
+              },
+            ]);
+          },
+        },
+        {
+          id: "recent",
+          label: "Recent",
+          selectable: false,
+          // This will fail to demonstrate error handling
+          loadChildren: async () => {
+            log.textContent = "Loading recent files...";
+            return simulateApiError(
+              "Network error: Unable to fetch recent files",
+            );
+          },
+        },
+      ];
+
+      // Listen for selection events
+      menu.addEventListener("ray-select", (e) => {
+        log.textContent = `Selected: ${e.detail.label}`;
+        console.log("ray-select", e.detail);
+      });
+
+      menu.addEventListener("ray-open", () => {
+        log.textContent = "Menu opened";
+        console.log("Menu opened");
+      });
+
+      menu.addEventListener("ray-close", () => {
+        console.log("Menu closed");
+      });
+
+      // Submenu navigation events
+      menu.addEventListener("ray-submenu-enter", (e) => {
+        log.textContent = `Entered submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`;
+        console.log("ray-submenu-enter", e.detail);
+      });
+
+      menu.addEventListener("ray-submenu-exit", (e) => {
+        log.textContent = `Exited submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`;
+        console.log("ray-submenu-exit", e.detail);
+      });
+
+      // Async loading events
+      menu.addEventListener("ray-load-start", (e) => {
+        log.textContent = `Loading children for: ${e.detail.label}...`;
+        console.log("ray-load-start", e.detail);
+      });
+
+      menu.addEventListener("ray-load-complete", (e) => {
+        log.textContent = `Loaded children for: ${e.detail.label}`;
+        console.log("ray-load-complete", e.detail);
+      });
+
+      menu.addEventListener("ray-load-error", (e) => {
+        log.textContent = `Error loading: ${e.detail.error.message}`;
+        console.error("ray-load-error", e.detail);
+      });
+
+      // Context menu triggers
+      document.querySelectorAll(".demo-box").forEach((box) => {
+        box.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          menu.open(e.clientX, e.clientY);
+        });
+        box.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          menu.open(e.clientX, e.clientY);
+        });
+      });
+
+      // Controls
+      document.getElementById("infinite").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("infinite-selection", "");
+        } else {
+          menu.removeAttribute("infinite-selection");
+        }
+      });
+
+      document.getElementById("deadzone").addEventListener("input", (e) => {
+        const value = e.target.value;
+        document.getElementById("deadzoneValue").textContent = value;
+        menu.setAttribute("center-deadzone", value);
+      });
+
+      document
+        .getElementById("edgeBehavior")
+        .addEventListener("change", (e) => {
+          menu.setAttribute("edge-behavior", e.target.value);
+        });
+
+      document.getElementById("trailPath").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("show-trail-path", "");
+        } else {
+          menu.removeAttribute("show-trail-path");
+        }
+      });
+
+      document.getElementById("anchorLine").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("show-anchor-line", "");
+        } else {
+          menu.removeAttribute("show-anchor-line");
+        }
+      });
+
+      document
+        .getElementById("centerTransparent")
+        .addEventListener("change", (e) => {
+          if (e.target.checked) {
+            menu.removeAttribute("center-transparent"); // Default is true
+          } else {
+            menu.setAttribute("center-transparent", "false");
+          }
+        });
+
+      document
+        .getElementById("instantDragThrough")
+        .addEventListener("change", (e) => {
+          if (e.target.checked) {
+            menu.setAttribute("instant-drag-through", ""); // Enable instant entry
+          } else {
+            menu.removeAttribute("instant-drag-through"); // Default is false (dwell only)
+          }
+        });
+
+      document
+        .getElementById("scrollBehavior")
+        .addEventListener("change", (e) => {
+          menu.setAttribute("scroll-behavior", e.target.value);
+          log.textContent = `Scroll behavior: ${e.target.value}`;
+        });
+
+      document
+        .getElementById("scrollThreshold")
+        .addEventListener("input", (e) => {
+          const value = e.target.value;
+          document.getElementById("scrollThresholdValue").textContent = value;
+          menu.setAttribute("scroll-threshold", value);
+        });
+
+      // Fan Layout Controls
+      document.getElementById("startAngle").addEventListener("input", (e) => {
+        const value = e.target.value;
+        document.getElementById("startAngleValue").textContent = value;
+        menu.setAttribute("start-angle", value);
+      });
+
+      document.getElementById("sweepAngle").addEventListener("input", (e) => {
+        const value = e.target.value;
+        document.getElementById("sweepAngleValue").textContent = value;
+        menu.setAttribute("sweep-angle", value);
+      });
+
+      // Fan Preset Selector
+      const fanPresets = {
+        full: { start: -90, sweep: 360 },
+        "fan-up": { start: 180, sweep: 180 },
+        "fan-down": { start: 0, sweep: 180 },
+        "fan-right": { start: -90, sweep: 180 },
+        "fan-left": { start: 90, sweep: 180 },
+        quarter: { start: -90, sweep: 90 },
+      };
+
+      document.getElementById("fanPreset").addEventListener("change", (e) => {
+        const preset = fanPresets[e.target.value];
+        if (preset) {
+          // Update sliders
+          document.getElementById("startAngle").value = preset.start;
+          document.getElementById("startAngleValue").textContent = preset.start;
+          document.getElementById("sweepAngle").value = preset.sweep;
+          document.getElementById("sweepAngleValue").textContent = preset.sweep;
+          // Apply to menu
+          menu.setAttribute("start-angle", preset.start);
+          menu.setAttribute("sweep-angle", preset.sweep);
+          log.textContent = `Preset: ${e.target.value} (${preset.start}° / ${preset.sweep}°)`;
+        }
+      });
+
+      // --- Drag & Drop Demo ---
+      const dropZone = document.getElementById("dropZone");
+      let draggedData = null;
+
+      // Handle drag start on draggable items
+      document.querySelectorAll(".drag-item").forEach((item) => {
+        item.addEventListener("dragstart", (e) => {
+          draggedData = {
+            action: item.dataset.action,
+            text: item.textContent,
+          };
+          e.dataTransfer.setData("text/plain", JSON.stringify(draggedData));
+          item.classList.add("dragging");
+        });
+
+        item.addEventListener("dragend", (e) => {
+          item.classList.remove("dragging");
+          draggedData = null;
+        });
+      });
+
+      // Handle drop zone events
+      dropZone.addEventListener("dragenter", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+
+        // Open menu as drop target at drop zone center
+        const rect = dropZone.getBoundingClientRect();
+        menu.openAsDropTarget(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+        );
+      });
+
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        // Update menu hover based on cursor position
+        menu.updateHoverFromPoint(e.clientX, e.clientY);
+      });
+
+      dropZone.addEventListener("dragleave", (e) => {
+        // Only handle if actually leaving the drop zone
+        if (!dropZone.contains(e.relatedTarget)) {
+          dropZone.classList.remove("drag-over");
+          menu.cancelDrop();
+        }
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+
+        // Trigger drop on the menu with the dragged data
+        const result = menu.dropOnHovered(draggedData);
+
+        if (result) {
+          log.textContent = `Dropped "${draggedData?.text}" → "${result.label}"`;
+        } else {
+          log.textContent = "Drop cancelled (no selection)";
+        }
+      });
+
+      // Listen for ray-drop events
+      menu.addEventListener("ray-drop", (e) => {
+        console.log("ray-drop event:", e.detail);
+        log.textContent = `Drop: ${e.detail.data?.text} → ${e.detail.item.label}`;
+      });
+
+      // Listen for spring-load events (hovering over item with children)
+      menu.addEventListener("ray-spring-load", (e) => {
+        console.log("ray-spring-load event:", e.detail);
+        log.textContent = `Spring-load triggered: ${e.detail.label}`;
+      });
+
+      // --- Instant Drag Demo ---
+      // Menu appears immediately when drag starts
+      let instantDragData = null;
+
+      document.querySelectorAll(".file-item").forEach((item) => {
+        item.addEventListener("dragstart", (e) => {
+          instantDragData = {
+            file: item.dataset.file,
+            name: item.querySelector(".file-name").textContent,
+          };
+          e.dataTransfer.setData("text/plain", JSON.stringify(instantDragData));
+          item.classList.add("dragging");
+
+          // Open menu immediately at cursor position
+          menu.openAsDropTarget(e.clientX, e.clientY);
+        });
+
+        item.addEventListener("drag", (e) => {
+          // Update menu hover during drag (note: drag event may have 0,0 coords at end)
+          if (e.clientX !== 0 || e.clientY !== 0) {
+            menu.updateHoverFromPoint(e.clientX, e.clientY);
+          }
+        });
+
+        item.addEventListener("dragend", (e) => {
+          item.classList.remove("dragging");
+
+          // Trigger drop on release
+          if (menu.isOpen) {
+            const result = menu.dropOnHovered(instantDragData);
+            if (result) {
+              log.textContent = `File "${instantDragData?.name}" → ${result.label}`;
+            } else {
+              log.textContent = `Drag cancelled for "${instantDragData?.name}"`;
+              menu.cancelDrop();
+            }
+          }
+
+          instantDragData = null;
+        });
+      });
+
+      // --- Icon Drag Demo ---
+      let iconDragData = null;
+
+      document.querySelectorAll(".icon-drag-btn").forEach((btn) => {
+        btn.addEventListener("dragstart", (e) => {
+          iconDragData = { type: btn.dataset.icon, label: btn.title };
+          e.dataTransfer.setData("text/plain", btn.dataset.icon);
+          btn.classList.add("dragging");
+          menu.openAsDropTarget(e.clientX, e.clientY);
+        });
+
+        btn.addEventListener("drag", (e) => {
+          if (e.clientX !== 0 || e.clientY !== 0) {
+            menu.updateHoverFromPoint(e.clientX, e.clientY);
+          }
+        });
+
+        btn.addEventListener("dragend", () => {
+          btn.classList.remove("dragging");
+          if (menu.isOpen) {
+            const result = menu.dropOnHovered(iconDragData);
+            if (result) {
+              log.textContent = `Icon "${iconDragData?.label}" → ${result.label}`;
+            } else {
+              log.textContent = `Drag cancelled for "${iconDragData?.label}"`;
+              menu.cancelDrop();
+            }
+          }
+          iconDragData = null;
+        });
+      });
+
+      // Prevent default on document to allow drag anywhere
+      document.addEventListener("dragover", (e) => {
+        // Only prevent default if menu is open as drop target
+        if (menu.isOpen && menu.isDropTarget) {
+          e.preventDefault();
+        }
+      });
+    </script>
   </body>
 </html>

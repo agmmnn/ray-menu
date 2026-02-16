@@ -9,69 +9,91 @@ This guide will help you add Ray Menu to your project and create your first radi
 
 ## Installation
 
-Install Ray Menu using your preferred package manager:
-
 ```bash
 npm install ray-menu
-# or
-bun add ray-menu
-# or
-pnpm add ray-menu
 ```
 
 ## Basic Usage
 
-### Web Component
-
-The Web Component works in any HTML page or framework:
-
 ```html
 <script type="module">
-  import 'ray-menu/wc';
+  import 'ray-menu';
 </script>
 
-<ray-menu>
-  <ray-menu-item value="copy">Copy</ray-menu-item>
-  <ray-menu-item value="paste">Paste</ray-menu-item>
-  <ray-menu-item value="cut">Cut</ray-menu-item>
-</ray-menu>
+<ray-menu id="menu"></ray-menu>
+
+<script>
+  const menu = document.getElementById('menu');
+  menu.items = [
+    { id: 'copy', label: 'Copy', shortcut: '⌘C' },
+    { id: 'paste', label: 'Paste', shortcut: '⌘V' },
+    { id: 'cut', label: 'Cut', shortcut: '⌘X' },
+    { id: 'delete', label: 'Delete', shortcut: '⌫' },
+  ];
+
+  // Open on right-click
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    menu.open(e.clientX, e.clientY);
+  });
+
+  // Handle selection
+  menu.addEventListener('ray-select', (e) => {
+    console.log('Selected:', e.detail.label);
+  });
+</script>
 ```
 
-### React
+## Nested Submenus
 
-Import the React components for a more integrated experience:
+Items with `children` automatically create submenus:
 
-```tsx
-import { RayMenu, RayMenuItem } from 'ray-menu/react';
+```js
+menu.items = [
+  { id: 'copy', label: 'Copy' },
+  {
+    id: 'share',
+    label: 'Share',
+    selectable: false,
+    children: [
+      { id: 'email', label: 'Email' },
+      { id: 'link', label: 'Copy Link' },
+      { id: 'social', label: 'Social' },
+    ],
+  },
+];
+```
 
-function App() {
-  const handleSelect = (value: string) => {
-    console.log('Selected:', value);
-  };
+## Async Submenus
 
-  return (
-    <RayMenu onSelect={handleSelect}>
-      <RayMenuItem value="copy">Copy</RayMenuItem>
-      <RayMenuItem value="paste">Paste</RayMenuItem>
-      <RayMenuItem value="cut">Cut</RayMenuItem>
-    </RayMenu>
-  );
-}
+Load submenu items dynamically with `loadChildren`:
+
+```js
+menu.items = [
+  {
+    id: 'move',
+    label: 'Move to',
+    selectable: false,
+    loadChildren: async () => {
+      const folders = await fetchFolders();
+      return folders.map(f => ({ id: f.id, label: f.name }));
+    },
+  },
+];
 ```
 
 ## How It Works
 
 Ray Menu uses a radial selection model:
 
-1. **Trigger** - Right-click or long-press to open the menu
-2. **Navigate** - Move your cursor/finger in the direction of the item
-3. **Select** - Release to select the highlighted item
+1. **Trigger** - Right-click or programmatically call `menu.open(x, y)`
+2. **Navigate** - Move your cursor in the direction of the item
+3. **Select** - Click or release to select the highlighted item
 
-The menu uses **infinite radial selection** - items are selected based on the angle from center, not the distance. This makes selection fast and intuitive.
+The menu uses **infinite radial selection** - items are selected based on angle from center, not distance.
 
 ## Next Steps
 
-- [Installation](/docs/installation) - Detailed installation options
-- [Web Component](/docs/web-component) - Full Web Component documentation
-- [React](/docs/react) - React hooks and components
-- [Styling](/docs/styling) - Customize the appearance
+- [Web Component](/docs/web-component) - Full attribute and API reference
+- [Styling](/docs/styling) - Customize with CSS variables
+- [API Reference](/docs/api-reference) - Complete API docs

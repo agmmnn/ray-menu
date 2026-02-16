@@ -184,6 +184,7 @@ export const RAY_MENU_STYLES = `
 
   .ray-menu-label {
     position: absolute;
+    z-index: 1;
     transform: translate(-50%, -50%);
     background: var(--ray-bg);
     color: var(--ray-text);

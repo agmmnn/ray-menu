@@ -5,52 +5,44 @@ description: Welcome to Ray Menu - A framework-agnostic radial menu library
 
 # Welcome to Ray Menu
 
-Ray Menu is a modern, framework-agnostic radial/pie menu library built with TypeScript. It provides a Web Component for universal use and first-class React bindings.
+Ray Menu is a modern, framework-agnostic radial/pie menu library built with TypeScript. It ships as a zero-dependency Web Component that works everywhere.
 
 ## Key Features
 
 - **Zero Dependencies** - Pure TypeScript core with no external dependencies
-- **Framework Agnostic** - Works anywhere with the Web Component, plus React bindings
+- **Framework Agnostic** - Works anywhere as a Web Component
 - **Infinite Radial Selection** - Sectors extend infinitely outward based on angle
 - **Keyboard Navigation** - Full keyboard support for accessibility
 - **Nested Submenus** - Support for async-loaded submenus
 - **CSS Theming** - Customize with CSS variables
+- **Drag & Drop** - Built-in drop target mode
 
 ## Quick Start
 
-### Web Component
-
 ```html
 <script type="module">
-  import 'ray-menu/wc';
+  import 'ray-menu';
 </script>
 
-<ray-menu>
-  <ray-menu-item value="copy">Copy</ray-menu-item>
-  <ray-menu-item value="paste">Paste</ray-menu-item>
-  <ray-menu-item value="cut">Cut</ray-menu-item>
-</ray-menu>
-```
+<ray-menu id="menu"></ray-menu>
 
-### React
+<script>
+  const menu = document.getElementById('menu');
+  menu.items = [
+    { id: 'copy', label: 'Copy', shortcut: '⌘C' },
+    { id: 'paste', label: 'Paste', shortcut: '⌘V' },
+    { id: 'cut', label: 'Cut', shortcut: '⌘X' },
+  ];
 
-```tsx
-import { TheHelm, useRadialMenu } from 'ray-menu/react';
-
-const items = [
-  { id: 'copy', label: 'Copy' },
-  { id: 'paste', label: 'Paste' },
-  { id: 'cut', label: 'Cut' },
-];
-
-function App() {
-  const menu = useRadialMenu({
-    items,
-    onSelect: (item) => console.log('Selected:', item.label),
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    menu.open(e.clientX, e.clientY);
   });
 
-  return <TheHelm menu={menu} />;
-}
+  menu.addEventListener('ray-select', (e) => {
+    console.log('Selected:', e.detail.label);
+  });
+</script>
 ```
 
 ## How It Works
@@ -69,5 +61,5 @@ The menu uses **infinite radial selection** - items are selected based on the an
   <Card title="Getting Started" href="/docs/getting-started" />
   <Card title="Installation" href="/docs/installation" />
   <Card title="Web Component" href="/docs/web-component" />
-  <Card title="React" href="/docs/react" />
+  <Card title="Styling" href="/docs/styling" />
 </Cards>

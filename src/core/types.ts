@@ -7,7 +7,7 @@ import type { Point } from './angle'
 export interface MenuItem {
   id: string
   label: string
-  icon?: React.ReactNode
+  icon?: string
   shortcut?: string
   disabled?: boolean
   /** Whether this item can be selected. Defaults to true. Set to false for items that should only open submenus. */

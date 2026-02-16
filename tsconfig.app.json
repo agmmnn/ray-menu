@@ -13,17 +13,12 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "jsx": "react-jsx",
 
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
       "@core": ["src/core/index.ts"],
-      "@core/*": ["src/core/*"],
-      "@components": ["src/components/index.ts"],
-      "@components/*": ["src/components/*"],
-      "@hooks": ["src/hooks/index.ts"],
-      "@hooks/*": ["src/hooks/*"]
+      "@core/*": ["src/core/*"]
     },
 
     "strict": true,

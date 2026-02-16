@@ -3,140 +3,50 @@ title: React
 description: React integration for Ray Menu
 ---
 
-# React
+# React Bindings
 
-Ray Menu provides first-class React support with components and hooks.
+React bindings that wrap the `<ray-menu>` Web Component are planned for a future release.
 
-## Import
-
-```tsx
-import { RayMenu, RayMenuItem, useRadialMenu } from 'ray-menu/react';
-```
-
-## Components
-
-### Basic Usage
+In the meantime, you can use the Web Component directly in React:
 
 ```tsx
-import { RayMenu, RayMenuItem } from 'ray-menu/react';
+import { useEffect, useRef } from 'react';
+import 'ray-menu';
 
 function App() {
+  const menuRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const el = document.createElement('ray-menu') as any;
+    el.items = [
+      { id: 'copy', label: 'Copy', shortcut: '⌘C' },
+      { id: 'paste', label: 'Paste', shortcut: '⌘V' },
+      { id: 'cut', label: 'Cut', shortcut: '⌘X' },
+    ];
+    document.body.appendChild(el);
+    menuRef.current = el;
+
+    el.addEventListener('ray-select', (e: CustomEvent) => {
+      console.log('Selected:', e.detail.label);
+    });
+
+    return () => el.remove();
+  }, []);
+
   return (
-    <RayMenu onSelect={(value) => console.log(value)}>
-      <RayMenuItem value="copy">Copy</RayMenuItem>
-      <RayMenuItem value="paste">Paste</RayMenuItem>
-      <RayMenuItem value="cut">Cut</RayMenuItem>
-    </RayMenu>
+    <div
+      onContextMenu={(e) => {
+        e.preventDefault();
+        (menuRef.current as any)?.open(e.clientX, e.clientY);
+      }}
+    >
+      Right-click here
+    </div>
   );
 }
 ```
 
-### Props
+## Next Steps
 
-#### `<RayMenu>`
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `onSelect` | `(value: string) => void` | - | Called when item is selected |
-| `onOpen` | `(x: number, y: number) => void` | - | Called when menu opens |
-| `onClose` | `() => void` | - | Called when menu closes |
-| `trigger` | `"contextmenu" \| "longpress" \| "both"` | `"both"` | Trigger method |
-| `centerDeadzone` | `number` | `30` | Center deadzone radius |
-| `disabled` | `boolean` | `false` | Disable the menu |
-| `children` | `ReactNode` | - | Menu items |
-
-#### `<RayMenuItem>`
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string` | required | Selection value |
-| `disabled` | `boolean` | `false` | Disable item |
-| `icon` | `ReactNode` | - | Icon element |
-| `children` | `ReactNode` | - | Label content |
-
-## Hooks
-
-### `useRadialMenu`
-
-For custom implementations, use the `useRadialMenu` hook:
-
-```tsx
-import { useRadialMenu } from 'ray-menu/react';
-
-function CustomMenu() {
-  const {
-    isOpen,
-    position,
-    activeIndex,
-    items,
-    open,
-    close,
-    setActiveIndex,
-  } = useRadialMenu({
-    items: ['Copy', 'Paste', 'Cut'],
-    onSelect: (index) => console.log('Selected:', index),
-  });
-
-  return (
-    // Custom rendering...
-  );
-}
-```
-
-#### Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `items` | `string[]` | Menu item labels |
-| `onSelect` | `(index: number) => void` | Selection callback |
-| `centerDeadzone` | `number` | Center deadzone radius |
-| `edgeBehavior` | `"shift" \| "flip" \| "none"` | Edge handling |
-
-#### Returns
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `isOpen` | `boolean` | Menu open state |
-| `position` | `{ x: number, y: number }` | Menu position |
-| `activeIndex` | `number \| null` | Currently highlighted item |
-| `items` | `string[]` | Menu items |
-| `open` | `(x: number, y: number) => void` | Open menu |
-| `close` | `() => void` | Close menu |
-| `setActiveIndex` | `(index: number \| null) => void` | Set active item |
-
-## Submenus
-
-```tsx
-import { RayMenu, RayMenuItem, RayMenuSubmenu } from 'ray-menu/react';
-
-function App() {
-  return (
-    <RayMenu onSelect={console.log}>
-      <RayMenuItem value="copy">Copy</RayMenuItem>
-      <RayMenuSubmenu label="More">
-        <RayMenuItem value="option1">Option 1</RayMenuItem>
-        <RayMenuItem value="option2">Option 2</RayMenuItem>
-      </RayMenuSubmenu>
-    </RayMenu>
-  );
-}
-```
-
-## Async Submenus
-
-Load submenu items dynamically:
-
-```tsx
-<RayMenuSubmenu
-  label="Load More"
-  loadItems={async () => {
-    const items = await fetchItems();
-    return items.map(item => (
-      <RayMenuItem key={item.id} value={item.id}>
-        {item.label}
-      </RayMenuItem>
-    ));
-  }}
-/>
-```
-
+- [Web Component](/docs/web-component) - Full Web Component API
+- [API Reference](/docs/api-reference) - Complete API docs
