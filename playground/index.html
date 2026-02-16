@@ -516,6 +516,7 @@
           class="icon-drag-btn"
           draggable="true"
           data-icon="doc"
+          data-hide-on-drag
           title="Document"
         >
           📄
@@ -524,6 +525,7 @@
           class="icon-drag-btn"
           draggable="true"
           data-icon="code"
+          data-hide-on-drag
           title="Code"
         >
           💻
@@ -532,6 +534,7 @@
           class="icon-drag-btn"
           draggable="true"
           data-icon="link"
+          data-hide-on-drag
           title="Link"
         >
           🔗
@@ -982,6 +985,11 @@
           iconDragData = { type: btn.dataset.icon, label: btn.title };
           e.dataTransfer.setData("text/plain", btn.dataset.icon);
           btn.classList.add("dragging");
+          if (btn.hasAttribute("data-hide-on-drag")) {
+            requestAnimationFrame(() => {
+              btn.style.visibility = "hidden";
+            });
+          }
           menu.openAsDropTarget(e.clientX, e.clientY);
         });
 
@@ -993,6 +1001,7 @@
 
         btn.addEventListener("dragend", () => {
           btn.classList.remove("dragging");
+          btn.style.visibility = "";
           if (menu.isOpen) {
             const result = menu.dropOnHovered(iconDragData);
             if (result) {

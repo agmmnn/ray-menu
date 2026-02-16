@@ -26,6 +26,7 @@ dist-ssr
 other
 test-results
 playwright-report
+.playwright-mcp
 .output
 .tanstack
 .vercel

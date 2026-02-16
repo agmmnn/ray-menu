@@ -13,7 +13,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "ray-menu": path.resolve(__dirname, "../dist/wc/ray-menu.mjs"),
+      "ray-menu/react": path.resolve(__dirname, "../src/react/index.ts"),
+      "ray-menu": path.resolve(__dirname, "../src/wc/index.ts"),
     },
   },
   plugins: [

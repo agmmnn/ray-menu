@@ -42,6 +42,16 @@
         "types": "./dist/wc/core/index.d.ts",
         "default": "./dist/wc/ray-menu.mjs"
       }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react/react/index.d.ts",
+        "default": "./dist/react/ray-menu-react.mjs"
+      },
+      "require": {
+        "types": "./dist/react/react/index.d.ts",
+        "default": "./dist/react/ray-menu-react.cjs"
+      }
     }
   },
   "files": [
@@ -50,7 +60,9 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite --config playground/vite.config.ts",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --mode react",
+    "build:wc": "vite build",
+    "build:react": "vite build --mode react",
     "build:watch": "vite build --watch",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -58,11 +70,20 @@
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
   },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^25.2.3",
+    "@types/react": "^19.2.14",
     "ajv": "^8.18.0",
     "eslint": "^10.0.0",
     "globals": "^17.3.0",

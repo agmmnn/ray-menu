@@ -3,39 +3,39 @@
  * Determines optimal menu orientation based on pointer position and viewport constraints
  */
 
-import type { Point } from './angle'
-import type { EdgeState } from './edge'
-import { normalizeAngleSigned, toDegrees } from './angle'
+import type { Point } from "./angle";
+import type { EdgeState } from "./edge";
+import { normalizeAngleSigned, toDegrees } from "./angle";
 
-export type FlipMode = 'none' | 'horizontal' | 'vertical' | 'both'
+export type FlipMode = "none" | "horizontal" | "vertical" | "both";
 
 export interface FlipState {
-  mode: FlipMode
+  mode: FlipMode;
   /** Whether horizontal flip is active */
-  flipX: boolean
+  flipX: boolean;
   /** Whether vertical flip is active */
-  flipY: boolean
+  flipY: boolean;
   /** Transform scale values */
-  scaleX: number
-  scaleY: number
+  scaleX: number;
+  scaleY: number;
   /** CSS transform string */
-  transform: string
+  transform: string;
 }
 
 export interface FlipConfig {
   /** Enable automatic flipping based on position */
-  auto: boolean
+  auto: boolean;
   /** Threshold (0-1) of viewport width/height before flipping */
-  threshold: number
+  threshold: number;
   /** Flip mode preference when auto is false */
-  mode: FlipMode
+  mode: FlipMode;
 }
 
 export const DEFAULT_FLIP_CONFIG: FlipConfig = {
   auto: true,
   threshold: 0.6,
-  mode: 'none',
-}
+  mode: "none",
+};
 
 /**
  * Calculate flip state based on menu position relative to viewport
@@ -45,34 +45,34 @@ export function calculateFlipState(
   position: Point,
   viewportWidth: number,
   viewportHeight: number,
-  config: FlipConfig = DEFAULT_FLIP_CONFIG
+  config: FlipConfig = DEFAULT_FLIP_CONFIG,
 ): FlipState {
   if (!config.auto) {
-    return getFlipStateFromMode(config.mode)
+    return getFlipStateFromMode(config.mode);
   }
 
-  const xRatio = position.x / viewportWidth
-  const yRatio = position.y / viewportHeight
+  const xRatio = position.x / viewportWidth;
+  const yRatio = position.y / viewportHeight;
 
-  const flipX = xRatio > config.threshold
-  const flipY = yRatio > config.threshold
+  const flipX = xRatio > config.threshold;
+  const flipY = yRatio > config.threshold;
 
-  let mode: FlipMode = 'none'
-  if (flipX && flipY) mode = 'both'
-  else if (flipX) mode = 'horizontal'
-  else if (flipY) mode = 'vertical'
+  let mode: FlipMode = "none";
+  if (flipX && flipY) mode = "both";
+  else if (flipX) mode = "horizontal";
+  else if (flipY) mode = "vertical";
 
-  return getFlipStateFromMode(mode)
+  return getFlipStateFromMode(mode);
 }
 
 /**
  * Get flip state from a specific mode
  */
 export function getFlipStateFromMode(mode: FlipMode): FlipState {
-  const flipX = mode === 'horizontal' || mode === 'both'
-  const flipY = mode === 'vertical' || mode === 'both'
-  const scaleX = flipX ? -1 : 1
-  const scaleY = flipY ? -1 : 1
+  const flipX = mode === "horizontal" || mode === "both";
+  const flipY = mode === "vertical" || mode === "both";
+  const scaleX = flipX ? -1 : 1;
+  const scaleY = flipY ? -1 : 1;
 
   return {
     mode,
@@ -81,7 +81,7 @@ export function getFlipStateFromMode(mode: FlipMode): FlipState {
     scaleX,
     scaleY,
     transform: `scale(${scaleX}, ${scaleY})`,
-  }
+  };
 }
 
 /**
@@ -91,20 +91,20 @@ export function getFlipStateFromMode(mode: FlipMode): FlipState {
 export function calculateSmartFlip(
   _position: Point,
   _menuRadius: number,
-  edgeState: EdgeState
+  edgeState: EdgeState,
 ): FlipState {
-  const { available, constrained } = edgeState
+  const { available, constrained } = edgeState;
 
   // Determine flip based on which side has more space
-  const flipX = constrained.right && available.left > available.right
-  const flipY = constrained.bottom && available.top > available.bottom
+  const flipX = constrained.right && available.left > available.right;
+  const flipY = constrained.bottom && available.top > available.bottom;
 
-  let mode: FlipMode = 'none'
-  if (flipX && flipY) mode = 'both'
-  else if (flipX) mode = 'horizontal'
-  else if (flipY) mode = 'vertical'
+  let mode: FlipMode = "none";
+  if (flipX && flipY) mode = "both";
+  else if (flipX) mode = "horizontal";
+  else if (flipY) mode = "vertical";
 
-  return getFlipStateFromMode(mode)
+  return getFlipStateFromMode(mode);
 }
 
 /**
@@ -112,14 +112,14 @@ export function calculateSmartFlip(
  * Ensures menu items maintain their visual order after flipping
  */
 export function getFlipRotationAdjustment(flipState: FlipState): number {
-  if (flipState.mode === 'both') {
-    return Math.PI
+  if (flipState.mode === "both") {
+    return Math.PI;
   } else if (flipState.flipX) {
-    return Math.PI
+    return Math.PI;
   } else if (flipState.flipY) {
-    return Math.PI
+    return Math.PI;
   }
-  return 0
+  return 0;
 }
 
 /**
@@ -127,25 +127,25 @@ export function getFlipRotationAdjustment(flipState: FlipState): number {
  */
 export function adjustAnglesForFlip(
   angles: number[],
-  flipState: FlipState
+  flipState: FlipState,
 ): number[] {
-  if (flipState.mode === 'none') return angles
+  if (flipState.mode === "none") return angles;
 
   return angles.map((angle) => {
-    let adjusted = angle
+    let adjusted = angle;
 
     if (flipState.flipX) {
       // Mirror horizontally: angle -> PI - angle
-      adjusted = Math.PI - adjusted
+      adjusted = Math.PI - adjusted;
     }
 
     if (flipState.flipY) {
       // Mirror vertically: angle -> -angle
-      adjusted = -adjusted
+      adjusted = -adjusted;
     }
 
-    return normalizeAngleSigned(adjusted)
-  })
+    return normalizeAngleSigned(adjusted);
+  });
 }
 
 /**
@@ -154,16 +154,16 @@ export function adjustAnglesForFlip(
  */
 export function getOptimalArcDirection(
   pointerAngle: number,
-  flipState: FlipState
-): 'cw' | 'ccw' {
-  const degrees = toDegrees(pointerAngle)
+  flipState: FlipState,
+): "cw" | "ccw" {
+  const degrees = toDegrees(pointerAngle);
 
   // Default to clockwise, flip to CCW based on quadrant and flip state
-  const inLeftHalf = Math.abs(degrees) > 90
+  const inLeftHalf = Math.abs(degrees) > 90;
 
   if (flipState.flipX) {
-    return inLeftHalf ? 'cw' : 'ccw'
+    return inLeftHalf ? "cw" : "ccw";
   }
 
-  return inLeftHalf ? 'ccw' : 'cw'
+  return inLeftHalf ? "ccw" : "cw";
 }

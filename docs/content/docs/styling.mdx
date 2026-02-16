@@ -9,18 +9,18 @@ Ray Menu uses CSS custom properties (variables) for theming, making it easy to c
 
 ## CSS Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `--ray-menu-bg` | `#ffffff` | Background color |
-| `--ray-menu-bg-hover` | `#f3f4f6` | Hover background |
-| `--ray-menu-text` | `#1f2937` | Text color |
-| `--ray-menu-text-muted` | `#6b7280` | Muted text color |
-| `--ray-menu-border` | `#e5e7eb` | Border color |
-| `--ray-menu-highlight` | `#3b82f6` | Highlight/accent color |
-| `--ray-menu-radius` | `12px` | Border radius |
-| `--ray-menu-shadow` | `0 10px 40px rgba(0,0,0,0.15)` | Box shadow |
-| `--ray-menu-size` | `200px` | Menu diameter |
-| `--ray-menu-item-gap` | `4px` | Gap between items |
+| Variable                | Default                        | Description            |
+| ----------------------- | ------------------------------ | ---------------------- |
+| `--ray-menu-bg`         | `#ffffff`                      | Background color       |
+| `--ray-menu-bg-hover`   | `#f3f4f6`                      | Hover background       |
+| `--ray-menu-text`       | `#1f2937`                      | Text color             |
+| `--ray-menu-text-muted` | `#6b7280`                      | Muted text color       |
+| `--ray-menu-border`     | `#e5e7eb`                      | Border color           |
+| `--ray-menu-highlight`  | `#3b82f6`                      | Highlight/accent color |
+| `--ray-menu-radius`     | `12px`                         | Border radius          |
+| `--ray-menu-shadow`     | `0 10px 40px rgba(0,0,0,0.15)` | Box shadow             |
+| `--ray-menu-size`       | `200px`                        | Menu diameter          |
+| `--ray-menu-item-gap`   | `4px`                          | Gap between items      |
 
 ## Basic Theming
 
@@ -63,10 +63,12 @@ Pass CSS variables via the `style` prop:
 
 ```tsx
 <RayMenu
-  style={{
-    '--ray-menu-bg': '#1a1a2e',
-    '--ray-menu-highlight': '#e94560',
-  } as React.CSSProperties}
+  style={
+    {
+      "--ray-menu-bg": "#1a1a2e",
+      "--ray-menu-highlight": "#e94560",
+    } as React.CSSProperties
+  }
 >
   {/* items */}
 </RayMenu>
@@ -78,7 +80,7 @@ Control the menu size:
 
 ```css
 ray-menu {
-  --ray-menu-size: 250px;  /* larger menu */
+  --ray-menu-size: 250px; /* larger menu */
 }
 ```
 
@@ -139,4 +141,3 @@ ray-menu.glass {
   backdrop-filter: blur(10px);
 }
 ```
-

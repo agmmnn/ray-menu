@@ -2,59 +2,59 @@
  * Core type definitions for the radial menu
  */
 
-import type { Point } from './angle'
+import type { Point } from "./angle";
 
 export interface MenuItem {
-  id: string
-  label: string
-  icon?: string
-  shortcut?: string
-  disabled?: boolean
+  id: string;
+  label: string;
+  icon?: string;
+  shortcut?: string;
+  disabled?: boolean;
   /** Whether this item can be selected. Defaults to true. Set to false for items that should only open submenus. */
-  selectable?: boolean
-  children?: MenuItem[]
+  selectable?: boolean;
+  children?: MenuItem[];
   /** Async function to load children dynamically. Called when submenu is entered if children is empty. */
-  loadChildren?: () => Promise<MenuItem[]>
-  onSelect?: () => void
+  loadChildren?: () => Promise<MenuItem[]>;
+  onSelect?: () => void;
 }
 
 export interface MenuState {
-  isOpen: boolean
-  position: Point
-  activeItemId: string | null
-  hoveredItemId: string | null
-  submenuStack: string[]
+  isOpen: boolean;
+  position: Point;
+  activeItemId: string | null;
+  hoveredItemId: string | null;
+  submenuStack: string[];
 }
 
-export type EdgeBehavior = 'shift' | 'flip' | 'none'
+export type EdgeBehavior = "shift" | "flip" | "none";
 
 export interface MenuConfig {
   /** Radius of the main menu ring */
-  radius: number
+  radius: number;
   /** Inner dead zone radius */
-  innerRadius: number
+  innerRadius: number;
   /** Angular gap between items (radians) */
-  gap: number
+  gap: number;
   /** Start angle for item distribution */
-  startAngle: number
+  startAngle: number;
   /** Total angular span for items */
-  sweepAngle: number
+  sweepAngle: number;
   /** Animation duration in ms */
-  animationDuration: number
+  animationDuration: number;
   /** Enable edge detection and repositioning */
-  edgeDetection: boolean
+  edgeDetection: boolean;
   /** Enable smart flip behavior */
-  smartFlip: boolean
+  smartFlip: boolean;
   /** Show drift trace trail */
-  showDriftTrace: boolean
+  showDriftTrace: boolean;
   /** Enable infinite radial selection - sectors extend infinitely outward */
-  infiniteSelection: boolean
+  infiniteSelection: boolean;
   /** Center dead zone radius - no selection within this radius */
-  centerDeadzone: number
+  centerDeadzone: number;
   /** Maximum distance for infinite selection (0 = truly infinite) */
-  infiniteThreshold: number
+  infiniteThreshold: number;
   /** Edge behavior mode */
-  edgeBehavior: EdgeBehavior
+  edgeBehavior: EdgeBehavior;
 }
 
 export const DEFAULT_CONFIG: MenuConfig = {
@@ -70,29 +70,34 @@ export const DEFAULT_CONFIG: MenuConfig = {
   infiniteSelection: true,
   centerDeadzone: 30,
   infiniteThreshold: 0, // 0 = truly infinite
-  edgeBehavior: 'flip',
-}
+  edgeBehavior: "flip",
+};
 
 export interface RadialMenuProps {
-  items: MenuItem[]
-  config?: Partial<MenuConfig>
-  onSelect?: (item: MenuItem) => void
-  onOpen?: (position: Point) => void
-  onClose?: () => void
-  className?: string
-  trigger?: 'contextmenu' | 'click' | 'manual'
+  items: MenuItem[];
+  config?: Partial<MenuConfig>;
+  onSelect?: (item: MenuItem) => void;
+  onOpen?: (position: Point) => void;
+  onClose?: () => void;
+  className?: string;
+  trigger?: "contextmenu" | "click" | "manual";
 }
 
 export interface ArcSegment {
-  id: string
-  startAngle: number
-  endAngle: number
-  innerRadius: number
-  outerRadius: number
-  item: MenuItem
+  id: string;
+  startAngle: number;
+  endAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  item: MenuItem;
 }
 
-export type { Point, PolarCoord } from './angle'
-export type { Viewport, EdgeState, EdgeConstraints } from './edge'
-export type { FlipState, FlipMode, FlipConfig } from './flip'
-export type { Velocity, SpringConfig, DriftConfig, TracePoint } from './physics'
+export type { Point, PolarCoord } from "./angle";
+export type { Viewport, EdgeState, EdgeConstraints } from "./edge";
+export type { FlipState, FlipMode, FlipConfig } from "./flip";
+export type {
+  Velocity,
+  SpringConfig,
+  DriftConfig,
+  TracePoint,
+} from "./physics";

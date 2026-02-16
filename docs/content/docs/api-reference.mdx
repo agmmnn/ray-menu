@@ -11,32 +11,32 @@ Complete reference for all Ray Menu APIs.
 
 ### Attributes
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `radius` | `number` | `140` | Outer radius of the menu |
-| `inner-radius` | `number` | `45` | Inner radius (center area) |
-| `infinite-selection` | `boolean` | `false` | Extend selection infinitely by angle |
-| `center-deadzone` | `number` | `30` | Pixels from center before selection starts |
-| `infinite-threshold` | `number` | `0` | Distance where infinite selection begins (0 = truly infinite) |
-| `edge-behavior` | `string` | `"flip"` | Edge handling: `"shift"`, `"flip"`, or `"none"` |
-| `show-trail-path` | `boolean` | `false` | Show cursor trail path effect |
-| `show-anchor-line` | `boolean` | `false` | Show anchor line from menu edge to cursor |
-| `center-transparent` | `boolean` | `true` | Make center area transparent |
-| `instant-drag-through` | `boolean` | `false` | Enable instant drag-through to submenus |
-| `scroll-behavior` | `string` | `"close"` | `"close"`, `"keep"`, `"lock"`, or `"none"` |
-| `scroll-threshold` | `number` | `10` | Pixels of scroll before behavior triggers |
-| `start-angle` | `number` | `-90` | Start angle in degrees |
-| `sweep-angle` | `number` | `360` | Sweep angle in degrees (for fan layouts) |
-| `static` | `boolean` | `false` | Static/dock mode (relative positioning) |
-| `default-open` | `boolean` | `false` | Open menu on mount |
+| Attribute              | Type      | Default   | Description                                                   |
+| ---------------------- | --------- | --------- | ------------------------------------------------------------- |
+| `radius`               | `number`  | `140`     | Outer radius of the menu                                      |
+| `inner-radius`         | `number`  | `45`      | Inner radius (center area)                                    |
+| `infinite-selection`   | `boolean` | `false`   | Extend selection infinitely by angle                          |
+| `center-deadzone`      | `number`  | `30`      | Pixels from center before selection starts                    |
+| `infinite-threshold`   | `number`  | `0`       | Distance where infinite selection begins (0 = truly infinite) |
+| `edge-behavior`        | `string`  | `"flip"`  | Edge handling: `"shift"`, `"flip"`, or `"none"`               |
+| `show-trail-path`      | `boolean` | `false`   | Show cursor trail path effect                                 |
+| `show-anchor-line`     | `boolean` | `false`   | Show anchor line from menu edge to cursor                     |
+| `center-transparent`   | `boolean` | `true`    | Make center area transparent                                  |
+| `instant-drag-through` | `boolean` | `false`   | Enable instant drag-through to submenus                       |
+| `scroll-behavior`      | `string`  | `"close"` | `"close"`, `"keep"`, `"lock"`, or `"none"`                    |
+| `scroll-threshold`     | `number`  | `10`      | Pixels of scroll before behavior triggers                     |
+| `start-angle`          | `number`  | `-90`     | Start angle in degrees                                        |
+| `sweep-angle`          | `number`  | `360`     | Sweep angle in degrees (for fan layouts)                      |
+| `static`               | `boolean` | `false`   | Static/dock mode (relative positioning)                       |
+| `default-open`         | `boolean` | `false`   | Open menu on mount                                            |
 
 ### Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `items` | `MenuItem[]` | Menu items (set via JS) |
-| `isOpen` | `boolean` | Whether menu is currently open |
-| `isDropTarget` | `boolean` | Whether menu is in drop target mode |
+| Property       | Type         | Description                         |
+| -------------- | ------------ | ----------------------------------- |
+| `items`        | `MenuItem[]` | Menu items (set via JS)             |
+| `isOpen`       | `boolean`    | Whether menu is currently open      |
+| `isDropTarget` | `boolean`    | Whether menu is in drop target mode |
 
 ### MenuItem Interface
 
@@ -55,32 +55,32 @@ interface MenuItem {
 
 ### Methods
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `open` | `(x: number, y: number) => void` | Open menu at coordinates |
-| `close` | `() => void` | Close the menu |
-| `toggle` | `(x: number, y: number) => void` | Toggle menu at coordinates |
-| `goBack` | `() => boolean` | Navigate back in submenu stack |
-| `goToRoot` | `() => void` | Navigate to root menu |
-| `openAsDropTarget` | `(x: number, y: number) => void` | Open as drag & drop target |
-| `updateHoverFromPoint` | `(x: number, y: number) => void` | Update hover during drag |
-| `dropOnHovered` | `(data?: any) => MenuItem \| null` | Drop on currently hovered item |
-| `cancelDrop` | `() => void` | Cancel drop target mode |
+| Method                 | Signature                          | Description                    |
+| ---------------------- | ---------------------------------- | ------------------------------ |
+| `open`                 | `(x: number, y: number) => void`   | Open menu at coordinates       |
+| `close`                | `() => void`                       | Close the menu                 |
+| `toggle`               | `(x: number, y: number) => void`   | Toggle menu at coordinates     |
+| `goBack`               | `() => boolean`                    | Navigate back in submenu stack |
+| `goToRoot`             | `() => void`                       | Navigate to root menu          |
+| `openAsDropTarget`     | `(x: number, y: number) => void`   | Open as drag & drop target     |
+| `updateHoverFromPoint` | `(x: number, y: number) => void`   | Update hover during drag       |
+| `dropOnHovered`        | `(data?: any) => MenuItem \| null` | Drop on currently hovered item |
+| `cancelDrop`           | `() => void`                       | Cancel drop target mode        |
 
 ### Events
 
-| Event | Detail | Description |
-|-------|--------|-------------|
-| `ray-select` | `MenuItem` | Item selected |
-| `ray-open` | - | Menu opened |
-| `ray-close` | - | Menu closed |
-| `ray-submenu-enter` | `{ item, depth }` | Entered a submenu |
-| `ray-submenu-exit` | `{ item, depth }` | Exited a submenu |
-| `ray-load-start` | `MenuItem` | Async children loading started |
-| `ray-load-complete` | `MenuItem` | Async children loaded |
-| `ray-load-error` | `{ item, error }` | Async loading failed |
-| `ray-drop` | `{ item, data }` | Item dropped on |
-| `ray-spring-load` | `MenuItem` | Spring-load triggered during drag |
+| Event               | Detail            | Description                       |
+| ------------------- | ----------------- | --------------------------------- |
+| `ray-select`        | `MenuItem`        | Item selected                     |
+| `ray-open`          | -                 | Menu opened                       |
+| `ray-close`         | -                 | Menu closed                       |
+| `ray-submenu-enter` | `{ item, depth }` | Entered a submenu                 |
+| `ray-submenu-exit`  | `{ item, depth }` | Exited a submenu                  |
+| `ray-load-start`    | `MenuItem`        | Async children loading started    |
+| `ray-load-complete` | `MenuItem`        | Async children loaded             |
+| `ray-load-error`    | `{ item, error }` | Async loading failed              |
+| `ray-drop`          | `{ item, data }`  | Item dropped on                   |
+| `ray-spring-load`   | `MenuItem`        | Spring-load triggered during drag |
 
 ---
 
@@ -91,7 +91,7 @@ Available via `ray-menu/core`:
 ### `distributeAngles`
 
 ```ts
-import { distributeAngles } from 'ray-menu/core';
+import { distributeAngles } from "ray-menu/core";
 
 const angles = distributeAngles(itemCount, startAngle, sweepAngle);
 // number[] - angle for each item in radians
@@ -100,7 +100,7 @@ const angles = distributeAngles(itemCount, startAngle, sweepAngle);
 ### `toCartesian`
 
 ```ts
-import { toCartesian } from 'ray-menu/core';
+import { toCartesian } from "ray-menu/core";
 
 const point = toCartesian(center, { angle, distance });
 // { x: number, y: number }
@@ -109,7 +109,7 @@ const point = toCartesian(center, { angle, distance });
 ### `toDegrees` / `toRadians`
 
 ```ts
-import { toDegrees, toRadians } from 'ray-menu/core';
+import { toDegrees, toRadians } from "ray-menu/core";
 
 toDegrees(Math.PI); // 180
 toRadians(90); // Math.PI / 2

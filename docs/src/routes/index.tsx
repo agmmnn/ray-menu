@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
+import { useRayMenu } from "ray-menu/react";
+import type { MenuItem } from "ray-menu/react";
 
-const menuItems = [
+const menuItems: MenuItem[] = [
   { id: "docs", label: "Docs", icon: "📚" },
   { id: "github", label: "GitHub", icon: "⭐" },
   { id: "examples", label: "Examples", icon: "🎯" },
@@ -16,43 +18,30 @@ export const Route = createFileRoute("/")({
 
 function DemoCircle() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [ready, setReady] = useState(false);
   const circleRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (menuRef.current) {
-      setReady(true);
-      return;
-    }
+  const menu = useRayMenu({
+    items: menuItems,
+    showAnchorLine: true,
+    onSelect: (item: MenuItem) => {
+      if (item.id === "docs") window.location.href = "/docs";
+      else if (item.id === "github")
+        window.open("https://github.com/agmmnn/ray-menu", "_blank");
+    },
+    onOpen: () => setIsMenuOpen(true),
+    onClose: () => setIsMenuOpen(false),
+  });
 
-    import("../lib/ray-menu-client").then(({ createRayMenu }) =>
-      createRayMenu()
-    ).then((el) => {
-      el.items = menuItems;
-      el.setAttribute("show-anchor-line", "");
-      document.body.appendChild(el);
-      menuRef.current = el;
-      setReady(true);
-
-      el.addEventListener("ray-select", (e: Event) => {
-        const item = (e as CustomEvent).detail;
-        if (item.id === "docs") window.location.href = "/docs";
-        else if (item.id === "github")
-          window.open("https://github.com/agmmnn/ray-menu", "_blank");
-      });
-      el.addEventListener("ray-open", () => setIsMenuOpen(true));
-      el.addEventListener("ray-close", () => setIsMenuOpen(false));
-    });
-  }, []);
-
-  const handleClick = useCallback(() => {
-    const rect = circleRef.current?.getBoundingClientRect();
-    const menu = menuRef.current;
-    if (rect && menu) {
-      menu.open(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    }
-  }, []);
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const rect = circleRef.current?.getBoundingClientRect();
+      if (rect) {
+        menu.open(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
+    },
+    [menu],
+  );
 
   return (
     <button
@@ -67,9 +56,7 @@ function DemoCircle() {
         background: "transparent",
         cursor: "pointer",
         transition: "border-color 0.2s, box-shadow 0.2s",
-        boxShadow: isMenuOpen
-          ? "0 0 0 1px rgba(255,255,255,0.2)"
-          : undefined,
+        boxShadow: isMenuOpen ? "0 0 0 1px rgba(255,255,255,0.2)" : undefined,
         outline: "none",
       }}
       onMouseEnter={(e) =>
@@ -135,7 +122,13 @@ function Home() {
           alignItems: "center",
         }}
       >
-        <span style={{ fontSize: 15, fontWeight: 500, color: "rgba(255,255,255,0.8)" }}>
+        <span
+          style={{
+            fontSize: 15,
+            fontWeight: 500,
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
           ray-menu
         </span>
         <div style={{ display: "flex", gap: 24 }}>

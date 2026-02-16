@@ -17,29 +17,29 @@ npm install ray-menu
 
 ```html
 <script type="module">
-  import 'ray-menu';
+  import "ray-menu";
 </script>
 
 <ray-menu id="menu"></ray-menu>
 
 <script>
-  const menu = document.getElementById('menu');
+  const menu = document.getElementById("menu");
   menu.items = [
-    { id: 'copy', label: 'Copy', shortcut: '⌘C' },
-    { id: 'paste', label: 'Paste', shortcut: '⌘V' },
-    { id: 'cut', label: 'Cut', shortcut: '⌘X' },
-    { id: 'delete', label: 'Delete', shortcut: '⌫' },
+    { id: "copy", label: "Copy", shortcut: "⌘C" },
+    { id: "paste", label: "Paste", shortcut: "⌘V" },
+    { id: "cut", label: "Cut", shortcut: "⌘X" },
+    { id: "delete", label: "Delete", shortcut: "⌫" },
   ];
 
   // Open on right-click
-  document.addEventListener('contextmenu', (e) => {
+  document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     menu.open(e.clientX, e.clientY);
   });
 
   // Handle selection
-  menu.addEventListener('ray-select', (e) => {
-    console.log('Selected:', e.detail.label);
+  menu.addEventListener("ray-select", (e) => {
+    console.log("Selected:", e.detail.label);
   });
 </script>
 ```
@@ -50,15 +50,15 @@ Items with `children` automatically create submenus:
 
 ```js
 menu.items = [
-  { id: 'copy', label: 'Copy' },
+  { id: "copy", label: "Copy" },
   {
-    id: 'share',
-    label: 'Share',
+    id: "share",
+    label: "Share",
     selectable: false,
     children: [
-      { id: 'email', label: 'Email' },
-      { id: 'link', label: 'Copy Link' },
-      { id: 'social', label: 'Social' },
+      { id: "email", label: "Email" },
+      { id: "link", label: "Copy Link" },
+      { id: "social", label: "Social" },
     ],
   },
 ];
@@ -71,12 +71,12 @@ Load submenu items dynamically with `loadChildren`:
 ```js
 menu.items = [
   {
-    id: 'move',
-    label: 'Move to',
+    id: "move",
+    label: "Move to",
     selectable: false,
     loadChildren: async () => {
       const folders = await fetchFolders();
-      return folders.map(f => ({ id: f.id, label: f.name }));
+      return folders.map((f) => ({ id: f.id, label: f.name }));
     },
   },
 ];

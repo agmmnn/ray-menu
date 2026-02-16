@@ -10,7 +10,7 @@ The `<ray-menu>` Web Component provides a framework-agnostic way to add radial m
 ## Import
 
 ```javascript
-import 'ray-menu/wc';
+import "ray-menu/wc";
 ```
 
 Or via script tag:
@@ -34,18 +34,18 @@ Or via script tag:
 
 ### `<ray-menu>`
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `trigger` | `"contextmenu" \| "longpress" \| "both"` | `"both"` | How to trigger the menu |
-| `center-deadzone` | `number` | `30` | Radius of center deadzone in pixels |
-| `disabled` | `boolean` | `false` | Disable the menu |
+| Attribute         | Type                                     | Default  | Description                         |
+| ----------------- | ---------------------------------------- | -------- | ----------------------------------- |
+| `trigger`         | `"contextmenu" \| "longpress" \| "both"` | `"both"` | How to trigger the menu             |
+| `center-deadzone` | `number`                                 | `30`     | Radius of center deadzone in pixels |
+| `disabled`        | `boolean`                                | `false`  | Disable the menu                    |
 
 ### `<ray-menu-item>`
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `value` | `string` | required | Value emitted on selection |
-| `disabled` | `boolean` | `false` | Disable this item |
+| Attribute  | Type      | Default  | Description                |
+| ---------- | --------- | -------- | -------------------------- |
+| `value`    | `string`  | required | Value emitted on selection |
+| `disabled` | `boolean` | `false`  | Disable this item          |
 
 ## Events
 
@@ -54,8 +54,8 @@ Or via script tag:
 Fired when an item is selected.
 
 ```javascript
-document.querySelector('ray-menu').addEventListener('ray-menu-select', (e) => {
-  console.log('Selected:', e.detail.value);
+document.querySelector("ray-menu").addEventListener("ray-menu-select", (e) => {
+  console.log("Selected:", e.detail.value);
 });
 ```
 
@@ -64,8 +64,8 @@ document.querySelector('ray-menu').addEventListener('ray-menu-select', (e) => {
 Fired when the menu opens.
 
 ```javascript
-document.querySelector('ray-menu').addEventListener('ray-menu-open', (e) => {
-  console.log('Menu opened at:', e.detail.x, e.detail.y);
+document.querySelector("ray-menu").addEventListener("ray-menu-open", (e) => {
+  console.log("Menu opened at:", e.detail.x, e.detail.y);
 });
 ```
 
@@ -74,8 +74,8 @@ document.querySelector('ray-menu').addEventListener('ray-menu-open', (e) => {
 Fired when the menu closes.
 
 ```javascript
-document.querySelector('ray-menu').addEventListener('ray-menu-close', () => {
-  console.log('Menu closed');
+document.querySelector("ray-menu").addEventListener("ray-menu-close", () => {
+  console.log("Menu closed");
 });
 ```
 
@@ -107,7 +107,7 @@ Create nested menus with `<ray-menu-submenu>`:
 ## Programmatic Control
 
 ```javascript
-const menu = document.querySelector('ray-menu');
+const menu = document.querySelector("ray-menu");
 
 // Open at position
 menu.open(100, 200);
@@ -115,4 +115,3 @@ menu.open(100, 200);
 // Close
 menu.close();
 ```
-

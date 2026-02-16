@@ -21,26 +21,26 @@ Ray Menu is a modern, framework-agnostic radial/pie menu library built with Type
 
 ```html
 <script type="module">
-  import 'ray-menu';
+  import "ray-menu";
 </script>
 
 <ray-menu id="menu"></ray-menu>
 
 <script>
-  const menu = document.getElementById('menu');
+  const menu = document.getElementById("menu");
   menu.items = [
-    { id: 'copy', label: 'Copy', shortcut: '⌘C' },
-    { id: 'paste', label: 'Paste', shortcut: '⌘V' },
-    { id: 'cut', label: 'Cut', shortcut: '⌘X' },
+    { id: "copy", label: "Copy", shortcut: "⌘C" },
+    { id: "paste", label: "Paste", shortcut: "⌘V" },
+    { id: "cut", label: "Cut", shortcut: "⌘X" },
   ];
 
-  document.addEventListener('contextmenu', (e) => {
+  document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     menu.open(e.clientX, e.clientY);
   });
 
-  menu.addEventListener('ray-select', (e) => {
-    console.log('Selected:', e.detail.label);
+  menu.addEventListener("ray-select", (e) => {
+    console.log("Selected:", e.detail.label);
   });
 </script>
 ```

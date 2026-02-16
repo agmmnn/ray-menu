@@ -17,7 +17,7 @@ export {
   isAngleInSector,
   distributeAngles,
   getClosestItemIndex,
-} from './angle'
+} from "./angle";
 
 // Edge detection
 export {
@@ -26,7 +26,7 @@ export {
   calculateAngularOffset,
   clampToViewport,
   getSubmenuPosition,
-} from './edge'
+} from "./edge";
 
 // Smart flip logic
 export {
@@ -37,7 +37,7 @@ export {
   adjustAnglesForFlip,
   getOptimalArcDirection,
   DEFAULT_FLIP_CONFIG,
-} from './flip'
+} from "./flip";
 
 // Physics and animations
 export {
@@ -52,11 +52,16 @@ export {
   generateTraceTrail,
   DEFAULT_SPRING,
   DEFAULT_DRIFT,
-} from './physics'
+} from "./physics";
 
 // Types
-export * from './types'
-export type { Point, PolarCoord } from './angle'
-export type { Viewport, EdgeState, EdgeConstraints } from './edge'
-export type { FlipState, FlipMode, FlipConfig } from './flip'
-export type { Velocity, SpringConfig, DriftConfig, TracePoint } from './physics'
+export * from "./types";
+export type { Point, PolarCoord } from "./angle";
+export type { Viewport, EdgeState, EdgeConstraints } from "./edge";
+export type { FlipState, FlipMode, FlipConfig } from "./flip";
+export type {
+  Velocity,
+  SpringConfig,
+  DriftConfig,
+  TracePoint,
+} from "./physics";

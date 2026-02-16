@@ -3,41 +3,43 @@ title: React
 description: React integration for Ray Menu
 ---
 
-# React Bindings
+# React
 
-React bindings that wrap the `<ray-menu>` Web Component are planned for a future release.
+Ray Menu provides first-class React bindings via `ray-menu/react`.
 
-In the meantime, you can use the Web Component directly in React:
+## Install
+
+```bash
+npm i ray-menu react
+```
+
+React is an optional peer dependency — the core Web Component works without it.
+
+## `useRayMenu` Hook
+
+The hook manages the full lifecycle of the Web Component: creating it, appending it to the body, syncing props, and cleaning up on unmount. It returns an object with imperative methods and readonly state.
 
 ```tsx
-import { useEffect, useRef } from 'react';
-import 'ray-menu';
+import { useRayMenu } from "ray-menu/react";
 
 function App() {
-  const menuRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const el = document.createElement('ray-menu') as any;
-    el.items = [
-      { id: 'copy', label: 'Copy', shortcut: '⌘C' },
-      { id: 'paste', label: 'Paste', shortcut: '⌘V' },
-      { id: 'cut', label: 'Cut', shortcut: '⌘X' },
-    ];
-    document.body.appendChild(el);
-    menuRef.current = el;
-
-    el.addEventListener('ray-select', (e: CustomEvent) => {
-      console.log('Selected:', e.detail.label);
-    });
-
-    return () => el.remove();
-  }, []);
+  const menu = useRayMenu({
+    items: [
+      { id: "copy", label: "Copy", shortcut: "⌘C" },
+      { id: "paste", label: "Paste", shortcut: "⌘V" },
+      { id: "cut", label: "Cut", shortcut: "⌘X" },
+    ],
+    showAnchorLine: true,
+    onSelect: (item) => console.log("Selected:", item.label),
+    onOpen: () => console.log("opened"),
+    onClose: () => console.log("closed"),
+  });
 
   return (
     <div
       onContextMenu={(e) => {
         e.preventDefault();
-        (menuRef.current as any)?.open(e.clientX, e.clientY);
+        menu.open(e.clientX, e.clientY);
       }}
     >
       Right-click here
@@ -46,7 +48,240 @@ function App() {
 }
 ```
 
+### Return Value
+
+The returned object has imperative methods that proxy to the underlying Web Component:
+
+| Method                 | Signature                     | Description                     |
+| ---------------------- | ----------------------------- | ------------------------------- |
+| `open`                 | `(x, y) => void`              | Open menu at coordinates        |
+| `close`                | `() => void`                  | Close the menu                  |
+| `toggle`               | `(x, y) => void`              | Toggle menu at coordinates      |
+| `goBack`               | `() => boolean`               | Navigate back one submenu level |
+| `goToRoot`             | `() => void`                  | Navigate to root menu           |
+| `openAsDropTarget`     | `(x, y) => void`              | Open as drag & drop target      |
+| `updateHoverFromPoint` | `(x, y) => void`              | Update hover during drag        |
+| `dropOnHovered`        | `(data?) => MenuItem \| null` | Drop on hovered item            |
+| `cancelDrop`           | `() => void`                  | Cancel drop target mode         |
+| `getHoveredItem`       | `() => MenuItem \| null`      | Get currently hovered item      |
+
+And readonly getters:
+
+| Getter         | Type                  | Description                        |
+| -------------- | --------------------- | ---------------------------------- |
+| `isOpen`       | `boolean`             | Whether menu is currently open     |
+| `isDropTarget` | `boolean`             | Whether in drop target mode        |
+| `isLoading`    | `boolean`             | Whether async children are loading |
+| `submenuDepth` | `number`              | Current submenu nesting depth      |
+| `items`        | `MenuItem[]`          | Current items                      |
+| `element`      | `HTMLElement \| null` | Underlying `<ray-menu>` element    |
+
+## `<RayMenu>` Component
+
+A declarative wrapper around `useRayMenu`. It renders nothing (the Web Component is body-appended) but exposes imperative methods via `ref`.
+
+```tsx
+import { useRef } from "react";
+import { RayMenu, type RayMenuRef } from "ray-menu/react";
+
+function App() {
+  const menuRef = useRef<RayMenuRef>(null);
+
+  return (
+    <>
+      <RayMenu
+        ref={menuRef}
+        items={[
+          { id: "copy", label: "Copy" },
+          { id: "paste", label: "Paste" },
+        ]}
+        onSelect={(item) => console.log(item.label)}
+      />
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          menuRef.current?.open(e.clientX, e.clientY);
+        }}
+      >
+        Open Menu
+      </button>
+    </>
+  );
+}
+```
+
+> **Note:** Call `e.stopPropagation()` when opening from a click handler. Otherwise the click event bubbles to the menu's window listener and immediately closes it.
+
+## Options
+
+Both `useRayMenu` and `<RayMenu>` accept the same options object:
+
+### Props
+
+| Prop                 | Type                                    | Default   | Description                              |
+| -------------------- | --------------------------------------- | --------- | ---------------------------------------- |
+| `items`              | `MenuItem[]`                            | required  | Menu items                               |
+| `radius`             | `number`                                | `120`     | Outer radius                             |
+| `innerRadius`        | `number`                                | `40`      | Inner radius                             |
+| `infiniteSelection`  | `boolean`                               | `true`    | Select by angle, not distance            |
+| `centerDeadzone`     | `number`                                | `30`      | Center dead zone radius                  |
+| `infiniteThreshold`  | `number`                                | `0`       | Max selection distance (0 = infinite)    |
+| `edgeBehavior`       | `'shift' \| 'flip' \| 'none'`           | `'flip'`  | Edge handling mode                       |
+| `showTrailPath`      | `boolean`                               | `false`   | Show cursor trail                        |
+| `showAnchorLine`     | `boolean`                               | `false`   | Show anchor line                         |
+| `centerTransparent`  | `boolean`                               | `true`    | Transparent center                       |
+| `instantDragThrough` | `boolean`                               | `false`   | Instant drag-through to submenus         |
+| `scrollBehavior`     | `'close' \| 'keep' \| 'lock' \| 'none'` | `'close'` | Scroll handling                          |
+| `scrollThreshold`    | `number`                                | `10`      | Scroll distance before behavior triggers |
+| `startAngle`         | `number`                                | `-90`     | Start angle in degrees                   |
+| `sweepAngle`         | `number`                                | `360`     | Sweep angle in degrees                   |
+| `static`             | `boolean`                               | `false`   | Static/dock mode                         |
+| `defaultOpen`        | `boolean`                               | `false`   | Open on mount                            |
+
+### Callbacks
+
+| Callback         | Signature                           | Description            |
+| ---------------- | ----------------------------------- | ---------------------- |
+| `onSelect`       | `(item: MenuItem) => void`          | Item selected          |
+| `onDrop`         | `(detail: { item, data }) => void`  | Item dropped on        |
+| `onOpen`         | `(position: Point) => void`         | Menu opened            |
+| `onClose`        | `() => void`                        | Menu closed            |
+| `onSubmenuEnter` | `(detail: { item, depth }) => void` | Entered submenu        |
+| `onSubmenuExit`  | `(detail: { item, depth }) => void` | Exited submenu         |
+| `onSpringLoad`   | `(item: MenuItem) => void`          | Spring-load triggered  |
+| `onLoadStart`    | `(item: MenuItem) => void`          | Async loading started  |
+| `onLoadComplete` | `(item: MenuItem) => void`          | Async loading finished |
+| `onLoadError`    | `(detail: { item, error }) => void` | Async loading failed   |
+
+## Examples
+
+### Context Menu
+
+```tsx
+import { useRayMenu } from "ray-menu/react";
+
+function FileExplorer() {
+  const menu = useRayMenu({
+    items: [
+      { id: "open", label: "Open" },
+      { id: "rename", label: "Rename" },
+      { id: "delete", label: "Delete" },
+      {
+        id: "share",
+        label: "Share",
+        selectable: false,
+        children: [
+          { id: "email", label: "Email" },
+          { id: "link", label: "Copy Link" },
+        ],
+      },
+    ],
+    onSelect: (item) => handleAction(item.id),
+  });
+
+  return (
+    <div
+      onContextMenu={(e) => {
+        e.preventDefault();
+        menu.open(e.clientX, e.clientY);
+      }}
+    >
+      {/* file list */}
+    </div>
+  );
+}
+```
+
+### Async Submenus
+
+```tsx
+const menu = useRayMenu({
+  items: [
+    {
+      id: "move",
+      label: "Move to...",
+      selectable: false,
+      loadChildren: async () => {
+        const folders = await fetchFolders();
+        return folders.map((f) => ({ id: f.id, label: f.name }));
+      },
+    },
+  ],
+  onLoadError: ({ item, error }) => {
+    console.error(`Failed to load ${item.label}:`, error);
+  },
+  onSelect: (item) => moveFile(item.id),
+});
+```
+
+### Drag & Drop Target
+
+```tsx
+function DragTarget() {
+  const menu = useRayMenu({
+    items: [
+      { id: "copy", label: "Copy Here" },
+      { id: "move", label: "Move Here" },
+      { id: "link", label: "Create Link" },
+    ],
+    onSelect: (item) => console.log(item.label),
+  });
+
+  return (
+    <div
+      onDragEnter={(e) => {
+        e.preventDefault();
+        menu.openAsDropTarget(e.clientX, e.clientY);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        menu.updateHoverFromPoint(e.clientX, e.clientY);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const result = menu.dropOnHovered(e.dataTransfer.getData("text"));
+        if (!result) menu.cancelDrop();
+      }}
+    >
+      Drop files here
+    </div>
+  );
+}
+```
+
+### Fan Layout
+
+```tsx
+const menu = useRayMenu({
+  items: [
+    { id: "home", label: "Home" },
+    { id: "search", label: "Search" },
+    { id: "settings", label: "Settings" },
+  ],
+  startAngle: 180, // start from bottom-left
+  sweepAngle: 180, // half circle
+});
+```
+
+## Exports
+
+Everything you need is exported from `ray-menu/react`:
+
+```tsx
+import {
+  RayMenu, // declarative component
+  useRayMenu, // hook
+  RayMenuController, // shared controller (advanced)
+  type RayMenuRef,
+  type UseRayMenuReturn,
+  type RayMenuControllerOptions,
+  type MenuItem,
+  type Point,
+  type EdgeBehavior,
+} from "ray-menu/react";
+```
+
 ## Next Steps
 
-- [Web Component](/docs/web-component) - Full Web Component API
-- [API Reference](/docs/api-reference) - Complete API docs
+- [Web Component](/docs/web-component) — Use without React
+- [API Reference](/docs/api-reference) — Complete API docs
