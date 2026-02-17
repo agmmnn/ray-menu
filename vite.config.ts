@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       outDir,
-      sourcemap: true,
+      sourcemap: false,
       minify: "esbuild",
     },
     resolve: {
