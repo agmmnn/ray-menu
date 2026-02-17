@@ -27,6 +27,7 @@ other
 test-results
 playwright-report
 .playwright-mcp
+CLAUDE.md
 .output
 .tanstack
 .vercel
