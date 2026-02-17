@@ -72,7 +72,10 @@ function Playground() {
   });
 
   const [ready, setReady] = useState(false);
-  const [dragData, setDragData] = useState<{ type: string; label: string } | null>(null);
+  const [dragData, setDragData] = useState<{
+    type: string;
+    label: string;
+  } | null>(null);
 
   useEffect(() => {
     import("ray-menu").then(() => {
@@ -95,9 +98,13 @@ function Playground() {
     };
     const onOpen = () => setLog("Menu opened");
     const onSubmenuEnter = (e: CustomEvent) =>
-      setLog(`Entered submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`);
+      setLog(
+        `Entered submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`,
+      );
     const onSubmenuExit = (e: CustomEvent) =>
-      setLog(`Exited submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`);
+      setLog(
+        `Exited submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`,
+      );
     const onLoadError = (e: CustomEvent) =>
       setLog(`Error: ${e.detail.error.message}`);
 
@@ -160,14 +167,11 @@ function Playground() {
     [ready],
   );
 
-  const handleIconDrag = useCallback(
-    (e: React.DragEvent) => {
-      if (e.clientX !== 0 || e.clientY !== 0) {
-        menuRef.current?.updateHoverFromPoint(e.clientX, e.clientY);
-      }
-    },
-    [],
-  );
+  const handleIconDrag = useCallback((e: React.DragEvent) => {
+    if (e.clientX !== 0 || e.clientY !== 0) {
+      menuRef.current?.updateHoverFromPoint(e.clientX, e.clientY);
+    }
+  }, []);
 
   const handleIconDragEnd = useCallback(
     (e: React.DragEvent) => {

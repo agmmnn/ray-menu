@@ -13,16 +13,24 @@ const basicItems: MenuItem[] = [
 ];
 
 const submenuItems: MenuItem[] = [
-  { id: "file", label: "File", children: [
-    { id: "new", label: "New" },
-    { id: "open", label: "Open" },
-    { id: "save", label: "Save" },
-  ]},
-  { id: "edit", label: "Edit", children: [
-    { id: "undo", label: "Undo" },
-    { id: "redo", label: "Redo" },
-    { id: "find", label: "Find" },
-  ]},
+  {
+    id: "file",
+    label: "File",
+    children: [
+      { id: "new", label: "New" },
+      { id: "open", label: "Open" },
+      { id: "save", label: "Save" },
+    ],
+  },
+  {
+    id: "edit",
+    label: "Edit",
+    children: [
+      { id: "undo", label: "Undo" },
+      { id: "redo", label: "Redo" },
+      { id: "find", label: "Find" },
+    ],
+  },
   { id: "view", label: "View" },
   { id: "help", label: "Help" },
 ];
@@ -53,7 +61,13 @@ interface DemoProps {
   radius?: number;
 }
 
-function Demo({ title, items, showAnchorLine = false, showTrailPath = false, radius }: DemoProps) {
+function Demo({
+  title,
+  items,
+  showAnchorLine = false,
+  showTrailPath = false,
+  radius,
+}: DemoProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [lastSelected, setLastSelected] = useState<string | null>(null);
   const circleRef = useRef<HTMLButtonElement>(null);
@@ -92,7 +106,14 @@ function Demo({ title, items, showAnchorLine = false, showTrailPath = false, rad
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
       <div style={{ fontSize: 12, color: "#a1a1aa" }}>{title}</div>
       <button
         ref={circleRef}
@@ -113,7 +134,9 @@ function Demo({ title, items, showAnchorLine = false, showTrailPath = false, rad
         {isMenuOpen ? "Open" : "Click"}
       </button>
       {lastSelected && (
-        <div style={{ fontSize: 11, color: "#22c55e" }}>Selected: {lastSelected}</div>
+        <div style={{ fontSize: 11, color: "#22c55e" }}>
+          Selected: {lastSelected}
+        </div>
       )}
     </div>
   );
@@ -201,7 +224,14 @@ function DropZone() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 12,
+      }}
+    >
       <div style={{ fontSize: 12, color: "#a1a1aa" }}>Drop Zone</div>
       <div
         onDragOver={handleDragOver}
@@ -234,7 +264,14 @@ function DropZone() {
 // Drag demo section
 function DragDemo() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 16,
+      }}
+    >
       <div style={{ fontSize: 12, color: "#a1a1aa" }}>Drag to Drop Zone</div>
       <div style={{ display: "flex", gap: 8 }}>
         <DraggableIcon emoji="📄" label="Doc" />
@@ -261,42 +298,58 @@ function DragIconMenu() {
     },
   });
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    iconRef.current?.setPointerCapture(e.pointerId);
-    // Position ghost immediately
-    if (ghostRef.current) {
-      ghostRef.current.style.left = `${e.clientX}px`;
-      ghostRef.current.style.top = `${e.clientY}px`;
-    }
-    menu.openAsDropTarget(e.clientX, e.clientY);
-  }, [menu]);
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+      iconRef.current?.setPointerCapture(e.pointerId);
+      // Position ghost immediately
+      if (ghostRef.current) {
+        ghostRef.current.style.left = `${e.clientX}px`;
+        ghostRef.current.style.top = `${e.clientY}px`;
+      }
+      menu.openAsDropTarget(e.clientX, e.clientY);
+    },
+    [menu],
+  );
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    // Update ghost position via ref (no state update = no re-render)
-    if (ghostRef.current) {
-      ghostRef.current.style.left = `${e.clientX}px`;
-      ghostRef.current.style.top = `${e.clientY}px`;
-    }
-    menu.updateHoverFromPoint(e.clientX, e.clientY);
-  }, [menu]);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      // Update ghost position via ref (no state update = no re-render)
+      if (ghostRef.current) {
+        ghostRef.current.style.left = `${e.clientX}px`;
+        ghostRef.current.style.top = `${e.clientY}px`;
+      }
+      menu.updateHoverFromPoint(e.clientX, e.clientY);
+    },
+    [menu],
+  );
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    iconRef.current?.releasePointerCapture(e.pointerId);
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      setIsDragging(false);
+      iconRef.current?.releasePointerCapture(e.pointerId);
 
-    const selected = menu.dropOnHovered();
-    if (selected) {
-      console.log("[DragIcon] Dropped on:", selected.label);
-    } else {
-      menu.cancelDrop();
-    }
-  }, [isDragging, menu]);
+      const selected = menu.dropOnHovered();
+      if (selected) {
+        console.log("[DragIcon] Dropped on:", selected.label);
+      } else {
+        menu.cancelDrop();
+      }
+    },
+    [isDragging, menu],
+  );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 12,
+      }}
+    >
       <div style={{ fontSize: 12, color: "#a1a1aa" }}>Drag Icon (Submenus)</div>
       <div
         ref={iconRef}
@@ -313,7 +366,9 @@ function DragIconMenu() {
           gap: 6,
           borderRadius: 12,
           border: `2px solid ${isDragging ? "rgba(100,180,255,0.5)" : "rgba(255,255,255,0.15)"}`,
-          background: isDragging ? "rgba(100,180,255,0.1)" : "rgba(255,255,255,0.05)",
+          background: isDragging
+            ? "rgba(100,180,255,0.1)"
+            : "rgba(255,255,255,0.05)",
           cursor: isDragging ? "grabbing" : "grab",
           fontSize: 32,
           userSelect: "none",
@@ -322,7 +377,9 @@ function DragIconMenu() {
         }}
       >
         <span>📁</span>
-        <span style={{ fontSize: 10, color: "#a1a1aa" }}>{isDragging ? "Release" : "Drag me"}</span>
+        <span style={{ fontSize: 10, color: "#a1a1aa" }}>
+          {isDragging ? "Release" : "Drag me"}
+        </span>
       </div>
 
       {/* Floating drag ghost - always rendered, visibility controlled by isDragging */}
@@ -351,7 +408,9 @@ function DragIconMenu() {
       </div>
 
       {lastAction && (
-        <div style={{ fontSize: 11, color: "#22c55e" }}>Action: {lastAction}</div>
+        <div style={{ fontSize: 11, color: "#22c55e" }}>
+          Action: {lastAction}
+        </div>
       )}
     </div>
   );
@@ -368,7 +427,14 @@ function App() {
         padding: 48,
       }}
     >
-      <h1 style={{ fontSize: 24, fontWeight: 500, textAlign: "center", marginBottom: 8 }}>
+      <h1
+        style={{
+          fontSize: 24,
+          fontWeight: 500,
+          textAlign: "center",
+          marginBottom: 8,
+        }}
+      >
         React Wrapper Test
       </h1>
       <p style={{ color: "#a1a1aa", textAlign: "center", marginBottom: 48 }}>
@@ -394,7 +460,14 @@ function App() {
         <DragDemo />
       </div>
 
-      <div style={{ marginTop: 64, color: "#71717a", fontSize: 12, textAlign: "center" }}>
+      <div
+        style={{
+          marginTop: 64,
+          color: "#71717a",
+          fontSize: 12,
+          textAlign: "center",
+        }}
+      >
         Open DevTools console to see event flow
       </div>
     </div>

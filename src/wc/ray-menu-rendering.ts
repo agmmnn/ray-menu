@@ -395,6 +395,5 @@ export function renderParentLevels(
       path.setAttribute("data-selected", String(isSelected));
       svg.appendChild(path);
     });
-
   });
 }

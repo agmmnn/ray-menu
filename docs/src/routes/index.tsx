@@ -125,8 +125,12 @@ function CopyButton({ text }: { text: string }) {
         color: "rgba(255,255,255,0.3)",
         transition: "color 0.2s",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
-      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.color = "rgba(255,255,255,0.6)")
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.color = "rgba(255,255,255,0.3)")
+      }
     >
       {copied ? <Check size={14} /> : <Copy size={14} />}
     </button>

@@ -101,9 +101,9 @@ describe("getFlipRotationAdjustment", () => {
   });
 
   it("returns PI for both flip", () => {
-    expect(
-      getFlipRotationAdjustment(getFlipStateFromMode("both")),
-    ).toBeCloseTo(Math.PI);
+    expect(getFlipRotationAdjustment(getFlipStateFromMode("both"))).toBeCloseTo(
+      Math.PI,
+    );
   });
 });
 

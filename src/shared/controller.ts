@@ -130,7 +130,8 @@ export class RayMenuController {
     this._options = options;
 
     // Don't sync attributes during close animation - it triggers re-renders
-    const isClosing = this._el.hasAttribute("data-closing") ||
+    const isClosing =
+      this._el.hasAttribute("data-closing") ||
       this._el.shadowRoot?.querySelector(".ray-menu-container[data-closing]");
 
     if (!isClosing) {

@@ -7,7 +7,9 @@ const DEFAULT_TRAIL_COLOR = "rgba(100, 180, 255, 0.5)";
 function getTrailColor(svg: SVGSVGElement): string {
   const host = svg.closest("ray-menu");
   if (host) {
-    const accent = getComputedStyle(host).getPropertyValue("--ray-accent").trim();
+    const accent = getComputedStyle(host)
+      .getPropertyValue("--ray-accent")
+      .trim();
     if (accent) return accent;
   }
   return DEFAULT_TRAIL_COLOR;
@@ -50,14 +52,20 @@ export function createDriftTraceSvg(): SVGSVGElement {
   trailGradient.setAttribute("id", "trailGradient");
   trailGradient.setAttribute("gradientUnits", "userSpaceOnUse");
   trailGradient.appendChild(createGradientStop("0%", DEFAULT_TRAIL_COLOR, "0"));
-  trailGradient.appendChild(createGradientStop("100%", DEFAULT_TRAIL_COLOR, "0.6"));
+  trailGradient.appendChild(
+    createGradientStop("100%", DEFAULT_TRAIL_COLOR, "0.6"),
+  );
 
   // Anchor gradient
   const anchorGradient = document.createElementNS(SVG_NS, "linearGradient");
   anchorGradient.setAttribute("id", "anchorGradient");
   anchorGradient.setAttribute("gradientUnits", "userSpaceOnUse");
-  anchorGradient.appendChild(createGradientStop("0%", DEFAULT_TRAIL_COLOR, "0.8"));
-  anchorGradient.appendChild(createGradientStop("100%", DEFAULT_TRAIL_COLOR, "0.2"));
+  anchorGradient.appendChild(
+    createGradientStop("0%", DEFAULT_TRAIL_COLOR, "0.8"),
+  );
+  anchorGradient.appendChild(
+    createGradientStop("100%", DEFAULT_TRAIL_COLOR, "0.2"),
+  );
 
   // Trail blur filter
   const trailBlur = document.createElementNS(SVG_NS, "filter");

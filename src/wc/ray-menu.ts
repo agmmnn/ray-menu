@@ -242,7 +242,9 @@ export class RayMenu extends HTMLElement {
     }
 
     // Animate out then clean up
-    const container = this.shadowRoot?.querySelector(".ray-menu-container") as HTMLElement | null;
+    const container = this.shadowRoot?.querySelector(
+      ".ray-menu-container",
+    ) as HTMLElement | null;
     const cleanup = () => {
       this._isOpen = false;
       this._isClosing = false;
@@ -576,7 +578,8 @@ export class RayMenu extends HTMLElement {
   }
 
   private _onPointerUp(e: PointerEvent): void {
-    if (!this._isOpen || e.pointerType !== "touch" || !this._pointerDownPos) return;
+    if (!this._isOpen || e.pointerType !== "touch" || !this._pointerDownPos)
+      return;
 
     const elapsed = Date.now() - this._pointerDownTime;
     const dist = distance(this._pointerDownPos, { x: e.clientX, y: e.clientY });
@@ -1348,7 +1351,10 @@ export class RayMenu extends HTMLElement {
     container.setAttribute("aria-label", "Menu");
     container.style.left = `${this._position.x}px`;
     container.style.top = `${this._position.y}px`;
-    container.style.setProperty("--ray-flip-transform", this._flipState.transform);
+    container.style.setProperty(
+      "--ray-flip-transform",
+      this._flipState.transform,
+    );
 
     if (this._isDropTarget) {
       container.setAttribute("data-drop-target", "true");

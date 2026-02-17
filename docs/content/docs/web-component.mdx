@@ -49,24 +49,24 @@ Or via script tag:
 
 ## Attributes
 
-| Attribute              | Type                            | Default   | Description                                       |
-| ---------------------- | ------------------------------- | --------- | ------------------------------------------------- |
-| `radius`               | `number`                        | `120`     | Radius of the menu ring in pixels                 |
-| `inner-radius`         | `number`                        | `40`      | Inner dead zone radius in pixels                  |
-| `center-deadzone`      | `number`                        | `30`      | Center deadzone radius for selection              |
-| `infinite-selection`   | `boolean`                       | `true`    | Sectors extend infinitely outward                 |
-| `infinite-threshold`   | `number`                        | `0`       | Max distance for infinite selection (0 = infinite)|
-| `edge-behavior`        | `"shift" \| "flip" \| "none"`   | `"flip"`  | How to handle viewport edge collisions            |
-| `show-trail-path`      | `boolean`                       | `false`   | Show drift trace trail path                       |
-| `show-anchor-line`     | `boolean`                       | `false`   | Show anchor line to hovered item                  |
-| `center-transparent`   | `boolean`                       | `true`    | Make center area transparent                      |
-| `instant-drag-through` | `boolean`                       | `false`   | Enable instant drag-through to submenus           |
-| `scroll-behavior`      | `"close" \| "keep" \| "lock" \| "none"` | `"close"` | Behavior when page scrolls while menu is open |
-| `scroll-threshold`     | `number`                        | `10`      | Scroll distance (px) before closing               |
-| `start-angle`          | `number`                        | `-90`     | Start angle in degrees (top = -90)                |
-| `sweep-angle`          | `number`                        | `360`     | Total sweep angle in degrees                      |
-| `static`               | `boolean`                       | `false`   | Use relative positioning (dock mode)              |
-| `default-open`         | `boolean`                       | `false`   | Open automatically on mount (use with `static`)   |
+| Attribute              | Type                                    | Default   | Description                                        |
+| ---------------------- | --------------------------------------- | --------- | -------------------------------------------------- |
+| `radius`               | `number`                                | `120`     | Radius of the menu ring in pixels                  |
+| `inner-radius`         | `number`                                | `40`      | Inner dead zone radius in pixels                   |
+| `center-deadzone`      | `number`                                | `30`      | Center deadzone radius for selection               |
+| `infinite-selection`   | `boolean`                               | `true`    | Sectors extend infinitely outward                  |
+| `infinite-threshold`   | `number`                                | `0`       | Max distance for infinite selection (0 = infinite) |
+| `edge-behavior`        | `"shift" \| "flip" \| "none"`           | `"flip"`  | How to handle viewport edge collisions             |
+| `show-trail-path`      | `boolean`                               | `false`   | Show drift trace trail path                        |
+| `show-anchor-line`     | `boolean`                               | `false`   | Show anchor line to hovered item                   |
+| `center-transparent`   | `boolean`                               | `true`    | Make center area transparent                       |
+| `instant-drag-through` | `boolean`                               | `false`   | Enable instant drag-through to submenus            |
+| `scroll-behavior`      | `"close" \| "keep" \| "lock" \| "none"` | `"close"` | Behavior when page scrolls while menu is open      |
+| `scroll-threshold`     | `number`                                | `10`      | Scroll distance (px) before closing                |
+| `start-angle`          | `number`                                | `-90`     | Start angle in degrees (top = -90)                 |
+| `sweep-angle`          | `number`                                | `360`     | Total sweep angle in degrees                       |
+| `static`               | `boolean`                               | `false`   | Use relative positioning (dock mode)               |
+| `default-open`         | `boolean`                               | `false`   | Open automatically on mount (use with `static`)    |
 
 ## Properties
 
@@ -96,18 +96,18 @@ interface MenuItem {
 
 ## Methods
 
-| Method                        | Description                              |
-| ----------------------------- | ---------------------------------------- |
-| `open(x, y)`                  | Open the menu at viewport coordinates    |
-| `close()`                     | Close the menu                           |
-| `toggle(x, y)`                | Toggle menu open/closed                  |
-| `goBack()`                    | Navigate back one submenu level          |
-| `goToRoot()`                  | Navigate back to root menu               |
-| `openAsDropTarget(x, y)`      | Open in drag-drop target mode            |
-| `updateHoverFromPoint(x, y)`  | Update hover state from external coordinates |
-| `dropOnHovered(data?)`        | Complete drop on currently hovered item  |
-| `cancelDrop()`                | Cancel drag-drop operation               |
-| `getHoveredItem()`            | Get the currently hovered MenuItem       |
+| Method                       | Description                                  |
+| ---------------------------- | -------------------------------------------- |
+| `open(x, y)`                 | Open the menu at viewport coordinates        |
+| `close()`                    | Close the menu                               |
+| `toggle(x, y)`               | Toggle menu open/closed                      |
+| `goBack()`                   | Navigate back one submenu level              |
+| `goToRoot()`                 | Navigate back to root menu                   |
+| `openAsDropTarget(x, y)`     | Open in drag-drop target mode                |
+| `updateHoverFromPoint(x, y)` | Update hover state from external coordinates |
+| `dropOnHovered(data?)`       | Complete drop on currently hovered item      |
+| `cancelDrop()`               | Cancel drag-drop operation                   |
+| `getHoveredItem()`           | Get the currently hovered MenuItem           |
 
 ## Events
 
@@ -217,12 +217,12 @@ ray-menu {
 
 When the menu is open:
 
-| Key              | Action                             |
-| ---------------- | ---------------------------------- |
-| `ArrowLeft/Right`| Move focus between items           |
+| Key                     | Action                               |
+| ----------------------- | ------------------------------------ |
+| `ArrowLeft/Right`       | Move focus between items             |
 | `ArrowDown/Enter/Space` | Select focused item or enter submenu |
-| `ArrowUp`        | Go back to parent or close         |
-| `Backspace`      | Go back to parent submenu          |
-| `Escape`         | Close the menu                     |
-| `Home/End`       | Jump to first/last item            |
-| `1-9`            | Quick select item by number        |
+| `ArrowUp`               | Go back to parent or close           |
+| `Backspace`             | Go back to parent submenu            |
+| `Escape`                | Close the menu                       |
+| `Home/End`              | Jump to first/last item              |
+| `1-9`                   | Quick select item by number          |
