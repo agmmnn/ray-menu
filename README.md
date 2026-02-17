@@ -1,6 +1,6 @@
 # 𖤓 Ray Menu
 
-https://github.com/user-attachments/assets/a6010441-fcfc-47ee-89ff-f5f37c2f8e4e
+https://github.com/user-attachments/assets/c4fdf273-ccb6-4610-8bca-c24640e3f010
 
 > **Infinite, fluid, and framework-agnostic radial menu for the modern web.**
 
