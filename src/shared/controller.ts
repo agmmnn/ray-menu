@@ -222,11 +222,17 @@ export class RayMenuController {
 
   // --- Private ---
 
+  private _lastAttrValues: Record<string, unknown> = {};
+
   private _syncAttributes(options: RayMenuControllerOptions): void {
     if (!this._el) return;
 
     for (const [prop, attr] of Object.entries(ATTR_MAP)) {
       const value = options[prop as keyof RayMenuControllerOptions];
+
+      // Skip if value hasn't changed
+      if (this._lastAttrValues[prop] === value) continue;
+      this._lastAttrValues[prop] = value;
 
       if (value === undefined) {
         this._el.removeAttribute(attr);
@@ -245,8 +251,13 @@ export class RayMenuController {
     }
   }
 
+  private _lastItems: MenuItem[] | null = null;
+
   private _syncItems(items: MenuItem[]): void {
     if (!this._el) return;
+    // Only sync if items reference changed
+    if (items === this._lastItems) return;
+    this._lastItems = items;
     this._el.items = items;
   }
 

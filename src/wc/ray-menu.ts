@@ -276,7 +276,10 @@ export class RayMenu extends HTMLElement {
     this._removeGlobalListeners();
     this._isClosing = true;
 
-    if (container) {
+    // Skip animation for drop target mode (drag events fire after browser animation)
+    if (this._isDropTarget) {
+      cleanup();
+    } else if (container) {
       container.setAttribute("data-closing", "true");
       container.addEventListener("animationend", cleanup, { once: true });
       // Fallback in case animationend doesn't fire (e.g. prefers-reduced-motion)

@@ -235,13 +235,124 @@ function DropZone() {
 function DragDemo() {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-      <div style={{ fontSize: 12, color: "#a1a1aa" }}>Drag & Drop</div>
+      <div style={{ fontSize: 12, color: "#a1a1aa" }}>Drag to Drop Zone</div>
       <div style={{ display: "flex", gap: 8 }}>
         <DraggableIcon emoji="📄" label="Doc" />
         <DraggableIcon emoji="🖼️" label="Image" />
         <DraggableIcon emoji="🎵" label="Audio" />
       </div>
       <DropZone />
+    </div>
+  );
+}
+
+// Drag icon that opens menu with submenus (uses pointer events for instant response)
+function DragIconMenu() {
+  const [lastAction, setLastAction] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const iconRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+
+  const menu = useRayMenu({
+    items: submenuItems,
+    onSelect: (item: MenuItem) => {
+      console.log("[DragIcon] Selected:", item.label);
+      setLastAction(item.label);
+    },
+  });
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    iconRef.current?.setPointerCapture(e.pointerId);
+    // Position ghost immediately
+    if (ghostRef.current) {
+      ghostRef.current.style.left = `${e.clientX}px`;
+      ghostRef.current.style.top = `${e.clientY}px`;
+    }
+    menu.openAsDropTarget(e.clientX, e.clientY);
+  }, [menu]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    // Update ghost position via ref (no state update = no re-render)
+    if (ghostRef.current) {
+      ghostRef.current.style.left = `${e.clientX}px`;
+      ghostRef.current.style.top = `${e.clientY}px`;
+    }
+    menu.updateHoverFromPoint(e.clientX, e.clientY);
+  }, [menu]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    iconRef.current?.releasePointerCapture(e.pointerId);
+
+    const selected = menu.dropOnHovered();
+    if (selected) {
+      console.log("[DragIcon] Dropped on:", selected.label);
+    } else {
+      menu.cancelDrop();
+    }
+  }, [isDragging, menu]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+      <div style={{ fontSize: 12, color: "#a1a1aa" }}>Drag Icon (Submenus)</div>
+      <div
+        ref={iconRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        style={{
+          width: 80,
+          height: 80,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          borderRadius: 12,
+          border: `2px solid ${isDragging ? "rgba(100,180,255,0.5)" : "rgba(255,255,255,0.15)"}`,
+          background: isDragging ? "rgba(100,180,255,0.1)" : "rgba(255,255,255,0.05)",
+          cursor: isDragging ? "grabbing" : "grab",
+          fontSize: 32,
+          userSelect: "none",
+          touchAction: "none",
+          transition: "border 0.2s, background 0.2s",
+        }}
+      >
+        <span>📁</span>
+        <span style={{ fontSize: 10, color: "#a1a1aa" }}>{isDragging ? "Release" : "Drag me"}</span>
+      </div>
+
+      {/* Floating drag ghost - always rendered, visibility controlled by isDragging */}
+      <div
+        ref={ghostRef}
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          transform: "translate(-50%, -50%)",
+          width: 60,
+          height: 60,
+          display: isDragging ? "flex" : "none",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 12,
+          background: "rgba(30, 30, 35, 0.9)",
+          border: "2px solid rgba(100,180,255,0.5)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          fontSize: 28,
+          pointerEvents: "none",
+          zIndex: 10000,
+        }}
+      >
+        📁
+      </div>
+
+      {lastAction && (
+        <div style={{ fontSize: 11, color: "#22c55e" }}>Action: {lastAction}</div>
+      )}
     </div>
   );
 }
@@ -279,6 +390,7 @@ function App() {
         <Demo title="Submenus" items={submenuItems} />
         <Demo title="8 Items (compass)" items={manyItems} />
         <Demo title="Large Radius" items={basicItems} radius={180} />
+        <DragIconMenu />
         <DragDemo />
       </div>
 

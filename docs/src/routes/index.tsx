@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useRef, useCallback } from "react";
 import { useRayMenu } from "ray-menu/react";
 import type { MenuItem } from "ray-menu/react";
+import { toast, Toaster } from "sonner";
+import { Copy, Check } from "lucide-react";
 
 const menuItems: MenuItem[] = [
   { id: "docs", label: "Docs", icon: "📚" },
@@ -26,9 +28,14 @@ function DemoCircle() {
     showAnchorLine: true,
     onSelect: (item: MenuItem) => {
       console.log("Selected:", item);
+      toast.success(`Selected: ${item.label}`);
       if (item.id === "docs") window.location.href = "/docs";
       else if (item.id === "github")
         window.open("https://github.com/agmmnn/ray-menu", "_blank");
+      else if (item.id === "install") {
+        navigator.clipboard.writeText("npm i ray-menu");
+        toast.success("Copied to clipboard!");
+      }
     },
     onOpen: () => setIsMenuOpen(true),
     onClose: () => {
@@ -94,6 +101,38 @@ function DemoCircle() {
   );
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success("Copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      style={{
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: 4,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "rgba(255,255,255,0.3)",
+        transition: "color 0.2s",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
+      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+    </button>
+  );
+}
+
 const features = [
   { title: "Zero deps", desc: "Pure TypeScript. No runtime dependencies." },
   { title: "Web Component", desc: "Works in any framework or plain HTML." },
@@ -113,6 +152,7 @@ function Home() {
         fontFamily: "'DM Mono', 'JetBrains Mono', monospace",
       }}
     >
+      <Toaster position="bottom-center" theme="dark" />
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap"
@@ -219,18 +259,27 @@ function Home() {
             alignItems: "center",
           }}
         >
-          <code
+          <div
             style={{
-              fontSize: 12,
-              color: "rgba(255,255,255,0.25)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
               background: "rgba(255,255,255,0.03)",
-              padding: "8px 16px",
+              padding: "6px 8px 6px 16px",
               borderRadius: 6,
               border: "1px solid rgba(255,255,255,0.06)",
             }}
           >
-            npm i ray-menu
-          </code>
+            <code
+              style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.4)",
+              }}
+            >
+              npm i ray-menu
+            </code>
+            <CopyButton text="npm i ray-menu" />
+          </div>
           <Link
             to="/docs/$"
             params={{ _splat: "" }}
