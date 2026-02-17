@@ -396,19 +396,5 @@ export function renderParentLevels(
       svg.appendChild(path);
     });
 
-    // Back arrow indicator
-    const backIndicatorAngle = entry.entryAngle + Math.PI;
-    const backIndicatorRadius = (levelInnerRadius + levelRadius) / 2;
-    const backIndicatorPos = {
-      x: svgCenter + 20 + Math.cos(backIndicatorAngle) * backIndicatorRadius,
-      y: svgCenter + 20 + Math.sin(backIndicatorAngle) * backIndicatorRadius,
-    };
-
-    const backArrow = document.createElementNS(SVG_NS, "text");
-    backArrow.setAttribute("class", "ray-menu-back-arrow");
-    backArrow.setAttribute("x", String(backIndicatorPos.x));
-    backArrow.setAttribute("y", String(backIndicatorPos.y));
-    backArrow.textContent = "◂";
-    svg.appendChild(backArrow);
   });
 }

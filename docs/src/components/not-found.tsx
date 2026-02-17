@@ -5,7 +5,7 @@ export function NotFound() {
   return (
     <HomeLayout
       nav={{
-        title: "Tanstack Start",
+        title: "ray-menu",
       }}
       className="text-center py-32 justify-center"
     >

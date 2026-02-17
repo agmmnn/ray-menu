@@ -39,6 +39,7 @@ export class RayMenu extends HTMLElement {
   // State
   private _items: MenuItem[] = [];
   private _isOpen = false;
+  private _isClosing = false;
   private _position: Point = { x: 0, y: 0 };
   private _hoveredIndex = -1;
   private _flipState: FlipState = {
@@ -158,7 +159,7 @@ export class RayMenu extends HTMLElement {
 
   set items(value: MenuItem[]) {
     this._items = value;
-    if (this._isOpen) this._render();
+    if (this._isOpen && !this._isClosing) this._render();
   }
 
   get isOpen(): boolean {
@@ -244,6 +245,7 @@ export class RayMenu extends HTMLElement {
     const container = this.shadowRoot?.querySelector(".ray-menu-container") as HTMLElement | null;
     const cleanup = () => {
       this._isOpen = false;
+      this._isClosing = false;
       this._isDropTarget = false;
       this._hoveredIndex = -1;
       this._focusedIndex = -1;
@@ -272,6 +274,7 @@ export class RayMenu extends HTMLElement {
     };
 
     this._removeGlobalListeners();
+    this._isClosing = true;
 
     if (container) {
       container.setAttribute("data-closing", "true");
@@ -850,13 +853,17 @@ export class RayMenu extends HTMLElement {
     const hasChildren = item.children && item.children.length > 0;
     const canLoadChildren = typeof item.loadChildren === "function";
 
+    // Items with children enter submenu instead of selecting
+    if (hasChildren || canLoadChildren) {
+      const angle = this._pointerPosition
+        ? angleFromCenter(this._position, this._pointerPosition)
+        : this._config.startAngle;
+      this._enterSubmenu(item, angle, true);
+      return;
+    }
+
+    // Non-selectable items without children do nothing
     if (item.selectable === false) {
-      if (hasChildren || canLoadChildren) {
-        const angle = this._pointerPosition
-          ? angleFromCenter(this._position, this._pointerPosition)
-          : this._config.startAngle;
-        this._enterSubmenu(item, angle, true);
-      }
       return;
     }
 

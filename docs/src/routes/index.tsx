@@ -19,22 +19,29 @@ export const Route = createFileRoute("/")({
 function DemoCircle() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const circleRef = useRef<HTMLButtonElement>(null);
+  const lastCloseTime = useRef(0);
 
   const menu = useRayMenu({
     items: menuItems,
     showAnchorLine: true,
     onSelect: (item: MenuItem) => {
+      console.log("Selected:", item);
       if (item.id === "docs") window.location.href = "/docs";
       else if (item.id === "github")
         window.open("https://github.com/agmmnn/ray-menu", "_blank");
     },
     onOpen: () => setIsMenuOpen(true),
-    onClose: () => setIsMenuOpen(false),
+    onClose: () => {
+      setIsMenuOpen(false);
+      lastCloseTime.current = Date.now();
+    },
   });
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
+      // Prevent reopening if menu just closed (debounce)
+      if (Date.now() - lastCloseTime.current < 100) return;
       const rect = circleRef.current?.getBoundingClientRect();
       if (rect) {
         menu.open(rect.left + rect.width / 2, rect.top + rect.height / 2);
