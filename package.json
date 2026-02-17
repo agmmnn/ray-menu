@@ -1,6 +1,6 @@
 {
   "name": "ray-menu",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "A framework-agnostic radial (pie) menu library for the modern web.",
   "author": "agmmnn",
