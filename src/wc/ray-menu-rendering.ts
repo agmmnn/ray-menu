@@ -249,11 +249,23 @@ export function createLabel(options: CreateLabelOptions): HTMLDivElement {
 
   const label = document.createElement("div");
   label.className = "ray-menu-label";
+  label.id = `ray-menu-item-${index}`;
   label.style.left = `${labelPos.x}px`;
   label.style.top = `${labelPos.y}px`;
 
   if (isDropTarget) {
     label.style.pointerEvents = "none";
+  }
+
+  // ARIA
+  label.setAttribute("role", "menuitem");
+  if (item.disabled) {
+    label.setAttribute("aria-disabled", "true");
+  }
+  const hasChildren = item.children && item.children.length > 0;
+  const canLoadChildren = typeof item.loadChildren === "function";
+  if (hasChildren || canLoadChildren) {
+    label.setAttribute("aria-haspopup", "menu");
   }
 
   label.setAttribute("data-hovered", String(isHovered));
@@ -265,6 +277,7 @@ export function createLabel(options: CreateLabelOptions): HTMLDivElement {
   if (showKeyHint && index < 9) {
     const keyHint = document.createElement("span");
     keyHint.className = "ray-menu-key-hint";
+    keyHint.setAttribute("aria-hidden", "true");
     keyHint.textContent = String(index + 1);
     label.appendChild(keyHint);
   }
@@ -280,13 +293,10 @@ export function createLabel(options: CreateLabelOptions): HTMLDivElement {
     label.appendChild(shortcut);
   }
 
-  // Show submenu indicator for items with children or loadChildren
-  const hasChildren = item.children && item.children.length > 0;
-  const canLoadChildren = typeof item.loadChildren === "function";
-
   if (hasChildren || canLoadChildren) {
     const indicator = document.createElement("span");
     indicator.className = "ray-menu-submenu-indicator";
+    indicator.setAttribute("aria-hidden", "true");
     indicator.textContent = "▸";
     label.appendChild(indicator);
   }
@@ -305,6 +315,8 @@ export function createBackIndicator(
 
   const indicator = document.createElement("div");
   indicator.className = "ray-menu-back-indicator";
+  indicator.setAttribute("role", "button");
+  indicator.setAttribute("aria-label", "Go back");
   indicator.setAttribute("data-active", "false");
 
   const backZone = document.createElement("div");

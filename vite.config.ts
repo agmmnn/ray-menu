@@ -4,13 +4,41 @@ import { resolve } from "path";
 
 export default defineConfig(({ mode }) => {
   const isReact = mode === "react";
+  const isCore = mode === "core";
+
+  const entry = isReact
+    ? resolve(__dirname, "src/react/index.ts")
+    : isCore
+      ? resolve(__dirname, "src/core/index.ts")
+      : resolve(__dirname, "src/wc/index.ts");
+
+  const name = isReact ? "RayMenuReact" : isCore ? "RayMenuCore" : "RayMenu";
+
+  const fileName = (format: string) => {
+    const ext = format === "es" ? "mjs" : "cjs";
+    if (isReact) return `ray-menu-react.${ext}`;
+    if (isCore) return `ray-menu-core.${ext}`;
+    return `ray-menu.${ext}`;
+  };
+
+  const outDir = isReact ? "dist/react" : isCore ? "dist/core" : "dist/wc";
+
+  const dtsInclude = isReact
+    ? ["src/react", "src/shared", "src/core", "src/wc/ray-menu-types.ts"]
+    : isCore
+      ? ["src/core"]
+      : ["src/wc", "src/core"];
+
+  const assetPrefix = isReact
+    ? "ray-menu-react"
+    : isCore
+      ? "ray-menu-core"
+      : "ray-menu";
 
   return {
     plugins: [
       dts({
-        include: isReact
-          ? ["src/react", "src/shared", "src/core", "src/wc/ray-menu-types.ts"]
-          : ["src/wc", "src/core"],
+        include: dtsInclude,
         exclude: ["src/**/*.test.ts", "playground"],
         rollupTypes: false,
         tsconfigPath: "./tsconfig.app.json",
@@ -18,23 +46,18 @@ export default defineConfig(({ mode }) => {
     ],
     build: {
       lib: {
-        entry: isReact
-          ? resolve(__dirname, "src/react/index.ts")
-          : resolve(__dirname, "src/wc/index.ts"),
-        name: isReact ? "RayMenuReact" : "RayMenu",
+        entry,
+        name,
         formats: ["es", "cjs"],
-        fileName: (format) =>
-          isReact
-            ? `ray-menu-react.${format === "es" ? "mjs" : "cjs"}`
-            : `ray-menu.${format === "es" ? "mjs" : "cjs"}`,
+        fileName,
       },
       rollupOptions: {
         external: isReact ? ["react", "react/jsx-runtime"] : [],
         output: {
-          assetFileNames: isReact ? "ray-menu-react.[ext]" : "ray-menu.[ext]",
+          assetFileNames: `${assetPrefix}.[ext]`,
         },
       },
-      outDir: isReact ? "dist/react" : "dist/wc",
+      outDir,
       sourcemap: true,
       minify: "esbuild",
     },

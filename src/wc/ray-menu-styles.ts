@@ -80,11 +80,29 @@ export const RAY_MENU_STYLES = `
     height: 100vh;
     pointer-events: none;
     z-index: 9999;
+    touch-action: none;
+  }
+
+  @keyframes ray-menu-enter {
+    from { opacity: 0; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(0.8); }
+    to { opacity: 1; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(1); }
+  }
+
+  @keyframes ray-menu-exit {
+    from { opacity: 1; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(1); }
+    to { opacity: 0; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(0.8); }
   }
 
   .ray-menu-container {
     position: absolute;
     pointer-events: auto;
+    animation: ray-menu-enter 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1));
+  }
+
+  .ray-menu-container[data-closing="true"] {
+    animation: ray-menu-exit 120ms ease-in forwards;
+    pointer-events: none;
   }
 
   .ray-menu-container[data-drop-target="true"] {
@@ -151,7 +169,8 @@ export const RAY_MENU_STYLES = `
     opacity: 0.6;
   }
 
-  .ray-menu-arc[data-hovered="true"] {
+  .ray-menu-arc[data-hovered="true"],
+  .ray-menu-arc[data-focused="true"] {
     fill: var(--ray-arc-fill-hover);
     stroke: var(--ray-arc-stroke-hover);
     stroke-width: 2;
@@ -374,5 +393,13 @@ export const RAY_MENU_STYLES = `
     border-top-color: var(--ray-loading-spinner);
     border-radius: 50%;
     animation: loadingSpin 0.8s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ray-menu-arc, .ray-menu-label { transition: none !important; }
+    .ray-menu-container { animation: none !important; }
+    .ray-menu-container[data-closing="true"] { animation: none !important; display: none; }
+    .ray-menu-loading-spinner, .ray-menu-back-indicator .back-progress { animation: none !important; }
+    .drop-target-overlay { animation: none !important; }
   }
 `;

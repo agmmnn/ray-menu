@@ -110,9 +110,15 @@ export class RayMenu extends HTMLElement {
   // Config
   private _config: MenuConfig = { ...DEFAULT_CONFIG };
 
+  // Touch support state
+  private _pointerDownPos: Point | null = null;
+  private _pointerDownTime = 0;
+
   // Bound handlers
   private _handlePointerMove = this._onPointerMove.bind(this);
   private _handleClick = this._onClick.bind(this);
+  private _handlePointerDown = this._onPointerDown.bind(this);
+  private _handlePointerUp = this._onPointerUp.bind(this);
   private _handleKeyDown = this._onKeyDown.bind(this);
   private _handleDragOver = this._onDragOver.bind(this);
   private _handleScroll = this._onScroll.bind(this);
@@ -234,32 +240,46 @@ export class RayMenu extends HTMLElement {
       return;
     }
 
-    this._isOpen = false;
-    this._isDropTarget = false;
-    this._hoveredIndex = -1;
-    this._focusedIndex = -1;
-    this._keyboardActive = false;
-    this._isLoading = false;
-    this._loadingItemId = null;
-    this._loadError = null;
-    this._pointerPosition = null;
-    this._positionHistory = [];
-    this._timestampHistory = [];
-    this._velocity = { vx: 0, vy: 0 };
-    this._navStack = [];
-    this._currentItems = [];
-    this._clearSpringLoad();
-    this._clearBackDwell();
-    this._removeBackIndicator();
-    this._removeLoadingIndicator();
-    this._clearContainer();
-    this._removeDriftTrace();
-    this._removeGlobalListeners();
-    window.removeEventListener("dragover", this._handleDragOver);
+    // Animate out then clean up
+    const container = this.shadowRoot?.querySelector(".ray-menu-container") as HTMLElement | null;
+    const cleanup = () => {
+      this._isOpen = false;
+      this._isDropTarget = false;
+      this._hoveredIndex = -1;
+      this._focusedIndex = -1;
+      this._keyboardActive = false;
+      this._isLoading = false;
+      this._loadingItemId = null;
+      this._loadError = null;
+      this._pointerPosition = null;
+      this._positionHistory = [];
+      this._timestampHistory = [];
+      this._velocity = { vx: 0, vy: 0 };
+      this._navStack = [];
+      this._currentItems = [];
+      this._clearSpringLoad();
+      this._clearBackDwell();
+      this._removeBackIndicator();
+      this._removeLoadingIndicator();
+      this._clearContainer();
+      this._removeDriftTrace();
+      window.removeEventListener("dragover", this._handleDragOver);
 
-    // Restore scroll if locked
-    if (this._scrollBehavior === "lock") {
-      this._unlockScroll();
+      // Restore scroll if locked
+      if (this._scrollBehavior === "lock") {
+        this._unlockScroll();
+      }
+    };
+
+    this._removeGlobalListeners();
+
+    if (container) {
+      container.setAttribute("data-closing", "true");
+      container.addEventListener("animationend", cleanup, { once: true });
+      // Fallback in case animationend doesn't fire (e.g. prefers-reduced-motion)
+      setTimeout(cleanup, 200);
+    } else {
+      cleanup();
     }
 
     this.dispatchEvent(new CustomEvent("ray-close"));
@@ -543,6 +563,25 @@ export class RayMenu extends HTMLElement {
     }
   }
 
+  private _onPointerDown(e: PointerEvent): void {
+    if (!this._isOpen || e.pointerType !== "touch") return;
+    this._pointerDownPos = { x: e.clientX, y: e.clientY };
+    this._pointerDownTime = Date.now();
+  }
+
+  private _onPointerUp(e: PointerEvent): void {
+    if (!this._isOpen || e.pointerType !== "touch" || !this._pointerDownPos) return;
+
+    const elapsed = Date.now() - this._pointerDownTime;
+    const dist = distance(this._pointerDownPos, { x: e.clientX, y: e.clientY });
+    this._pointerDownPos = null;
+
+    // Treat as tap if within deadzone distance and time < 300ms
+    if (dist < 20 && elapsed < 300) {
+      this._onClick(e as unknown as MouseEvent);
+    }
+  }
+
   private _onScroll(): void {
     if (!this._isOpen) return;
     if (this._scrollBehavior === "none" || this._scrollBehavior === "lock")
@@ -710,6 +749,8 @@ export class RayMenu extends HTMLElement {
   private _addGlobalListeners(): void {
     window.addEventListener("pointermove", this._handlePointerMove);
     window.addEventListener("click", this._handleClick);
+    window.addEventListener("pointerdown", this._handlePointerDown);
+    window.addEventListener("pointerup", this._handlePointerUp);
     window.addEventListener("keydown", this._handleKeyDown);
     if (this._scrollBehavior === "close" || this._scrollBehavior === "keep") {
       window.addEventListener("scroll", this._handleScroll, { passive: true });
@@ -719,6 +760,8 @@ export class RayMenu extends HTMLElement {
   private _removeGlobalListeners(): void {
     window.removeEventListener("pointermove", this._handlePointerMove);
     window.removeEventListener("click", this._handleClick);
+    window.removeEventListener("pointerdown", this._handlePointerDown);
+    window.removeEventListener("pointerup", this._handlePointerUp);
     window.removeEventListener("keydown", this._handleKeyDown);
     window.removeEventListener("scroll", this._handleScroll);
   }
@@ -1122,6 +1165,8 @@ export class RayMenu extends HTMLElement {
     // Create center loading indicator
     const indicator = document.createElement("div");
     indicator.className = "ray-menu-loading-indicator";
+    indicator.setAttribute("role", "status");
+    indicator.setAttribute("aria-live", "polite");
 
     const spinner = document.createElement("div");
     spinner.className = "ray-menu-loading-spinner";
@@ -1236,33 +1281,37 @@ export class RayMenu extends HTMLElement {
     arcs.forEach((arc, index) => {
       const isHovered = index === this._hoveredIndex;
       const isFocused = index === this._focusedIndex && this._keyboardActive;
-      const isActive = isHovered || isFocused;
       const item = this._currentItems[index];
       const pathEl = arc as SVGPathElement;
 
-      pathEl.setAttribute(
-        "fill",
-        isActive ? "rgba(100, 180, 255, 0.4)" : "rgba(50, 50, 60, 0.6)",
-      );
-      pathEl.setAttribute(
-        "stroke",
-        isActive ? "rgba(100, 180, 255, 0.7)" : "rgba(255, 255, 255, 0.1)",
-      );
-      pathEl.setAttribute("stroke-width", isActive ? "2" : "1");
-      pathEl.setAttribute(
-        "opacity",
-        item?.disabled ? "0.3" : isActive ? "1" : "0.6",
-      );
-      pathEl.setAttribute("filter", isActive ? "url(#glow)" : "");
+      pathEl.setAttribute("data-hovered", String(isHovered));
+      pathEl.setAttribute("data-focused", String(isFocused));
+      pathEl.setAttribute("data-disabled", String(!!item?.disabled));
     });
 
     const labels = this.shadowRoot.querySelectorAll(".ray-menu-label");
+    let activeDescendantId = "";
     labels.forEach((label, index) => {
       const isHovered = index === this._hoveredIndex;
       const isFocused = index === this._focusedIndex && this._keyboardActive;
+      const isActive = isHovered || isFocused;
       label.setAttribute("data-hovered", String(isHovered));
       label.setAttribute("data-focused", String(isFocused));
+      label.setAttribute("aria-current", String(isActive));
+      if (isActive) {
+        activeDescendantId = label.id;
+      }
     });
+
+    // Update aria-activedescendant on the container
+    const container = this.shadowRoot.querySelector(".ray-menu-container");
+    if (container) {
+      if (activeDescendantId) {
+        container.setAttribute("aria-activedescendant", activeDescendantId);
+      } else {
+        container.removeAttribute("aria-activedescendant");
+      }
+    }
   }
 
   private _render(): void {
@@ -1285,9 +1334,11 @@ export class RayMenu extends HTMLElement {
     // Create container
     const container = document.createElement("div");
     container.className = "ray-menu-container";
+    container.setAttribute("role", "menu");
+    container.setAttribute("aria-label", "Menu");
     container.style.left = `${this._position.x}px`;
     container.style.top = `${this._position.y}px`;
-    container.style.transform = `translate(-50%, -50%) ${this._flipState.transform}`;
+    container.style.setProperty("--ray-flip-transform", this._flipState.transform);
 
     if (this._isDropTarget) {
       container.setAttribute("data-drop-target", "true");

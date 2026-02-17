@@ -5,113 +5,224 @@ description: Using the ray-menu Web Component
 
 # Web Component
 
-The `<ray-menu>` Web Component provides a framework-agnostic way to add radial menus to any web page.
+The `<ray-menu>` Web Component provides a framework-agnostic way to add radial menus to any web page. It uses an imperative API — items are set via JavaScript, and the menu is opened programmatically.
 
 ## Import
 
 ```javascript
-import "ray-menu/wc";
+import "ray-menu";
 ```
 
 Or via script tag:
 
 ```html
-<script type="module" src="ray-menu/wc"></script>
+<script type="module" src="ray-menu/dist/wc/ray-menu.mjs"></script>
 ```
 
 ## Basic Usage
 
 ```html
-<ray-menu>
-  <ray-menu-item value="copy">Copy</ray-menu-item>
-  <ray-menu-item value="paste">Paste</ray-menu-item>
-  <ray-menu-item value="cut">Cut</ray-menu-item>
-  <ray-menu-item value="delete">Delete</ray-menu-item>
-</ray-menu>
+<ray-menu id="menu"></ray-menu>
+
+<script type="module">
+  import "ray-menu";
+
+  const menu = document.getElementById("menu");
+
+  menu.items = [
+    { id: "copy", label: "Copy" },
+    { id: "paste", label: "Paste" },
+    { id: "cut", label: "Cut" },
+    { id: "delete", label: "Delete" },
+  ];
+
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    menu.open(e.clientX, e.clientY);
+  });
+
+  menu.addEventListener("ray-select", (e) => {
+    console.log("Selected:", e.detail);
+  });
+</script>
 ```
 
 ## Attributes
 
-### `<ray-menu>`
+| Attribute              | Type                            | Default   | Description                                       |
+| ---------------------- | ------------------------------- | --------- | ------------------------------------------------- |
+| `radius`               | `number`                        | `120`     | Radius of the menu ring in pixels                 |
+| `inner-radius`         | `number`                        | `40`      | Inner dead zone radius in pixels                  |
+| `center-deadzone`      | `number`                        | `30`      | Center deadzone radius for selection              |
+| `infinite-selection`   | `boolean`                       | `true`    | Sectors extend infinitely outward                 |
+| `infinite-threshold`   | `number`                        | `0`       | Max distance for infinite selection (0 = infinite)|
+| `edge-behavior`        | `"shift" \| "flip" \| "none"`   | `"flip"`  | How to handle viewport edge collisions            |
+| `show-trail-path`      | `boolean`                       | `false`   | Show drift trace trail path                       |
+| `show-anchor-line`     | `boolean`                       | `false`   | Show anchor line to hovered item                  |
+| `center-transparent`   | `boolean`                       | `true`    | Make center area transparent                      |
+| `instant-drag-through` | `boolean`                       | `false`   | Enable instant drag-through to submenus           |
+| `scroll-behavior`      | `"close" \| "keep" \| "lock" \| "none"` | `"close"` | Behavior when page scrolls while menu is open |
+| `scroll-threshold`     | `number`                        | `10`      | Scroll distance (px) before closing               |
+| `start-angle`          | `number`                        | `-90`     | Start angle in degrees (top = -90)                |
+| `sweep-angle`          | `number`                        | `360`     | Total sweep angle in degrees                      |
+| `static`               | `boolean`                       | `false`   | Use relative positioning (dock mode)              |
+| `default-open`         | `boolean`                       | `false`   | Open automatically on mount (use with `static`)   |
 
-| Attribute         | Type                                     | Default  | Description                         |
-| ----------------- | ---------------------------------------- | -------- | ----------------------------------- |
-| `trigger`         | `"contextmenu" \| "longpress" \| "both"` | `"both"` | How to trigger the menu             |
-| `center-deadzone` | `number`                                 | `30`     | Radius of center deadzone in pixels |
-| `disabled`        | `boolean`                                | `false`  | Disable the menu                    |
+## Properties
 
-### `<ray-menu-item>`
+| Property       | Type         | Description                        |
+| -------------- | ------------ | ---------------------------------- |
+| `items`        | `MenuItem[]` | Array of menu items to display     |
+| `isOpen`       | `boolean`    | Whether the menu is currently open |
+| `isDropTarget` | `boolean`    | Whether in drag-drop target mode   |
+| `isLoading`    | `boolean`    | Whether async children are loading |
+| `submenuDepth` | `number`     | Current submenu nesting depth      |
 
-| Attribute  | Type      | Default  | Description                |
-| ---------- | --------- | -------- | -------------------------- |
-| `value`    | `string`  | required | Value emitted on selection |
-| `disabled` | `boolean` | `false`  | Disable this item          |
+### MenuItem
+
+```typescript
+interface MenuItem {
+  id: string;
+  label: string;
+  icon?: string;
+  shortcut?: string;
+  disabled?: boolean;
+  selectable?: boolean;
+  children?: MenuItem[];
+  loadChildren?: () => Promise<MenuItem[]>;
+  onSelect?: () => void;
+}
+```
+
+## Methods
+
+| Method                        | Description                              |
+| ----------------------------- | ---------------------------------------- |
+| `open(x, y)`                  | Open the menu at viewport coordinates    |
+| `close()`                     | Close the menu                           |
+| `toggle(x, y)`                | Toggle menu open/closed                  |
+| `goBack()`                    | Navigate back one submenu level          |
+| `goToRoot()`                  | Navigate back to root menu               |
+| `openAsDropTarget(x, y)`      | Open in drag-drop target mode            |
+| `updateHoverFromPoint(x, y)`  | Update hover state from external coordinates |
+| `dropOnHovered(data?)`        | Complete drop on currently hovered item  |
+| `cancelDrop()`                | Cancel drag-drop operation               |
+| `getHoveredItem()`            | Get the currently hovered MenuItem       |
 
 ## Events
 
-### `ray-menu-select`
+### `ray-select`
 
-Fired when an item is selected.
+Fired when an item is selected. `event.detail` is the selected `MenuItem`.
 
 ```javascript
-document.querySelector("ray-menu").addEventListener("ray-menu-select", (e) => {
-  console.log("Selected:", e.detail.value);
+menu.addEventListener("ray-select", (e) => {
+  console.log("Selected:", e.detail.label);
 });
 ```
 
-### `ray-menu-open`
+### `ray-open`
 
-Fired when the menu opens.
+Fired when the menu opens. `event.detail` is `{ x, y }` position.
 
 ```javascript
-document.querySelector("ray-menu").addEventListener("ray-menu-open", (e) => {
-  console.log("Menu opened at:", e.detail.x, e.detail.y);
+menu.addEventListener("ray-open", (e) => {
+  console.log("Opened at:", e.detail.x, e.detail.y);
 });
 ```
 
-### `ray-menu-close`
+### `ray-close`
 
 Fired when the menu closes.
 
 ```javascript
-document.querySelector("ray-menu").addEventListener("ray-menu-close", () => {
+menu.addEventListener("ray-close", () => {
   console.log("Menu closed");
 });
 ```
 
-## Icons
+### `ray-submenu-enter`
 
-Use the `icon` slot to add icons:
+Fired when entering a submenu. `event.detail` is `{ item, depth }`.
 
-```html
-<ray-menu-item value="copy">
-  <svg slot="icon" viewBox="0 0 24 24"><!-- icon SVG --></svg>
-  Copy
-</ray-menu-item>
-```
+### `ray-submenu-exit`
+
+Fired when exiting a submenu. `event.detail` is `{ item, depth }`.
+
+### `ray-drop`
+
+Fired on drop in drag-drop mode. `event.detail` is `{ item, data }`.
+
+### `ray-load-start` / `ray-load-complete` / `ray-load-error`
+
+Fired during async child loading.
 
 ## Submenus
 
-Create nested menus with `<ray-menu-submenu>`:
-
-```html
-<ray-menu>
-  <ray-menu-item value="copy">Copy</ray-menu-item>
-  <ray-menu-submenu label="More">
-    <ray-menu-item value="option1">Option 1</ray-menu-item>
-    <ray-menu-item value="option2">Option 2</ray-menu-item>
-  </ray-menu-submenu>
-</ray-menu>
-```
-
-## Programmatic Control
+Submenus are defined via the `children` property on menu items:
 
 ```javascript
-const menu = document.querySelector("ray-menu");
-
-// Open at position
-menu.open(100, 200);
-
-// Close
-menu.close();
+menu.items = [
+  { id: "copy", label: "Copy" },
+  {
+    id: "more",
+    label: "More",
+    children: [
+      { id: "option1", label: "Option 1" },
+      { id: "option2", label: "Option 2" },
+    ],
+  },
+];
 ```
+
+### Async Submenus
+
+Load submenu items on demand with `loadChildren`:
+
+```javascript
+menu.items = [
+  {
+    id: "files",
+    label: "Files",
+    loadChildren: async () => {
+      const files = await fetchFiles();
+      return files.map((f) => ({ id: f.id, label: f.name }));
+    },
+  },
+];
+```
+
+## Theming
+
+Customize appearance with CSS custom properties on the `<ray-menu>` element:
+
+```css
+ray-menu {
+  --ray-bg: #1a1a2e;
+  --ray-text: #ffffff;
+  --ray-accent: #ff6b6b;
+  --ray-accent-text: white;
+  --ray-border: rgba(255, 255, 255, 0.15);
+  --ray-arc-fill: rgba(50, 50, 60, 0.6);
+  --ray-arc-fill-hover: rgba(255, 107, 107, 0.4);
+  --ray-arc-stroke: rgba(255, 255, 255, 0.1);
+  --ray-arc-stroke-hover: rgba(255, 107, 107, 0.7);
+  --ray-radius: 8px;
+  --ray-font-size: 14px;
+  --ray-transition: 150ms ease;
+}
+```
+
+## Keyboard Navigation
+
+When the menu is open:
+
+| Key              | Action                             |
+| ---------------- | ---------------------------------- |
+| `ArrowLeft/Right`| Move focus between items           |
+| `ArrowDown/Enter/Space` | Select focused item or enter submenu |
+| `ArrowUp`        | Go back to parent or close         |
+| `Backspace`      | Go back to parent submenu          |
+| `Escape`         | Close the menu                     |
+| `Home/End`       | Jump to first/last item            |
+| `1-9`            | Quick select item by number        |

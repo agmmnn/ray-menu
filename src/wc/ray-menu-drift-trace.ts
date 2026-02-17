@@ -2,7 +2,16 @@ import type { Point, Velocity, TracePoint } from "../core";
 import { distance, distributeAngles, generateTraceTrail } from "../core";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const TRAIL_COLOR = "rgba(100, 180, 255, 0.5)";
+const DEFAULT_TRAIL_COLOR = "rgba(100, 180, 255, 0.5)";
+
+function getTrailColor(svg: SVGSVGElement): string {
+  const host = svg.closest("ray-menu");
+  if (host) {
+    const accent = getComputedStyle(host).getPropertyValue("--ray-accent").trim();
+    if (accent) return accent;
+  }
+  return DEFAULT_TRAIL_COLOR;
+}
 
 /**
  * Create a gradient stop element
@@ -40,15 +49,15 @@ export function createDriftTraceSvg(): SVGSVGElement {
   const trailGradient = document.createElementNS(SVG_NS, "linearGradient");
   trailGradient.setAttribute("id", "trailGradient");
   trailGradient.setAttribute("gradientUnits", "userSpaceOnUse");
-  trailGradient.appendChild(createGradientStop("0%", TRAIL_COLOR, "0"));
-  trailGradient.appendChild(createGradientStop("100%", TRAIL_COLOR, "0.6"));
+  trailGradient.appendChild(createGradientStop("0%", DEFAULT_TRAIL_COLOR, "0"));
+  trailGradient.appendChild(createGradientStop("100%", DEFAULT_TRAIL_COLOR, "0.6"));
 
   // Anchor gradient
   const anchorGradient = document.createElementNS(SVG_NS, "linearGradient");
   anchorGradient.setAttribute("id", "anchorGradient");
   anchorGradient.setAttribute("gradientUnits", "userSpaceOnUse");
-  anchorGradient.appendChild(createGradientStop("0%", TRAIL_COLOR, "0.8"));
-  anchorGradient.appendChild(createGradientStop("100%", TRAIL_COLOR, "0.2"));
+  anchorGradient.appendChild(createGradientStop("0%", DEFAULT_TRAIL_COLOR, "0.8"));
+  anchorGradient.appendChild(createGradientStop("100%", DEFAULT_TRAIL_COLOR, "0.2"));
 
   // Trail blur filter
   const trailBlur = document.createElementNS(SVG_NS, "filter");
@@ -106,6 +115,7 @@ export function updateDriftTrace(
     showAnchorLine,
   } = options;
 
+  const trailColor = getTrailColor(svg);
   const trailDuration = 300;
   const maxPoints = 20;
 
@@ -113,6 +123,18 @@ export function updateDriftTrace(
   const defs = svg.querySelector("defs");
   while (svg.lastChild && svg.lastChild !== defs) {
     svg.removeChild(svg.lastChild);
+  }
+
+  // Update gradient colors dynamically
+  const trailGradient = svg.querySelector("#trailGradient");
+  if (trailGradient) {
+    const stops = trailGradient.querySelectorAll("stop");
+    stops.forEach((stop) => stop.setAttribute("stop-color", trailColor));
+  }
+  const anchorGradient = svg.querySelector("#anchorGradient");
+  if (anchorGradient) {
+    const stops = anchorGradient.querySelectorAll("stop");
+    stops.forEach((stop) => stop.setAttribute("stop-color", trailColor));
   }
 
   // Generate trail points
@@ -173,7 +195,7 @@ export function updateDriftTrace(
     anchorDot.setAttribute("cx", String(anchorPoint.x));
     anchorDot.setAttribute("cy", String(anchorPoint.y));
     anchorDot.setAttribute("r", "4");
-    anchorDot.setAttribute("fill", TRAIL_COLOR);
+    anchorDot.setAttribute("fill", trailColor);
     anchorDot.setAttribute("opacity", "0.9");
     svg.appendChild(anchorDot);
   }
@@ -201,7 +223,7 @@ export function updateDriftTrace(
       dot.setAttribute("cx", String(point.x));
       dot.setAttribute("cy", String(point.y));
       dot.setAttribute("r", String(2 + (index / trailPoints.length) * 3));
-      dot.setAttribute("fill", TRAIL_COLOR);
+      dot.setAttribute("fill", trailColor);
       dot.setAttribute("opacity", String(point.opacity * 0.5));
       svg.appendChild(dot);
     });
@@ -211,7 +233,7 @@ export function updateDriftTrace(
     posDot.setAttribute("cx", String(pointerPosition.x));
     posDot.setAttribute("cy", String(pointerPosition.y));
     posDot.setAttribute("r", "6");
-    posDot.setAttribute("fill", TRAIL_COLOR);
+    posDot.setAttribute("fill", trailColor);
     posDot.setAttribute("opacity", "0.8");
     posDot.setAttribute("filter", "url(#trailBlur)");
     svg.appendChild(posDot);
@@ -229,7 +251,7 @@ export function updateDriftTrace(
         "y2",
         String(pointerPosition.y + (velocity.vy / speed) * 30),
       );
-      dirLine.setAttribute("stroke", TRAIL_COLOR);
+      dirLine.setAttribute("stroke", trailColor);
       dirLine.setAttribute("stroke-width", "2");
       dirLine.setAttribute("stroke-linecap", "round");
       dirLine.setAttribute("opacity", String(intensity * 0.5));
