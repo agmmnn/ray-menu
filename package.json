@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "A framework-agnostic radial (pie) menu library for the modern web.",
-  "author": "",
+  "author": "agmmnn",
   "license": "MIT",
   "homepage": "https://github.com/agmmnn/ray-menu",
   "repository": {
@@ -39,11 +39,11 @@
     },
     "./core": {
       "import": {
-        "types": "./dist/core/core/index.d.ts",
+        "types": "./dist/core/index.d.ts",
         "default": "./dist/core/ray-menu-core.mjs"
       },
       "require": {
-        "types": "./dist/core/core/index.d.ts",
+        "types": "./dist/core/index.d.ts",
         "default": "./dist/core/ray-menu-core.cjs"
       }
     },
@@ -79,7 +79,8 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
