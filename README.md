@@ -1,10 +1,10 @@
-# ray-menu
+<img width="1202" height="752" alt="CleanShot 2026-02-19 at 01 03 10@2x" src="https://github.com/user-attachments/assets/13766766-99fd-47be-8aca-9d566358ebd9" />
 
 [![npm](https://img.shields.io/npm/v/ray-menu)](https://www.npmjs.com/package/ray-menu)
 [![npm bundle size](https://img.shields.io/bundlephobia/minzip/ray-menu)](https://bundlephobia.com/package/ray-menu)
 [![license](https://img.shields.io/npm/l/ray-menu)](https://github.com/agmmnn/ray-menu/blob/master/LICENSE)
 
-https://github.com/user-attachments/assets/c4fdf273-ccb6-4610-8bca-c24640e3f010
+# ray-menu
 
 Radial (pie) menu for the web. Framework-agnostic. Zero dependencies.
 
