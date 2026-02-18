@@ -35,7 +35,12 @@ import {
 } from "./ray-menu-rendering";
 import { createDriftTraceSvg, updateDriftTrace } from "./ray-menu-drift-trace";
 
-export class RayMenu extends HTMLElement {
+const BaseElement =
+  typeof HTMLElement !== "undefined"
+    ? HTMLElement
+    : (class {} as typeof HTMLElement);
+
+export class RayMenu extends BaseElement {
   // State
   private _items: MenuItem[] = [];
   private _isOpen = false;

@@ -106,6 +106,9 @@ export class RayMenuController {
   }
 
   async init(): Promise<void> {
+    // Skip in non-browser environments (SSR)
+    if (typeof document === "undefined") return;
+
     // Register the <ray-menu> custom element if not already registered.
     // Uses static import to ensure bundlers include the WC code.
     if (
