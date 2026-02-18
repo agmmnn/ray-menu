@@ -1465,7 +1465,12 @@ export class RayMenu extends HTMLElement {
 }
 
 // Register the custom element
-customElements.define("ray-menu", RayMenu);
+if (
+  typeof customElements !== "undefined" &&
+  !customElements.get("ray-menu")
+) {
+  customElements.define("ray-menu", RayMenu);
+}
 
 // Extend HTMLElementTagNameMap for TypeScript support
 declare global {

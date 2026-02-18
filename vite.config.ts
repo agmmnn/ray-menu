@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
   const outDir = isReact ? "dist/react" : isCore ? "dist/core" : "dist/wc";
 
   const dtsInclude = isReact
-    ? ["src/react", "src/shared", "src/core", "src/wc/ray-menu-types.ts"]
+    ? ["src/react", "src/shared", "src/core", "src/wc/ray-menu-types.ts", "src/wc/ray-menu.ts"]
     : isCore
       ? ["src/core"]
       : ["src/wc", "src/core"];

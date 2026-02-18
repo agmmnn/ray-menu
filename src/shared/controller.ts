@@ -4,6 +4,7 @@ import type {
   RayMenuSubmenuDetail,
   RayMenuLoadErrorDetail,
 } from "../wc/ray-menu-types";
+import { RayMenu } from "../wc/ray-menu";
 
 export interface RayMenuControllerOptions {
   items: MenuItem[];
@@ -105,14 +106,13 @@ export class RayMenuController {
   }
 
   async init(): Promise<void> {
-    // Dynamically import to register the <ray-menu> custom element.
-    // This is async to support SSR environments where the WC can't
-    // be imported at the top level.
+    // Register the <ray-menu> custom element if not already registered.
+    // Uses static import to ensure bundlers include the WC code.
     if (
       typeof customElements !== "undefined" &&
       !customElements.get("ray-menu")
     ) {
-      await import("../wc/index");
+      customElements.define("ray-menu", RayMenu);
     }
 
     const el = document.createElement("ray-menu") as RayMenuElement;
