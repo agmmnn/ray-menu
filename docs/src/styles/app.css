@@ -3,81 +3,111 @@
 @import "fumadocs-ui/css/preset.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/roboto";
 
 @custom-variant dark (&:is(.dark *));
 
+/* ─── Fumadocs theme: Orbital Amber ──────────────────── */
+
 :root {
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0.028 261.692);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0.028 261.692);
-  --primary: oklch(0.488 0.243 264.376);
-  --primary-foreground: oklch(0.97 0.014 254.604);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.003 264.542);
-  --muted-foreground: oklch(0.551 0.027 264.364);
-  --accent: oklch(0.488 0.243 264.376);
-  --accent-foreground: oklch(0.97 0.014 254.604);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.928 0.006 264.531);
-  --input: oklch(0.928 0.006 264.531);
-  --ring: oklch(0.707 0.022 261.325);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.002 247.839);
-  --sidebar-foreground: oklch(0.13 0.028 261.692);
-  --sidebar-primary: oklch(0.546 0.245 262.881);
-  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-accent: oklch(0.488 0.243 264.376);
-  --sidebar-accent-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-border: oklch(0.928 0.006 264.531);
-  --sidebar-ring: oklch(0.707 0.022 261.325);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.13 0.028 261.692);
+  /* Fumadocs core variables — light mode */
+  --color-fd-background: hsl(40, 20%, 97%);
+  --color-fd-foreground: hsl(30, 10%, 12%);
+  --color-fd-muted: hsl(35, 14%, 93%);
+  --color-fd-muted-foreground: hsl(30, 6%, 45%);
+  --color-fd-popover: hsl(40, 20%, 98%);
+  --color-fd-popover-foreground: hsl(30, 10%, 15%);
+  --color-fd-card: hsl(38, 16%, 95%);
+  --color-fd-card-foreground: hsl(30, 10%, 12%);
+  --color-fd-border: hsl(33, 12%, 88%);
+  --color-fd-primary: hsl(30, 80%, 50%);
+  --color-fd-primary-foreground: hsl(40, 20%, 98%);
+  --color-fd-secondary: hsl(35, 14%, 92%);
+  --color-fd-secondary-foreground: hsl(30, 10%, 18%);
+  --color-fd-accent: hsl(30, 60%, 92%);
+  --color-fd-accent-foreground: hsl(30, 80%, 35%);
+  --color-fd-ring: hsl(30, 50%, 65%);
+
+  /* shadcn variables — light mode */
+  --card: hsl(38, 16%, 95%);
+  --card-foreground: hsl(30, 10%, 12%);
+  --popover: hsl(40, 20%, 98%);
+  --popover-foreground: hsl(30, 10%, 15%);
+  --primary: hsl(30, 80%, 50%);
+  --primary-foreground: hsl(40, 20%, 98%);
+  --secondary: hsl(35, 14%, 92%);
+  --secondary-foreground: hsl(30, 10%, 18%);
+  --muted: hsl(35, 14%, 93%);
+  --muted-foreground: hsl(30, 6%, 45%);
+  --accent: hsl(30, 60%, 92%);
+  --accent-foreground: hsl(30, 80%, 35%);
+  --destructive: hsl(0, 72%, 51%);
+  --border: hsl(33, 12%, 88%);
+  --input: hsl(33, 12%, 88%);
+  --ring: hsl(30, 50%, 65%);
+  --radius: 0.5rem;
+  --background: hsl(40, 20%, 97%);
+  --foreground: hsl(30, 10%, 12%);
+  --sidebar: hsl(40, 18%, 96%);
+  --sidebar-foreground: hsl(30, 10%, 12%);
+  --sidebar-primary: hsl(30, 80%, 50%);
+  --sidebar-primary-foreground: hsl(40, 20%, 98%);
+  --sidebar-accent: hsl(30, 60%, 92%);
+  --sidebar-accent-foreground: hsl(30, 80%, 35%);
+  --sidebar-border: hsl(33, 12%, 88%);
+  --sidebar-ring: hsl(30, 50%, 65%);
 }
 
 .dark {
-  --background: oklch(0.13 0.028 261.692);
-  --foreground: oklch(0.985 0.002 247.839);
-  --card: oklch(0.21 0.034 264.665);
-  --card-foreground: oklch(0.985 0.002 247.839);
-  --popover: oklch(0.21 0.034 264.665);
-  --popover-foreground: oklch(0.985 0.002 247.839);
-  --primary: oklch(0.42 0.18 266);
-  --primary-foreground: oklch(0.97 0.014 254.604);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.278 0.033 256.848);
-  --muted-foreground: oklch(0.707 0.022 261.325);
-  --accent: oklch(0.42 0.18 266);
-  --accent-foreground: oklch(0.97 0.014 254.604);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.21 0.034 264.665);
-  --sidebar-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-primary: oklch(0.623 0.214 259.815);
-  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-accent: oklch(0.42 0.18 266);
-  --sidebar-accent-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* Fumadocs core variables — dark mode (matches landing page) */
+  --color-fd-background: hsl(240, 33%, 4%);
+  --color-fd-foreground: hsl(0, 0%, 92%);
+  --color-fd-muted: hsl(240, 20%, 9%);
+  --color-fd-muted-foreground: hsla(0, 0%, 100%, 0.45);
+  --color-fd-popover: hsl(240, 25%, 7%);
+  --color-fd-popover-foreground: hsl(0, 0%, 88%);
+  --color-fd-card: hsl(240, 22%, 8%);
+  --color-fd-card-foreground: hsl(0, 0%, 92%);
+  --color-fd-border: hsla(0, 0%, 100%, 0.07);
+  --color-fd-primary: hsl(30, 80%, 56%);
+  --color-fd-primary-foreground: hsl(240, 33%, 4%);
+  --color-fd-secondary: hsl(240, 18%, 12%);
+  --color-fd-secondary-foreground: hsl(0, 0%, 88%);
+  --color-fd-accent: hsla(30, 80%, 56%, 0.12);
+  --color-fd-accent-foreground: hsl(30, 80%, 65%);
+  --color-fd-ring: hsl(30, 60%, 45%);
+
+  /* shadcn variables — dark mode */
+  --background: hsl(240, 33%, 4%);
+  --foreground: hsl(0, 0%, 92%);
+  --card: hsl(240, 22%, 8%);
+  --card-foreground: hsl(0, 0%, 92%);
+  --popover: hsl(240, 25%, 7%);
+  --popover-foreground: hsl(0, 0%, 88%);
+  --primary: hsl(30, 80%, 56%);
+  --primary-foreground: hsl(240, 33%, 4%);
+  --secondary: hsl(240, 18%, 12%);
+  --secondary-foreground: hsl(0, 0%, 88%);
+  --muted: hsl(240, 20%, 9%);
+  --muted-foreground: hsla(0, 0%, 100%, 0.45);
+  --accent: hsla(30, 80%, 56%, 0.12);
+  --accent-foreground: hsl(30, 80%, 65%);
+  --destructive: hsl(0, 62%, 55%);
+  --border: hsla(0, 0%, 100%, 0.07);
+  --input: hsla(0, 0%, 100%, 0.1);
+  --ring: hsl(30, 60%, 45%);
+  --sidebar: hsl(240, 25%, 6%);
+  --sidebar-foreground: hsl(0, 0%, 88%);
+  --sidebar-primary: hsl(30, 80%, 56%);
+  --sidebar-primary-foreground: hsl(240, 33%, 4%);
+  --sidebar-accent: hsla(30, 80%, 56%, 0.1);
+  --sidebar-accent-foreground: hsl(30, 80%, 65%);
+  --sidebar-border: hsla(0, 0%, 100%, 0.07);
+  --sidebar-ring: hsl(30, 60%, 45%);
 }
 
 @theme inline {
-  --font-sans: "Roboto", sans-serif;
+  --font-sans: "JetBrains Mono", monospace;
+  --font-mono: "JetBrains Mono", monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -86,11 +116,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);

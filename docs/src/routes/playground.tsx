@@ -1,12 +1,42 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ArrowLeft,
+  Keyboard,
+  MousePointerClick,
+  GripVertical,
+  Terminal,
+  Sun,
+  Moon,
+} from "lucide-react";
+import { useTheme } from "next-themes";
 
 export const Route = createFileRoute("/playground")({
   component: Playground,
   head: () => ({
     meta: [{ title: "Playground - ray-menu" }],
   }),
-  ssr: false, // Disable SSR for this page - Web Components need client-side only
+  ssr: false,
 });
 
 const defaultItems = [
@@ -57,15 +87,43 @@ const fanPresets: Record<string, { start: number; sweep: number }> = {
   quarter: { start: -90, sweep: 90 },
 };
 
+const dragIcons = [
+  { type: "image", label: "Image", emoji: "\uD83D\uDDBC\uFE0F" },
+  { type: "video", label: "Video", emoji: "\uD83C\uDFAC" },
+  { type: "music", label: "Music", emoji: "\uD83C\uDFB5" },
+  { type: "doc", label: "Document", emoji: "\uD83D\uDCC4" },
+  { type: "code", label: "Code", emoji: "\uD83D\uDCBB" },
+  { type: "link", label: "Link", emoji: "\uD83D\uDD17" },
+];
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme !== "light";
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label="Toggle theme"
+    >
+      <Sun className="size-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute size-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+    </Button>
+  );
+}
+
 function Playground() {
   const menuRef = useRef<any>(null);
-  const [log, setLog] = useState("Right-click or click in the demo area");
+  const [logs, setLogs] = useState<string[]>([
+    "Right-click or click in the demo area",
+  ]);
   const [config, setConfig] = useState({
     infinite: true,
     trailPath: false,
     anchorLine: false,
     centerTransparent: true,
     edgeBehavior: "flip",
+    preset: "full",
     startAngle: -90,
     sweepAngle: 360,
     deadzone: 30,
@@ -77,9 +135,12 @@ function Playground() {
     label: string;
   } | null>(null);
 
+  const pushLog = useCallback((msg: string) => {
+    setLogs((prev) => [...prev.slice(-19), msg]);
+  }, []);
+
   useEffect(() => {
     import("ray-menu").then(() => {
-      // Wait for custom element to be defined
       customElements.whenDefined("ray-menu").then(() => {
         setReady(true);
       });
@@ -93,20 +154,18 @@ function Playground() {
 
     menu.items = defaultItems;
 
-    const onSelect = (e: CustomEvent) => {
-      setLog(`Selected: ${e.detail.label}`);
-    };
-    const onOpen = () => setLog("Menu opened");
+    const onSelect = (e: CustomEvent) => pushLog(`Selected: ${e.detail.label}`);
+    const onOpen = () => pushLog("Menu opened");
     const onSubmenuEnter = (e: CustomEvent) =>
-      setLog(
+      pushLog(
         `Entered submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`,
       );
     const onSubmenuExit = (e: CustomEvent) =>
-      setLog(
+      pushLog(
         `Exited submenu: ${e.detail.item.label} (depth: ${e.detail.depth})`,
       );
     const onLoadError = (e: CustomEvent) =>
-      setLog(`Error: ${e.detail.error.message}`);
+      pushLog(`Error: ${e.detail.error.message}`);
 
     menu.addEventListener("ray-select", onSelect);
     menu.addEventListener("ray-open", onOpen);
@@ -121,9 +180,8 @@ function Playground() {
       menu.removeEventListener("ray-submenu-exit", onSubmenuExit);
       menu.removeEventListener("ray-load-error", onLoadError);
     };
-  }, [ready]);
+  }, [ready, pushLog]);
 
-  // Sync config to menu attributes
   useEffect(() => {
     if (!ready) return;
     const menu = menuRef.current;
@@ -156,7 +214,7 @@ function Playground() {
     [ready],
   );
 
-  // Icon drag handlers
+
   const handleIconDragStart = useCallback(
     (e: React.DragEvent, icon: { type: string; label: string }) => {
       setDragData(icon);
@@ -180,18 +238,17 @@ function Playground() {
       if (menu?.isOpen) {
         const result = menu.dropOnHovered(dragData);
         if (result) {
-          setLog(`Icon "${dragData?.label}" → ${result.label}`);
+          pushLog(`Icon "${dragData?.label}" \u2192 ${result.label}`);
         } else {
-          setLog(`Drag cancelled for "${dragData?.label}"`);
+          pushLog(`Drag cancelled for "${dragData?.label}"`);
           menu.cancelDrop();
         }
       }
       setDragData(null);
     },
-    [dragData],
+    [dragData, pushLog],
   );
 
-  // Allow drag over document when menu is open as drop target
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {
       const menu = menuRef.current;
@@ -204,314 +261,337 @@ function Playground() {
   }, []);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#08080a",
-        color: "#fff",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
+    <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
-      <nav
-        style={{
-          maxWidth: 960,
-          margin: "0 auto",
-          padding: "16px 24px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-          <Link
-            to="/"
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: "rgba(255,255,255,0.8)",
-              textDecoration: "none",
-            }}
-          >
+      <nav className="max-w-[1000px] mx-auto px-6 py-4 flex items-center justify-between border-b border-border">
+        <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity no-underline">
+            <ArrowLeft className="size-4" />
             ray-menu
           </Link>
-          <span
-            style={{
-              fontSize: 13,
-              color: "rgba(255,255,255,0.4)",
-            }}
-          >
-            playground
-          </span>
+          <Separator orientation="vertical" className="h-4" />
+          <span className="text-sm text-muted-foreground">Playground</span>
         </div>
-        <div style={{ display: "flex", gap: 20 }}>
-          <Link
-            to="/docs/$"
-            params={{ _splat: "" }}
-            style={{
-              fontSize: 13,
-              color: "rgba(255,255,255,0.35)",
-              textDecoration: "none",
-            }}
-          >
-            docs
-          </Link>
-          <a
-            href="https://github.com/agmmnn/ray-menu"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: 13,
-              color: "rgba(255,255,255,0.35)",
-              textDecoration: "none",
-            }}
-          >
-            github
-          </a>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/docs/$" params={{ _splat: "" }} className="no-underline">
+              Docs
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <a
+              href="https://github.com/agmmnn/ray-menu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="no-underline"
+            >
+              GitHub
+            </a>
+          </Button>
+          <ThemeToggle />
         </div>
       </nav>
 
-      <div
-        style={{
-          maxWidth: 960,
-          margin: "0 auto",
-          padding: "24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
-        {/* Controls */}
-        <div
-          style={{
-            padding: "16px 20px",
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 8,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 12,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
-          >
-            Configuration
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-            }}
-          >
-            <Checkbox
-              label="Infinite Selection"
-              checked={config.infinite}
-              onChange={(v) => setConfig((c) => ({ ...c, infinite: v }))}
-            />
-            <Checkbox
-              label="Trail Path"
-              checked={config.trailPath}
-              onChange={(v) => setConfig((c) => ({ ...c, trailPath: v }))}
-            />
-            <Checkbox
-              label="Anchor Line"
-              checked={config.anchorLine}
-              onChange={(v) => setConfig((c) => ({ ...c, anchorLine: v }))}
-            />
-            <Checkbox
-              label="Center Transparent"
-              checked={config.centerTransparent}
-              onChange={(v) =>
-                setConfig((c) => ({ ...c, centerTransparent: v }))
-              }
-            />
-            <SelectControl
-              label="Edge Behavior"
-              value={config.edgeBehavior}
-              options={["flip", "shift", "none"]}
-              onChange={(v) => setConfig((c) => ({ ...c, edgeBehavior: v }))}
-            />
-            <SelectControl
-              label="Preset"
-              value="full"
-              options={Object.keys(fanPresets)}
-              onChange={(v) => {
-                const p = fanPresets[v];
-                if (p)
-                  setConfig((c) => ({
-                    ...c,
-                    startAngle: p.start,
-                    sweepAngle: p.sweep,
-                  }));
-              }}
-            />
-            <RangeControl
-              label="Start Angle"
-              value={config.startAngle}
-              min={-180}
-              max={180}
-              suffix="\u00b0"
-              onChange={(v) => setConfig((c) => ({ ...c, startAngle: v }))}
-            />
-            <RangeControl
-              label="Sweep Angle"
-              value={config.sweepAngle}
-              min={45}
-              max={360}
-              suffix="\u00b0"
-              onChange={(v) => setConfig((c) => ({ ...c, sweepAngle: v }))}
-            />
-            <RangeControl
-              label="Deadzone"
-              value={config.deadzone}
-              min={10}
-              max={60}
-              suffix="px"
-              onChange={(v) => setConfig((c) => ({ ...c, deadzone: v }))}
-            />
-          </div>
-        </div>
+      <div className="max-w-[1000px] mx-auto p-6 flex flex-col gap-5">
+        {/* Config + Demo grid */}
+        <div className="grid grid-cols-[320px_1fr] gap-5 items-start">
+          {/* Sidebar: Controls */}
+          <div className="flex flex-col gap-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Options</CardTitle>
+                <CardDescription className="text-xs">
+                  Toggle menu behaviors
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="infinite" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                    Infinite Selection
+                  </Label>
+                  <Switch
+                    id="infinite"
+                    size="sm"
+                    checked={config.infinite}
+                    onCheckedChange={(v) =>
+                      setConfig((c) => ({ ...c, infinite: !!v }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="trail" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                    Trail Path
+                  </Label>
+                  <Switch
+                    id="trail"
+                    size="sm"
+                    checked={config.trailPath}
+                    onCheckedChange={(v) =>
+                      setConfig((c) => ({ ...c, trailPath: !!v }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="anchor" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                    Anchor Line
+                  </Label>
+                  <Switch
+                    id="anchor"
+                    size="sm"
+                    checked={config.anchorLine}
+                    onCheckedChange={(v) =>
+                      setConfig((c) => ({ ...c, anchorLine: !!v }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="center" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                    Center Transparent
+                  </Label>
+                  <Switch
+                    id="center"
+                    size="sm"
+                    checked={config.centerTransparent}
+                    onCheckedChange={(v) =>
+                      setConfig((c) => ({ ...c, centerTransparent: !!v }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Demo area */}
-        <div
-          onContextMenu={handleContextMenu}
-          style={{
-            height: 400,
-            background: "rgba(255,255,255,0.015)",
-            border: "1px dashed rgba(255,255,255,0.08)",
-            borderRadius: 8,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "context-menu",
-            transition: "border-color 0.2s",
-          }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")
-          }
-        >
-          <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 13 }}>
-            {ready ? "Right-click here" : "Loading..."}
-          </span>
-        </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Layout</CardTitle>
+                <CardDescription className="text-xs">
+                  Angle and edge configuration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    Edge Behavior
+                  </Label>
+                  <Select
+                    value={config.edgeBehavior}
+                    onValueChange={(v) =>
+                      setConfig((c) => ({ ...c, edgeBehavior: v }))
+                    }
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="flip">Flip</SelectItem>
+                      <SelectItem value="shift">Shift</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-        {/* Icon Drag Demo */}
-        <div
-          style={{
-            padding: "16px 20px",
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 8,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 8,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-            }}
-          >
-            Drag & Drop
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    Preset
+                  </Label>
+                  <Select
+                    value={config.preset}
+                    onValueChange={(v) => {
+                      const p = fanPresets[v];
+                      if (p)
+                        setConfig((c) => ({
+                          ...c,
+                          preset: v,
+                          startAngle: p.start,
+                          sweepAngle: p.sweep,
+                        }));
+                    }}
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(fanPresets).map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {key}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-normal text-muted-foreground">
+                      Start Angle
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] font-mono tabular-nums">
+                      {config.startAngle}&deg;
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[config.startAngle]}
+                    min={-180}
+                    max={180}
+                    step={1}
+                    onValueChange={([v]) =>
+                      setConfig((c) => ({ ...c, startAngle: v }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-normal text-muted-foreground">
+                      Sweep Angle
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] font-mono tabular-nums">
+                      {config.sweepAngle}&deg;
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[config.sweepAngle]}
+                    min={45}
+                    max={360}
+                    step={1}
+                    onValueChange={([v]) =>
+                      setConfig((c) => ({ ...c, sweepAngle: v }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-normal text-muted-foreground">
+                      Deadzone
+                    </Label>
+                    <Badge variant="outline" className="text-[10px] font-mono tabular-nums">
+                      {config.deadzone}px
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[config.deadzone]}
+                    min={10}
+                    max={60}
+                    step={1}
+                    onValueChange={([v]) =>
+                      setConfig((c) => ({ ...c, deadzone: v }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: "rgba(255,255,255,0.3)",
-              marginBottom: 12,
-            }}
-          >
-            Drag an icon — radial menu appears instantly at cursor
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {[
-              { type: "image", label: "Image", emoji: "🖼️" },
-              { type: "video", label: "Video", emoji: "🎬" },
-              { type: "music", label: "Music", emoji: "🎵" },
-              { type: "doc", label: "Document", emoji: "📄" },
-              { type: "code", label: "Code", emoji: "💻" },
-              { type: "link", label: "Link", emoji: "🔗" },
-            ].map((icon) => (
-              <div
-                key={icon.type}
-                draggable
-                onDragStart={(e) => handleIconDragStart(e, icon)}
-                onDrag={handleIconDrag}
-                onDragEnd={handleIconDragEnd}
-                title={icon.label}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 20,
-                  cursor: "grab",
-                  userSelect: "none",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "rgba(255,255,255,0.03)",
-                  transition: "transform 0.15s, border-color 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                }}
-              >
-                {icon.emoji}
+
+          {/* Main area */}
+          <div className="flex flex-col gap-4">
+            {/* Demo area */}
+            <div
+              onContextMenu={handleContextMenu}
+              className="h-[420px] rounded-xl border border-dashed border-border bg-card/50 flex flex-col items-center justify-center cursor-context-menu transition-colors hover:border-primary/30 hover:bg-card/80 relative overflow-hidden group"
+            >
+              {/* Subtle radial decoration */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-primary)/3%_0%,transparent_70%)] pointer-events-none" />
+
+              <div className="relative flex flex-col items-center gap-3">
+                <MousePointerClick className="size-5 text-muted-foreground/50 group-hover:text-primary/50 transition-colors" />
+                <span className="text-sm text-muted-foreground">
+                  {ready ? "Right-click to open menu" : "Loading\u2026"}
+                </span>
               </div>
-            ))}
+            </div>
+
+            {/* Drag & drop */}
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <GripVertical className="size-4 text-muted-foreground" />
+                  <CardTitle className="text-sm">Drag & Drop</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
+                  Drag an icon — radial menu appears at cursor
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2.5 flex-wrap">
+                  {dragIcons.map((icon) => (
+                    <div
+                      key={icon.type}
+                      draggable
+                      onDragStart={(e) => handleIconDragStart(e, icon)}
+                      onDrag={handleIconDrag}
+                      onDragEnd={handleIconDragEnd}
+                      title={icon.label}
+                      className="size-11 rounded-full flex items-center justify-center text-lg cursor-grab select-none border border-border bg-card hover:border-primary/30 hover:-translate-y-0.5 transition-all active:cursor-grabbing"
+                    >
+                      {icon.emoji}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Hints */}
+            <div className="flex gap-4 text-[11px] text-muted-foreground leading-relaxed">
+              <div className="flex gap-1.5 items-start">
+                <Keyboard className="size-3.5 mt-px shrink-0 text-muted-foreground/60" />
+                <span>
+                  <strong className="text-foreground/60">\u2190/\u2192</strong> navigate,{" "}
+                  <strong className="text-foreground/60">\u2193/Enter</strong> select,{" "}
+                  <strong className="text-foreground/60">\u2191/Backspace</strong> back,{" "}
+                  <strong className="text-foreground/60">Esc</strong> close,{" "}
+                  <strong className="text-foreground/60">1-9</strong> quick select
+                </span>
+              </div>
+            </div>
+
+            {/* Event log */}
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="size-4 text-muted-foreground" />
+                    <CardTitle className="text-sm">Event Log</CardTitle>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() =>
+                      setLogs(["Right-click or click in the demo area"])
+                    }
+                    className="text-xs text-muted-foreground"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div
+                  ref={(el) => {
+                    if (el) el.scrollTop = el.scrollHeight;
+                  }}
+                  className="bg-muted/50 rounded-lg p-3 max-h-32 overflow-y-auto font-mono text-xs leading-relaxed"
+                >
+                  {logs.map((line, i) => (
+                    <div
+                      key={`${i}-${line}`}
+                      className={
+                        i === logs.length - 1
+                          ? "text-primary"
+                          : "text-muted-foreground/60"
+                      }
+                    >
+                      <span className="text-muted-foreground/30 mr-2 select-none">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-
-        {/* Hints */}
-        <div
-          style={{
-            fontSize: 11,
-            color: "rgba(255,255,255,0.25)",
-            lineHeight: 1.6,
-          }}
-        >
-          <strong style={{ color: "rgba(255,255,255,0.4)" }}>Keyboard:</strong>{" "}
-          ←/→ navigate, ↓/Enter select, ↑/Backspace go back, Escape close, 1-9
-          quick select.
-          <br />
-          <strong style={{ color: "rgba(255,255,255,0.4)" }}>
-            Submenus:
-          </strong>{" "}
-          Click items with ▸ to enter. Click center to go back. "Move to" loads
-          async.
-        </div>
-
-        {/* Log */}
-        <div
-          style={{
-            padding: "10px 16px",
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 6,
-            fontFamily: "'JetBrains Mono', 'DM Mono', monospace",
-            fontSize: 12,
-            color: "rgba(100, 180, 255, 0.8)",
-          }}
-        >
-          {log}
         </div>
       </div>
 
@@ -522,108 +602,6 @@ function Playground() {
         inner-radius="45"
         infinite-selection
         center-deadzone="30"
-      />
-    </div>
-  );
-}
-
-function Checkbox({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        cursor: "pointer",
-        fontSize: 13,
-        color: "rgba(255,255,255,0.6)",
-      }}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        style={{ width: 14, height: 14 }}
-      />
-      {label}
-    </label>
-  );
-}
-
-function SelectControl({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          background: "rgba(255,255,255,0.05)",
-          color: "rgba(255,255,255,0.7)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          padding: "6px 8px",
-          borderRadius: 4,
-          fontSize: 12,
-        }}
-      >
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function RangeControl({
-  label,
-  value,
-  min,
-  max,
-  suffix,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  suffix: string;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-        {label}: {value}
-        {suffix}
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: "100%" }}
       />
     </div>
   );

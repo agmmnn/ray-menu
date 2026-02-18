@@ -1,8 +1,12 @@
 # ray-menu
 
+[![npm](https://img.shields.io/npm/v/ray-menu)](https://www.npmjs.com/package/ray-menu)
+[![npm bundle size](https://img.shields.io/bundlephobia/minzip/ray-menu)](https://bundlephobia.com/package/ray-menu)
+[![license](https://img.shields.io/npm/l/ray-menu)](https://github.com/agmmnn/ray-menu/blob/master/LICENSE)
+
 https://github.com/user-attachments/assets/c4fdf273-ccb6-4610-8bca-c24640e3f010
 
-Radial menu for the web. Framework-agnostic. Zero dependencies.
+Radial (pie) menu for the web. Framework-agnostic. Zero dependencies.
 
 - **Web Component** — Works with any framework or vanilla HTML
 - **React bindings** — `useRayMenu` hook with full TypeScript support
@@ -100,15 +104,19 @@ ray-menu {
 
 ### Methods
 
-- `open(x, y)` — Open at position
-- `close()` — Close menu
-- `toggle(x, y)` — Toggle at position
+| Method         | Description        |
+| -------------- | ------------------ |
+| `open(x, y)`  | Open at position   |
+| `close()`      | Close menu         |
+| `toggle(x, y)` | Toggle at position |
 
 ### Events
 
-- `ray-select` — Item selected
-- `ray-open` — Menu opened
-- `ray-close` — Menu closed
+| Event       | Description    |
+| ----------- | -------------- |
+| `ray-select` | Item selected  |
+| `ray-open`   | Menu opened    |
+| `ray-close`  | Menu closed    |
 
 ## Packages
 
@@ -124,4 +132,4 @@ Full documentation at [ray-menu.vercel.app/docs](https://ray-menu.vercel.app/doc
 
 ## License
 
-MIT
+[MIT](LICENSE)
