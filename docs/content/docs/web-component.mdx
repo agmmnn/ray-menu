@@ -65,6 +65,7 @@ Or via script tag:
 | `scroll-threshold`     | `number`                                | `10`      | Scroll distance (px) before closing                |
 | `start-angle`          | `number`                                | `-90`     | Start angle in degrees (top = -90)                 |
 | `sweep-angle`          | `number`                                | `360`     | Total sweep angle in degrees                       |
+| `variant`              | `"slice" \| "bubble"`                   | `"slice"` | Visual variant: arc slices or circle bubbles       |
 | `static`               | `boolean`                               | `false`   | Use relative positioning (dock mode)               |
 | `default-open`         | `boolean`                               | `false`   | Open automatically on mount (use with `static`)    |
 
@@ -191,6 +192,71 @@ menu.items = [
   },
 ];
 ```
+
+## Variants
+
+### Slice (default)
+
+Items render as arc/pie slices filling the ring. This is the classic radial menu look.
+
+### Bubble
+
+Items render as circles arranged in a ring. Set `variant="bubble"` to enable:
+
+```html
+<ray-menu variant="bubble"></ray-menu>
+```
+
+The bubble variant works best with items that have an `icon` property — the icon displays large inside the bubble with the label text below it.
+
+```javascript
+menu.items = [
+  { id: "copy", label: "Copy", icon: "📋" },
+  { id: "paste", label: "Paste", icon: "📌" },
+  { id: "delete", label: "Delete", icon: "🗑️" },
+];
+```
+
+#### Bubble Submenus
+
+Unlike the slice variant where submenus replace the ring concentrically, bubble submenus **branch outward from the parent bubble** as a fan of child bubbles. The root ring stays visible and dimmed, with a connector line linking the parent to its submenu cluster.
+
+```javascript
+menu.items = [
+  {
+    id: "format",
+    label: "Format",
+    icon: "🎨",
+    children: [
+      { id: "bold", label: "Bold", icon: "B" },
+      { id: "italic", label: "Italic", icon: "I" },
+      { id: "underline", label: "Underline", icon: "U" },
+    ],
+  },
+  { id: "copy", label: "Copy", icon: "📋" },
+  { id: "paste", label: "Paste", icon: "📌" },
+];
+```
+
+Behavior:
+- Root bubbles stay visible but dimmed when a submenu opens
+- The selected parent bubble is highlighted
+- Child bubbles fan outward from the parent in a radial arc
+- A dashed connector line links the parent to the submenu cluster
+- Hover detection uses infinite selection on the active submenu fan
+- Moving the pointer back into the root ring band exits the submenu
+- Multi-level submenus are supported (each level branches from its parent)
+- Deeper submenu levels use progressively smaller radii to prevent sprawl
+- Submenu fans automatically adjust their angle when near viewport edges
+
+Bubble-specific CSS variables:
+
+| Variable                   | Default                        | Description            |
+| -------------------------- | ------------------------------ | ---------------------- |
+| `--ray-bubble-fill`        | `rgba(50, 50, 60, 0.7)`       | Bubble background      |
+| `--ray-bubble-fill-hover`  | `rgba(100, 180, 255, 0.5)`    | Bubble hover fill      |
+| `--ray-bubble-stroke`      | `rgba(255, 255, 255, 0.15)`   | Bubble border          |
+| `--ray-bubble-stroke-hover`| `rgba(100, 180, 255, 0.8)`    | Bubble hover border    |
 
 ## Theming
 

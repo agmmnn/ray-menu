@@ -118,6 +118,44 @@ ray-menu {
 }
 ```
 
+## Bubble Variant
+
+When using `variant="bubble"`, additional CSS variables are available:
+
+| Variable                     | Default                      | Description         |
+| ---------------------------- | ---------------------------- | ------------------- |
+| `--ray-bubble-fill`          | `rgba(50, 50, 60, 0.7)`     | Bubble background   |
+| `--ray-bubble-fill-hover`    | `rgba(100, 180, 255, 0.5)`  | Bubble hover fill   |
+| `--ray-bubble-stroke`        | `rgba(255, 255, 255, 0.15)` | Bubble border       |
+| `--ray-bubble-stroke-hover`  | `rgba(100, 180, 255, 0.8)`  | Bubble hover border |
+
+```css
+ray-menu[variant="bubble"] {
+  --ray-bubble-fill: rgba(30, 30, 50, 0.8);
+  --ray-bubble-fill-hover: rgba(255, 107, 107, 0.5);
+  --ray-bubble-stroke-hover: rgba(255, 107, 107, 0.8);
+}
+```
+
+### Bubble Submenu Styles
+
+When a bubble submenu is open, parent-level bubbles are dimmed and the selected parent is highlighted. These states use data attributes that can be targeted with CSS:
+
+| Selector                                  | Description                          |
+| ----------------------------------------- | ------------------------------------ |
+| `.ray-menu-bubble[data-dimmed="true"]`    | Dimmed parent bubble (opacity: 0.3)  |
+| `.ray-menu-bubble[data-selected="true"]`  | Selected parent bubble (highlighted) |
+| `.ray-menu-bubble[data-submenu="true"]`   | Submenu child bubble (animated in)   |
+| `.ray-menu-connector`                     | Dashed connector line                |
+
+The submenu entry animation (`ray-bubble-pop`) can be customized:
+
+```css
+ray-menu .ray-menu-bubble[data-submenu="true"] {
+  animation-duration: 300ms;
+}
+```
+
 ## Examples
 
 ### Minimal Theme

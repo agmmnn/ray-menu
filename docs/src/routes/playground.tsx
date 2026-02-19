@@ -40,25 +40,32 @@ export const Route = createFileRoute("/playground")({
 });
 
 const defaultItems = [
-  { id: "copy", label: "Copy", shortcut: "\u2318+C" },
-  { id: "paste", label: "Paste", shortcut: "\u2318+V" },
-  { id: "cut", label: "Cut", shortcut: "\u2318+X" },
-  { id: "delete", label: "Delete", shortcut: "\u2326" },
+  { id: "copy", label: "Copy", icon: "\uD83D\uDCCB", shortcut: "\u2318+C" },
+  { id: "paste", label: "Paste", icon: "\uD83D\uDCCC", shortcut: "\u2318+V" },
+  { id: "cut", label: "Cut", icon: "\u2702\uFE0F", shortcut: "\u2318+X" },
+  {
+    id: "delete",
+    label: "Delete",
+    icon: "\uD83D\uDDD1\uFE0F",
+    shortcut: "\u2326",
+  },
   {
     id: "share",
     label: "Share",
+    icon: "\uD83D\uDD17",
     selectable: false,
     children: [
-      { id: "share-email", label: "Email" },
-      { id: "share-link", label: "Copy Link" },
+      { id: "share-email", label: "Email", icon: "\uD83D\uDCE7" },
+      { id: "share-link", label: "Copy Link", icon: "\uD83D\uDD17" },
       {
         id: "share-social",
         label: "Social",
+        icon: "\uD83C\uDF10",
         selectable: false,
         children: [
-          { id: "share-twitter", label: "Twitter" },
-          { id: "share-facebook", label: "Facebook" },
-          { id: "share-linkedin", label: "LinkedIn" },
+          { id: "share-twitter", label: "Twitter", icon: "\uD83D\uDC26" },
+          { id: "share-facebook", label: "Facebook", icon: "\uD83D\uDCF1" },
+          { id: "share-linkedin", label: "LinkedIn", icon: "\uD83D\uDCBC" },
         ],
       },
     ],
@@ -66,13 +73,14 @@ const defaultItems = [
   {
     id: "move",
     label: "Move to",
+    icon: "\uD83D\uDCC1",
     selectable: false,
     loadChildren: async () => {
       await new Promise((r) => setTimeout(r, 800));
       return [
-        { id: "move-docs", label: "Documents" },
-        { id: "move-photos", label: "Photos" },
-        { id: "move-downloads", label: "Downloads" },
+        { id: "move-docs", label: "Documents", icon: "\uD83D\uDCC4" },
+        { id: "move-photos", label: "Photos", icon: "\uD83D\uDDBC\uFE0F" },
+        { id: "move-downloads", label: "Downloads", icon: "\u2B07\uFE0F" },
       ];
     },
   },
@@ -122,11 +130,18 @@ function Playground() {
     trailPath: false,
     anchorLine: false,
     centerTransparent: true,
+    instantDragThrough: false,
     edgeBehavior: "flip",
+    scrollBehavior: "close",
+    variant: "slice" as "slice" | "bubble",
     preset: "full",
     startAngle: -90,
     sweepAngle: 360,
     deadzone: 30,
+    radius: 140,
+    innerRadius: 45,
+    infiniteThreshold: 0,
+    scrollThreshold: 10,
   });
 
   const [ready, setReady] = useState(false);
@@ -200,10 +215,20 @@ function Playground() {
       menu.setAttribute("center-transparent", "false");
     else menu.removeAttribute("center-transparent");
 
+    if (config.instantDragThrough)
+      menu.setAttribute("instant-drag-through", "");
+    else menu.removeAttribute("instant-drag-through");
+
     menu.setAttribute("edge-behavior", config.edgeBehavior);
+    menu.setAttribute("scroll-behavior", config.scrollBehavior);
+    menu.setAttribute("variant", config.variant);
     menu.setAttribute("start-angle", String(config.startAngle));
     menu.setAttribute("sweep-angle", String(config.sweepAngle));
     menu.setAttribute("center-deadzone", String(config.deadzone));
+    menu.setAttribute("radius", String(config.radius));
+    menu.setAttribute("inner-radius", String(config.innerRadius));
+    menu.setAttribute("infinite-threshold", String(config.infiniteThreshold));
+    menu.setAttribute("scroll-threshold", String(config.scrollThreshold));
   }, [config, ready]);
 
   const handleContextMenu = useCallback(
@@ -213,7 +238,6 @@ function Playground() {
     },
     [ready],
   );
-
 
   const handleIconDragStart = useCallback(
     (e: React.DragEvent, icon: { type: string; label: string }) => {
@@ -265,7 +289,10 @@ function Playground() {
       {/* Nav */}
       <nav className="max-w-[1000px] mx-auto px-6 py-4 flex items-center justify-between border-b border-border">
         <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity no-underline">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity no-underline"
+          >
             <ArrowLeft className="size-4" />
             ray-menu
           </Link>
@@ -306,7 +333,10 @@ function Playground() {
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="infinite" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                  <Label
+                    htmlFor="infinite"
+                    className="text-xs font-normal text-muted-foreground cursor-pointer"
+                  >
                     Infinite Selection
                   </Label>
                   <Switch
@@ -319,7 +349,10 @@ function Playground() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="trail" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                  <Label
+                    htmlFor="trail"
+                    className="text-xs font-normal text-muted-foreground cursor-pointer"
+                  >
                     Trail Path
                   </Label>
                   <Switch
@@ -332,7 +365,10 @@ function Playground() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="anchor" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                  <Label
+                    htmlFor="anchor"
+                    className="text-xs font-normal text-muted-foreground cursor-pointer"
+                  >
                     Anchor Line
                   </Label>
                   <Switch
@@ -345,7 +381,10 @@ function Playground() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="center" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                  <Label
+                    htmlFor="center"
+                    className="text-xs font-normal text-muted-foreground cursor-pointer"
+                  >
                     Center Transparent
                   </Label>
                   <Switch
@@ -356,6 +395,45 @@ function Playground() {
                       setConfig((c) => ({ ...c, centerTransparent: !!v }))
                     }
                   />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="drag-through"
+                    className="text-xs font-normal text-muted-foreground cursor-pointer"
+                  >
+                    Instant Drag Through
+                  </Label>
+                  <Switch
+                    id="drag-through"
+                    size="sm"
+                    checked={config.instantDragThrough}
+                    onCheckedChange={(v) =>
+                      setConfig((c) => ({ ...c, instantDragThrough: !!v }))
+                    }
+                  />
+                </div>
+                <Separator />
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    Variant
+                  </Label>
+                  <Select
+                    value={config.variant}
+                    onValueChange={(v) =>
+                      setConfig((c) => ({
+                        ...c,
+                        variant: v as "slice" | "bubble",
+                      }))
+                    }
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="slice">Slice</SelectItem>
+                      <SelectItem value="bubble">Bubble</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -384,6 +462,28 @@ function Playground() {
                     <SelectContent>
                       <SelectItem value="flip">Flip</SelectItem>
                       <SelectItem value="shift">Shift</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    Scroll Behavior
+                  </Label>
+                  <Select
+                    value={config.scrollBehavior}
+                    onValueChange={(v) =>
+                      setConfig((c) => ({ ...c, scrollBehavior: v }))
+                    }
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="close">Close</SelectItem>
+                      <SelectItem value="keep">Keep</SelectItem>
+                      <SelectItem value="lock">Lock</SelectItem>
                       <SelectItem value="none">None</SelectItem>
                     </SelectContent>
                   </Select>
@@ -426,7 +526,10 @@ function Playground() {
                     <Label className="text-xs font-normal text-muted-foreground">
                       Start Angle
                     </Label>
-                    <Badge variant="outline" className="text-[10px] font-mono tabular-nums">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono tabular-nums"
+                    >
                       {config.startAngle}&deg;
                     </Badge>
                   </div>
@@ -446,7 +549,10 @@ function Playground() {
                     <Label className="text-xs font-normal text-muted-foreground">
                       Sweep Angle
                     </Label>
-                    <Badge variant="outline" className="text-[10px] font-mono tabular-nums">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono tabular-nums"
+                    >
                       {config.sweepAngle}&deg;
                     </Badge>
                   </div>
@@ -464,9 +570,58 @@ function Playground() {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-normal text-muted-foreground">
+                      Radius
+                    </Label>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono tabular-nums"
+                    >
+                      {config.radius}px
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[config.radius]}
+                    min={60}
+                    max={250}
+                    step={1}
+                    onValueChange={([v]) =>
+                      setConfig((c) => ({ ...c, radius: v }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-normal text-muted-foreground">
+                      Inner Radius
+                    </Label>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono tabular-nums"
+                    >
+                      {config.innerRadius}px
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[config.innerRadius]}
+                    min={15}
+                    max={100}
+                    step={1}
+                    onValueChange={([v]) =>
+                      setConfig((c) => ({ ...c, innerRadius: v }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-normal text-muted-foreground">
                       Deadzone
                     </Label>
-                    <Badge variant="outline" className="text-[10px] font-mono tabular-nums">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono tabular-nums"
+                    >
                       {config.deadzone}px
                     </Badge>
                   </div>
@@ -477,6 +632,52 @@ function Playground() {
                     step={1}
                     onValueChange={([v]) =>
                       setConfig((c) => ({ ...c, deadzone: v }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-normal text-muted-foreground">
+                      Infinite Threshold
+                    </Label>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono tabular-nums"
+                    >
+                      {config.infiniteThreshold}px
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[config.infiniteThreshold]}
+                    min={0}
+                    max={2000}
+                    step={1}
+                    onValueChange={([v]) =>
+                      setConfig((c) => ({ ...c, infiniteThreshold: v }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-normal text-muted-foreground">
+                      Scroll Threshold
+                    </Label>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono tabular-nums"
+                    >
+                      {config.scrollThreshold}px
+                    </Badge>
+                  </div>
+                  <Slider
+                    value={[config.scrollThreshold]}
+                    min={1}
+                    max={50}
+                    step={1}
+                    onValueChange={([v]) =>
+                      setConfig((c) => ({ ...c, scrollThreshold: v }))
                     }
                   />
                 </div>
@@ -537,11 +738,16 @@ function Playground() {
               <div className="flex gap-1.5 items-start">
                 <Keyboard className="size-3.5 mt-px shrink-0 text-muted-foreground/60" />
                 <span>
-                  <strong className="text-foreground/60">\u2190/\u2192</strong> navigate,{" "}
-                  <strong className="text-foreground/60">\u2193/Enter</strong> select,{" "}
-                  <strong className="text-foreground/60">\u2191/Backspace</strong> back,{" "}
-                  <strong className="text-foreground/60">Esc</strong> close,{" "}
-                  <strong className="text-foreground/60">1-9</strong> quick select
+                  <strong className="text-foreground/60">\u2190/\u2192</strong>{" "}
+                  navigate,{" "}
+                  <strong className="text-foreground/60">\u2193/Enter</strong>{" "}
+                  select,{" "}
+                  <strong className="text-foreground/60">
+                    \u2191/Backspace
+                  </strong>{" "}
+                  back, <strong className="text-foreground/60">Esc</strong>{" "}
+                  close, <strong className="text-foreground/60">1-9</strong>{" "}
+                  quick select
                 </span>
               </div>
             </div>
@@ -596,13 +802,7 @@ function Playground() {
       </div>
 
       {/* @ts-expect-error -- web component */}
-      <ray-menu
-        ref={menuRef}
-        radius="140"
-        inner-radius="45"
-        infinite-selection
-        center-deadzone="30"
-      />
+      <ray-menu ref={menuRef} />
     </div>
   );
 }
