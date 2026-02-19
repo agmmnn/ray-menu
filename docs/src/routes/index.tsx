@@ -6,6 +6,7 @@ import { toast, Toaster } from "sonner";
 import { Copy, Check, ArrowRight, Sun, Moon } from "lucide-react";
 import { motion } from "motion/react";
 import { useTheme } from "next-themes";
+import { version } from "../../../package.json";
 
 const menuItems: MenuItem[] = [
   { id: "docs", label: "Docs", icon: "📚" },
@@ -514,7 +515,10 @@ function Home() {
           }}
         >
           <Reveal delay={0.1}>
-            <div
+            <a
+              href="https://github.com/agmmnn/ray-menu/releases"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -527,6 +531,7 @@ function Home() {
                 color: c.amber,
                 fontFamily: font.mono,
                 letterSpacing: "0.04em",
+                textDecoration: "none",
               }}
             >
               <span
@@ -538,8 +543,8 @@ function Home() {
                   opacity: 0.7,
                 }}
               />
-              v0.1.2
-            </div>
+              v{version}
+            </a>
           </Reveal>
 
           <Reveal delay={0.15}>
