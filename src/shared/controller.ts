@@ -22,6 +22,7 @@ export interface RayMenuControllerOptions {
   scrollThreshold?: number;
   startAngle?: number;
   sweepAngle?: number;
+  variant?: "slice" | "bubble";
   static?: boolean;
   defaultOpen?: boolean;
   onSelect?: (item: MenuItem) => void;
@@ -69,6 +70,7 @@ const ATTR_MAP: Record<string, string> = {
   scrollThreshold: "scroll-threshold",
   startAngle: "start-angle",
   sweepAngle: "sweep-angle",
+  variant: "variant",
   static: "static",
   defaultOpen: "default-open",
 };

@@ -412,6 +412,14 @@
         </div>
 
         <div class="control-item">
+          <span>Variant</span>
+          <select id="variant">
+            <option value="slice">Slice (default)</option>
+            <option value="bubble">Bubble</option>
+          </select>
+        </div>
+
+        <div class="control-item">
           <span>Quick Presets</span>
           <select id="fanPreset">
             <option value="full">● Full Circle (360°)</option>
@@ -542,6 +550,36 @@
       </div>
     </div>
 
+    <div class="bubble-submenu-demo">
+      <h2>Bubble Submenu Demo</h2>
+      <p style="color: #a1a1aa; margin-bottom: 1rem; font-size: 0.875rem">
+        Click the button to open a bubble menu with nested submenus. Children
+        fan outward from the parent bubble.
+      </p>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-start;">
+        <button id="bubbleSubmenuBtn" style="
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.05);
+          color: #e4e4e7;
+          cursor: pointer;
+          font-size: 0.875rem;
+        ">Click for Bubble Menu</button>
+        <button id="bubbleDragBtn" style="
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.5rem;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.05);
+          color: #e4e4e7;
+          cursor: grab;
+          font-size: 0.875rem;
+          user-select: none;
+          touch-action: none;
+        ">Drag for Bubble Menu</button>
+      </div>
+    </div>
+
     <div id="log">Last action: none</div>
 
     <!-- Spacer to make page scrollable for scroll behavior testing -->
@@ -629,13 +667,14 @@
 
       // Set menu items with nested submenus (including async children)
       menu.items = [
-        { id: "copy", label: "Copy", shortcut: "⌘+C" },
-        { id: "paste", label: "Paste", shortcut: "⌘+V" },
-        { id: "cut", label: "Cut", shortcut: "⌘+X" },
-        { id: "delete", label: "Delete", shortcut: "⌦" },
+        { id: "copy", label: "Copy", icon: "📋", shortcut: "⌘+C" },
+        { id: "paste", label: "Paste", icon: "📌", shortcut: "⌘+V" },
+        { id: "cut", label: "Cut", icon: "✂️", shortcut: "⌘+X" },
+        { id: "delete", label: "Delete", icon: "🗑️", shortcut: "⌦" },
         {
           id: "share",
           label: "Share",
+          icon: "🔗",
           selectable: false,
           children: [
             { id: "share-email", label: "Email" },
@@ -655,6 +694,7 @@
         {
           id: "move",
           label: "Move to",
+          icon: "📁",
           selectable: false,
           // Async children loading - simulates fetching folders from API
           loadChildren: async () => {
@@ -685,6 +725,7 @@
         {
           id: "recent",
           label: "Recent",
+          icon: "🕐",
           selectable: false,
           // This will fail to demonstrate error handling
           loadChildren: async () => {
@@ -834,6 +875,12 @@
         const value = e.target.value;
         document.getElementById("sweepAngleValue").textContent = value;
         menu.setAttribute("sweep-angle", value);
+      });
+
+      // Variant selector
+      document.getElementById("variant").addEventListener("change", (e) => {
+        menu.setAttribute("variant", e.target.value);
+        log.textContent = `Variant: ${e.target.value}`;
       });
 
       // Fan Preset Selector
@@ -1020,6 +1067,88 @@
         // Only prevent default if menu is open as drop target
         if (menu.isOpen && menu.isDropTarget) {
           e.preventDefault();
+        }
+      });
+
+      // === Bubble Submenu Demo ===
+      const bubbleMenu = document.createElement("ray-menu");
+      bubbleMenu.setAttribute("variant", "bubble");
+      bubbleMenu.setAttribute("radius", "140");
+      bubbleMenu.setAttribute("inner-radius", "45");
+      bubbleMenu.setAttribute("infinite-selection", "");
+      document.body.appendChild(bubbleMenu);
+
+      bubbleMenu.items = [
+        {
+          id: "format",
+          label: "Format",
+          icon: "🎨",
+          selectable: false,
+          children: [
+            { id: "bold", label: "Bold", icon: "𝐁" },
+            { id: "italic", label: "Italic", icon: "𝐼" },
+            { id: "underline", label: "Underline", icon: "U̲" },
+            {
+              id: "color",
+              label: "Color",
+              icon: "🌈",
+              selectable: false,
+              children: [
+                { id: "red", label: "Red", icon: "🔴" },
+                { id: "blue", label: "Blue", icon: "🔵" },
+                { id: "green", label: "Green", icon: "🟢" },
+              ],
+            },
+          ],
+        },
+        {
+          id: "insert",
+          label: "Insert",
+          icon: "➕",
+          selectable: false,
+          children: [
+            { id: "image", label: "Image", icon: "🖼️" },
+            { id: "link", label: "Link", icon: "🔗" },
+            { id: "table", label: "Table", icon: "📊" },
+          ],
+        },
+        { id: "copy", label: "Copy", icon: "📋" },
+        { id: "paste", label: "Paste", icon: "📎" },
+        { id: "delete", label: "Delete", icon: "🗑️" },
+      ];
+
+      bubbleMenu.addEventListener("ray-select", (e) => {
+        log.textContent = `Bubble: ${e.detail.label}`;
+      });
+
+      // Click to open
+      document.getElementById("bubbleSubmenuBtn").addEventListener("click", (e) => {
+        bubbleMenu.toggle(e.clientX, e.clientY);
+      });
+
+      // Drag to open
+      const bubbleDragBtn = document.getElementById("bubbleDragBtn");
+      bubbleDragBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        bubbleDragBtn.setPointerCapture(e.pointerId);
+        bubbleDragBtn.style.cursor = "grabbing";
+        bubbleMenu.openAsDropTarget(e.clientX, e.clientY);
+      });
+      bubbleDragBtn.addEventListener("pointermove", (e) => {
+        if (bubbleMenu.isOpen && bubbleMenu.isDropTarget) {
+          bubbleMenu.updateHoverFromPoint(e.clientX, e.clientY);
+        }
+      });
+      bubbleDragBtn.addEventListener("pointerup", (e) => {
+        bubbleDragBtn.releasePointerCapture(e.pointerId);
+        bubbleDragBtn.style.cursor = "grab";
+        if (bubbleMenu.isOpen) {
+          const result = bubbleMenu.dropOnHovered();
+          if (result) {
+            log.textContent = `Bubble drag: ${result.label}`;
+          } else {
+            bubbleMenu.cancelDrop();
+          }
         }
       });
     </script>

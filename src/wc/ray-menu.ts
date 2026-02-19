@@ -10,6 +10,7 @@ import {
   distance,
   distributeAngles,
   getClosestItemIndex,
+  toCartesian,
   detectEdgeConstraints,
   calculateSmartFlip,
   calculateVelocity,
@@ -30,8 +31,14 @@ import {
   createInnerRing,
   createArcPath,
   createLabel,
+  createBubble,
+  createBubbleLabel,
   createBackIndicator,
   renderParentLevels,
+  renderBubbleParentLevels,
+  calculateBubbleSubmenuLayout,
+  adjustBubbleSubmenuFanAngle,
+  createConnector,
 } from "./ray-menu-rendering";
 import { createDriftTraceSvg, updateDriftTrace } from "./ray-menu-drift-trace";
 
@@ -109,6 +116,9 @@ export class RayMenu extends BaseElement {
   private _savedBodyOverflow = "";
   private _savedBodyPaddingRight = "";
 
+  // Variant
+  private _variant: "slice" | "bubble" = "slice";
+
   // Static/Dock mode state
   private _isStatic = false;
   private _defaultOpen = false;
@@ -147,6 +157,7 @@ export class RayMenu extends BaseElement {
       "sweep-angle",
       "static",
       "default-open",
+      "variant",
     ];
   }
 
@@ -500,6 +511,9 @@ export class RayMenu extends BaseElement {
       case "default-open":
         this._defaultOpen = newValue !== null && newValue !== "false";
         break;
+      case "variant":
+        this._variant = newValue === "bubble" ? "bubble" : "slice";
+        break;
     }
     if (this._isOpen) this._render();
   }
@@ -799,12 +813,18 @@ export class RayMenu extends BaseElement {
   }
 
   private _getCurrentRadius(): number {
+    if (this._variant === "bubble") {
+      return this._config.radius;
+    }
     return (
       this._config.radius + this._navStack.length * this._submenuRadiusStep
     );
   }
 
   private _getCurrentInnerRadius(): number {
+    if (this._variant === "bubble") {
+      return this._config.innerRadius;
+    }
     if (this._navStack.length === 0) {
       return this._config.innerRadius;
     }
@@ -815,6 +835,10 @@ export class RayMenu extends BaseElement {
   }
 
   private _calculateHoveredIndex(pointer: Point): number {
+    if (this._variant === "bubble") {
+      return this._calculateBubbleHoveredIndex(pointer);
+    }
+
     const dist = distance(this._position, pointer);
     const currentInnerRadius = this._getCurrentInnerRadius();
     const currentRadius = this._getCurrentRadius();
@@ -858,6 +882,100 @@ export class RayMenu extends BaseElement {
       adjusted = -adjusted;
     }
     return adjusted;
+  }
+
+  /**
+   * Convert a point from SVG-space to screen-space.
+   * SVG center is at (radius+20, radius+20), screen center is at this._position.
+   */
+  private _svgToScreen(svgPoint: Point): Point {
+    const svgCenter = this._config.radius + 20;
+    return {
+      x: this._position.x + (svgPoint.x - svgCenter),
+      y: this._position.y + (svgPoint.y - svgCenter),
+    };
+  }
+
+  private _calculateBubbleHoveredIndex(pointer: Point): number {
+    if (this._navStack.length === 0) {
+      // No submenu open — use standard root ring detection
+      return this._calculateRootBubbleHoveredIndex(pointer);
+    }
+
+    // Submenu is open — route between root ring and submenu cluster
+    const deepestEntry = this._navStack[this._navStack.length - 1];
+    if (!deepestEntry.parentCenter || !deepestEntry.submenuAngles) {
+      return -1;
+    }
+
+    const parentScreen = this._svgToScreen(deepestEntry.parentCenter);
+    const distFromCenter = distance(this._position, pointer);
+
+    // If pointer is clearly within the root ring band, collapse back to root
+    const inRootRingBand =
+      distFromCenter >= this._config.innerRadius &&
+      distFromCenter <= this._config.radius * 1.3;
+
+    if (inRootRingBand) {
+      // Only collapse if pointer is closer to menu center than to parent bubble
+      const distToParent = distance(parentScreen, pointer);
+      if (distFromCenter < distToParent) {
+        this._handleBubbleLevelChange();
+        return -1;
+      }
+    }
+
+    // Center deadzone — no selection
+    if (distFromCenter < this._config.innerRadius) {
+      return -1;
+    }
+
+    // In all other cases (near submenu, far outside, etc.) use angular match
+    // on submenu items relative to parent center — this gives infinite selection
+    // behavior for submenu bubbles
+    const angle = angleFromCenter(parentScreen, pointer);
+    return getClosestItemIndex(angle, deepestEntry.submenuAngles);
+  }
+
+  private _calculateRootBubbleHoveredIndex(pointer: Point): number {
+    const dist = distance(this._position, pointer);
+    const deadzone = this._config.infiniteSelection
+      ? Math.max(this._config.centerDeadzone, this._config.innerRadius)
+      : this._config.innerRadius;
+
+    if (dist < deadzone) return -1;
+
+    if (!this._config.infiniteSelection && dist > this._config.radius * 1.5) {
+      return -1;
+    }
+
+    if (
+      this._config.infiniteSelection &&
+      this._config.infiniteThreshold > 0 &&
+      dist > this._config.infiniteThreshold
+    ) {
+      return -1;
+    }
+
+    let angle = angleFromCenter(this._position, pointer);
+    angle = this._adjustAngleForFlip(angle);
+
+    const rootItems =
+      this._navStack.length > 0 ? this._navStack[0].items : this._currentItems;
+    const itemAngles = distributeAngles(
+      rootItems.length,
+      this._config.startAngle,
+      this._config.sweepAngle,
+    );
+
+    return getClosestItemIndex(angle, itemAngles);
+  }
+
+  private _handleBubbleLevelChange(): void {
+    // Pointer moved back to root ring — pop all submenu levels
+    while (this._navStack.length > 0) {
+      this._exitSubmenu();
+    }
   }
 
   private _selectItem(item: MenuItem): void {
@@ -986,11 +1104,83 @@ export class RayMenu extends BaseElement {
   ): void {
     if (!item.children?.length) return;
 
-    this._navStack.push({
+    const navEntry: NavStackEntry = {
       item,
       entryAngle,
       items: [...this._currentItems],
-    });
+    };
+
+    // For bubble variant: compute parent bubble center and submenu layout
+    if (this._variant === "bubble") {
+      const svgCenter = this._config.radius + 20;
+      const placementRadius =
+        (this._config.innerRadius + this._config.radius) / 2;
+
+      const parentIndex = this._currentItems.findIndex(
+        (i) => i.id === item.id,
+      );
+
+      let parentCenter: { x: number; y: number };
+      let parentAngle: number;
+
+      if (
+        this._navStack.length > 0 &&
+        this._navStack[this._navStack.length - 1].parentCenter
+      ) {
+        // Deeper level: position relative to previous submenu fan
+        const prevEntry = this._navStack[this._navStack.length - 1];
+        const prevAngles = prevEntry.submenuAngles || [];
+        parentAngle =
+          parentIndex >= 0 && parentIndex < prevAngles.length
+            ? prevAngles[parentIndex]
+            : entryAngle;
+        const prevRadius = prevEntry.submenuRadius || 60;
+        parentCenter = toCartesian(prevEntry.parentCenter!, {
+          angle: parentAngle,
+          distance: prevRadius,
+        });
+      } else {
+        // Root level: position relative to root ring
+        const rootAngles = distributeAngles(
+          this._currentItems.length,
+          this._config.startAngle,
+          this._config.sweepAngle,
+        );
+        parentAngle =
+          parentIndex >= 0 ? rootAngles[parentIndex] : entryAngle;
+        parentCenter = toCartesian(
+          { x: svgCenter, y: svgCenter },
+          { angle: parentAngle, distance: placementRadius },
+        );
+      }
+
+      // Shrink radius for deeper levels to prevent sprawl
+      const depthFactor = Math.pow(0.85, this._navStack.length);
+      const submenuRadius = Math.max(placementRadius * 0.7 * depthFactor, 40);
+
+      // Adjust fan angle for viewport edge constraints
+      const parentScreenPos = this._svgToScreen(parentCenter);
+      const adjustedAngle = adjustBubbleSubmenuFanAngle(
+        parentScreenPos,
+        parentAngle,
+        item.children.length,
+        submenuRadius,
+        { width: window.innerWidth, height: window.innerHeight },
+      );
+
+      const layout = calculateBubbleSubmenuLayout(
+        parentCenter,
+        adjustedAngle,
+        item.children.length,
+        submenuRadius,
+      );
+
+      navEntry.parentCenter = parentCenter;
+      navEntry.submenuRadius = submenuRadius;
+      navEntry.submenuAngles = layout.angles;
+    }
+
+    this._navStack.push(navEntry);
 
     this._currentItems = item.children;
     this._hoveredIndex = -1;
@@ -1295,21 +1485,45 @@ export class RayMenu extends BaseElement {
   private _updateSelectionState(): void {
     if (!this.shadowRoot) return;
 
-    const arcs = this.shadowRoot.querySelectorAll(".ray-menu-arc");
-    arcs.forEach((arc, index) => {
+    // For bubble variant with submenus, only update the active level elements
+    const isBubbleSubmenu =
+      this._variant === "bubble" && this._navStack.length > 0;
+    const activeLevel = isBubbleSubmenu ? String(this._navStack.length) : null;
+
+    const arcs = this.shadowRoot.querySelectorAll(
+      ".ray-menu-arc, .ray-menu-bubble",
+    );
+    let activeIndex = 0;
+    arcs.forEach((arc) => {
+      const level = arc.getAttribute("data-level");
+      const isDimmed = arc.getAttribute("data-dimmed") === "true";
+
+      // Skip parent-level dimmed bubbles in bubble submenu mode
+      if (isBubbleSubmenu && level !== activeLevel) return;
+      if (isDimmed) return;
+
+      const index = activeIndex++;
       const isHovered = index === this._hoveredIndex;
       const isFocused = index === this._focusedIndex && this._keyboardActive;
       const item = this._currentItems[index];
-      const pathEl = arc as SVGPathElement;
 
-      pathEl.setAttribute("data-hovered", String(isHovered));
-      pathEl.setAttribute("data-focused", String(isFocused));
-      pathEl.setAttribute("data-disabled", String(!!item?.disabled));
+      arc.setAttribute("data-hovered", String(isHovered));
+      arc.setAttribute("data-focused", String(isFocused));
+      arc.setAttribute("data-disabled", String(!!item?.disabled));
     });
 
     const labels = this.shadowRoot.querySelectorAll(".ray-menu-label");
     let activeDescendantId = "";
-    labels.forEach((label, index) => {
+    let labelIndex = 0;
+    labels.forEach((label) => {
+      const level = label.getAttribute("data-level");
+      const isDimmed = label.getAttribute("data-dimmed") === "true";
+
+      // Skip parent-level dimmed labels in bubble submenu mode
+      if (isBubbleSubmenu && level !== null && level !== activeLevel) return;
+      if (isDimmed) return;
+
+      const index = labelIndex++;
       const isHovered = index === this._hoveredIndex;
       const isFocused = index === this._focusedIndex && this._keyboardActive;
       const isActive = isHovered || isFocused;
@@ -1341,8 +1555,15 @@ export class RayMenu extends BaseElement {
       return;
     }
 
-    const radius = this._getCurrentRadius();
-    const innerRadius = this._getCurrentInnerRadius();
+    // For bubble variant with submenus, use fixed base radius (no concentric growth)
+    const isBubbleSubmenu =
+      this._variant === "bubble" && this._navStack.length > 0;
+    const radius = isBubbleSubmenu
+      ? this._config.radius
+      : this._getCurrentRadius();
+    const innerRadius = isBubbleSubmenu
+      ? this._config.innerRadius
+      : this._getCurrentInnerRadius();
     const itemAngles = distributeAngles(
       this._currentItems.length,
       this._config.startAngle,
@@ -1369,66 +1590,261 @@ export class RayMenu extends BaseElement {
       container.setAttribute("data-keyboard-active", "true");
     }
 
-    // Create SVG
+    // Create SVG — always use base radius so the center point stays stable
     const svg = createMenuSvg(radius, this._isDropTarget);
-    svg.appendChild(
-      createOuterRing(radius, this._config.startAngle, this._config.sweepAngle),
-    );
-    svg.appendChild(
-      createInnerRing(
-        radius,
-        innerRadius,
-        this._centerTransparent,
-        this._config.startAngle,
-        this._config.sweepAngle,
-      ),
-    );
+    const svgCenter = radius + 20;
 
-    // Render parent levels
-    renderParentLevels(
-      svg,
-      this._navStack,
-      this._config,
-      this._submenuRadiusStep,
-      radius,
-    );
+    // For bubble submenus, allow content to overflow the SVG bounds
+    if (isBubbleSubmenu) {
+      svg.style.overflow = "visible";
+    }
 
-    // Arc segments and labels
-    this._currentItems.forEach((item, index) => {
-      const angle = itemAngles[index];
-      const isHovered = index === this._hoveredIndex;
-      const isFocused = index === this._focusedIndex && this._keyboardActive;
-      const segmentAngle = this._config.sweepAngle / this._currentItems.length;
-      const gap = 0.05;
-      const startAngle = angle - segmentAngle / 2 + gap / 2;
-      const endAngle = angle + segmentAngle / 2 - gap / 2;
-
-      const path = createArcPath(
-        radius + 20,
-        radius + 20,
-        innerRadius,
-        radius,
-        startAngle,
-        endAngle,
-        isHovered || isFocused,
-        item.disabled || false,
-        index,
+    if (!isBubbleSubmenu) {
+      svg.appendChild(
+        createOuterRing(
+          radius,
+          this._config.startAngle,
+          this._config.sweepAngle,
+        ),
       );
-      svg.appendChild(path);
+      svg.appendChild(
+        createInnerRing(
+          radius,
+          innerRadius,
+          this._centerTransparent,
+          this._config.startAngle,
+          this._config.sweepAngle,
+        ),
+      );
+    }
 
-      const label = createLabel({
-        item,
-        angle,
-        innerRadius,
-        outerRadius: radius,
-        isHovered,
-        isFocused,
-        isDropTarget: this._isDropTarget,
-        index,
-        showKeyHint: true,
+    // Items rendering — branch on variant
+    if (this._variant === "bubble") {
+      if (this._navStack.length > 0) {
+        // === Bubble submenu mode ===
+        // 1. Render root ring structure
+        svg.appendChild(
+          createOuterRing(
+            radius,
+            this._config.startAngle,
+            this._config.sweepAngle,
+          ),
+        );
+        svg.appendChild(
+          createInnerRing(
+            radius,
+            innerRadius,
+            this._centerTransparent,
+            this._config.startAngle,
+            this._config.sweepAngle,
+          ),
+        );
+
+        // 2. Render dimmed parent levels (root ring + intermediate fans)
+        renderBubbleParentLevels(
+          svg,
+          container,
+          this._navStack,
+          this._config,
+          svgCenter,
+        );
+
+        // 3. Render active (deepest) submenu level as fan from parent
+        const deepestEntry = this._navStack[this._navStack.length - 1];
+        if (deepestEntry.parentCenter && deepestEntry.submenuAngles) {
+          const subRadius = deepestEntry.submenuRadius || 60;
+          const subBubbleRadius = Math.min(subRadius * 0.35, 24);
+
+          // Draw connector from parent to submenu cluster
+          const connectorEnd = toCartesian(deepestEntry.parentCenter, {
+            angle: deepestEntry.entryAngle,
+            distance: subRadius * 0.5,
+          });
+          svg.appendChild(
+            createConnector(
+              deepestEntry.parentCenter.x,
+              deepestEntry.parentCenter.y,
+              connectorEnd.x,
+              connectorEnd.y,
+            ),
+          );
+
+          // Render active submenu children
+          this._currentItems.forEach((item, index) => {
+            const angle = deepestEntry.submenuAngles![index];
+            const pos = toCartesian(deepestEntry.parentCenter!, {
+              angle,
+              distance: subRadius,
+            });
+
+            const circle = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "circle",
+            );
+            circle.setAttribute("class", "ray-menu-bubble");
+            circle.setAttribute("cx", String(pos.x));
+            circle.setAttribute("cy", String(pos.y));
+            circle.setAttribute("r", String(subBubbleRadius));
+            const isHovered = index === this._hoveredIndex;
+            const isFocused =
+              index === this._focusedIndex && this._keyboardActive;
+            circle.setAttribute(
+              "data-hovered",
+              String(isHovered || isFocused),
+            );
+            circle.setAttribute(
+              "data-disabled",
+              String(item.disabled || false),
+            );
+            circle.setAttribute("data-index", String(index));
+            circle.setAttribute("data-submenu", "true");
+            circle.setAttribute(
+              "data-level",
+              String(this._navStack.length),
+            );
+            svg.appendChild(circle);
+
+            // Label positioned relative to SVG center (need to convert)
+            const labelOffsetX = pos.x - svgCenter;
+            const labelOffsetY = pos.y - svgCenter;
+            const label = document.createElement("div");
+            label.className = "ray-menu-label ray-menu-bubble-label";
+            label.id = `ray-menu-item-${index}`;
+            label.style.left = `${labelOffsetX}px`;
+            label.style.top = `${labelOffsetY}px`;
+            label.setAttribute("role", "menuitem");
+            if (item.disabled) {
+              label.setAttribute("aria-disabled", "true");
+            }
+            label.setAttribute("data-hovered", String(isHovered));
+            label.setAttribute(
+              "data-focused",
+              String(isFocused),
+            );
+            label.setAttribute(
+              "data-disabled",
+              String(item.disabled || false),
+            );
+            label.setAttribute("data-index", String(index));
+
+            if (item.icon) {
+              const icon = document.createElement("span");
+              icon.className = "ray-menu-bubble-icon";
+              icon.textContent = item.icon;
+              label.appendChild(icon);
+            }
+
+            const labelText = document.createElement("span");
+            labelText.className = "ray-menu-bubble-text";
+            labelText.textContent = item.label;
+            label.appendChild(labelText);
+
+            const hasChildren = item.children && item.children.length > 0;
+            const canLoadChildren =
+              typeof item.loadChildren === "function";
+            if (hasChildren || canLoadChildren) {
+              const indicator = document.createElement("span");
+              indicator.className = "ray-menu-submenu-indicator";
+              indicator.setAttribute("aria-hidden", "true");
+              indicator.textContent = "▸";
+              label.appendChild(indicator);
+            }
+
+            container.appendChild(label);
+          });
+        }
+      } else {
+        // === Bubble root level (no submenu open) ===
+        const placementRadius = (innerRadius + radius) / 2;
+        const itemCount = this._currentItems.length;
+        const maxBubbleRadius = Math.min(
+          placementRadius *
+            Math.sin(Math.PI / Math.max(itemCount, 1)) *
+            0.85,
+          (radius - innerRadius) / 2.5,
+        );
+        const bubbleRadius = Math.min(maxBubbleRadius, 28);
+
+        this._currentItems.forEach((item, index) => {
+          const angle = itemAngles[index];
+          const isHovered = index === this._hoveredIndex;
+          const isFocused =
+            index === this._focusedIndex && this._keyboardActive;
+
+          const circle = createBubble(
+            svgCenter,
+            svgCenter,
+            angle,
+            placementRadius,
+            bubbleRadius,
+            isHovered || isFocused,
+            item.disabled || false,
+            index,
+          );
+          svg.appendChild(circle);
+
+          const label = createBubbleLabel({
+            item,
+            angle,
+            innerRadius,
+            outerRadius: radius,
+            isHovered,
+            isFocused,
+            isDropTarget: this._isDropTarget,
+            index,
+            showKeyHint: true,
+          });
+          container.appendChild(label);
+        });
+      }
+    } else {
+      // === Slice variant (default) ===
+      // Render parent levels
+      renderParentLevels(
+        svg,
+        this._navStack,
+        this._config,
+        this._submenuRadiusStep,
+        radius,
+      );
+
+      this._currentItems.forEach((item, index) => {
+        const angle = itemAngles[index];
+        const isHovered = index === this._hoveredIndex;
+        const isFocused = index === this._focusedIndex && this._keyboardActive;
+        const segmentAngle =
+          this._config.sweepAngle / this._currentItems.length;
+        const gap = 0.05;
+        const startAngle = angle - segmentAngle / 2 + gap / 2;
+        const endAngle = angle + segmentAngle / 2 - gap / 2;
+
+        const path = createArcPath(
+          radius + 20,
+          radius + 20,
+          innerRadius,
+          radius,
+          startAngle,
+          endAngle,
+          isHovered || isFocused,
+          item.disabled || false,
+          index,
+        );
+        svg.appendChild(path);
+
+        const label = createLabel({
+          item,
+          angle,
+          innerRadius,
+          outerRadius: radius,
+          isHovered,
+          isFocused,
+          isDropTarget: this._isDropTarget,
+          index,
+          showKeyHint: true,
+        });
+        container.appendChild(label);
       });
-      container.appendChild(label);
-    });
+    }
 
     container.appendChild(svg);
     this._createBackIndicator(container);

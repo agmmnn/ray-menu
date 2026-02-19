@@ -10,6 +10,12 @@ export interface NavStackEntry {
   entryAngle: number;
   /** The menu items at this level */
   items: MenuItem[];
+  /** Bubble variant: SVG-space center of the parent bubble */
+  parentCenter?: Point;
+  /** Bubble variant: distance from parent center to child bubbles */
+  submenuRadius?: number;
+  /** Bubble variant: distributed angles of children relative to parentCenter */
+  submenuAngles?: number[];
 }
 
 export interface RayMenuDropDetail {

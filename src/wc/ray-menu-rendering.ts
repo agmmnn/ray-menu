@@ -341,6 +341,360 @@ export function createBackIndicator(
 }
 
 /**
+ * Create a bubble (circle) element for a menu item in bubble variant
+ */
+export function createBubble(
+  centerX: number,
+  centerY: number,
+  angle: number,
+  placementRadius: number,
+  bubbleRadius: number,
+  isHovered: boolean,
+  isDisabled: boolean,
+  index: number,
+): SVGCircleElement {
+  const pos = toCartesian(
+    { x: centerX, y: centerY },
+    { angle, distance: placementRadius },
+  );
+
+  const circle = document.createElementNS(SVG_NS, "circle");
+  circle.setAttribute("class", "ray-menu-bubble");
+  circle.setAttribute("cx", String(pos.x));
+  circle.setAttribute("cy", String(pos.y));
+  circle.setAttribute("r", String(bubbleRadius));
+  circle.setAttribute("data-hovered", String(isHovered));
+  circle.setAttribute("data-disabled", String(isDisabled));
+  circle.setAttribute("data-index", String(index));
+  return circle;
+}
+
+/**
+ * Create a label element for a bubble menu item
+ */
+export function createBubbleLabel(options: CreateLabelOptions): HTMLDivElement {
+  const {
+    item,
+    angle,
+    innerRadius,
+    outerRadius,
+    isHovered,
+    isFocused,
+    isDropTarget,
+    index,
+    showKeyHint,
+  } = options;
+
+  const labelPos = toCartesian(
+    { x: 0, y: 0 },
+    { angle, distance: (innerRadius + outerRadius) / 2 },
+  );
+
+  const label = document.createElement("div");
+  label.className = "ray-menu-label ray-menu-bubble-label";
+  label.id = `ray-menu-item-${index}`;
+  label.style.left = `${labelPos.x}px`;
+  label.style.top = `${labelPos.y}px`;
+
+  if (isDropTarget) {
+    label.style.pointerEvents = "none";
+  }
+
+  // ARIA
+  label.setAttribute("role", "menuitem");
+  if (item.disabled) {
+    label.setAttribute("aria-disabled", "true");
+  }
+  const hasChildren = item.children && item.children.length > 0;
+  const canLoadChildren = typeof item.loadChildren === "function";
+  if (hasChildren || canLoadChildren) {
+    label.setAttribute("aria-haspopup", "menu");
+  }
+
+  label.setAttribute("data-hovered", String(isHovered));
+  label.setAttribute("data-focused", String(isFocused));
+  label.setAttribute("data-disabled", String(item.disabled || false));
+  label.setAttribute("data-index", String(index));
+
+  // Key hint for keyboard navigation (1-9)
+  if (showKeyHint && index < 9) {
+    const keyHint = document.createElement("span");
+    keyHint.className = "ray-menu-key-hint";
+    keyHint.setAttribute("aria-hidden", "true");
+    keyHint.textContent = String(index + 1);
+    label.appendChild(keyHint);
+  }
+
+  // Icon (displayed large above text)
+  if (item.icon) {
+    const icon = document.createElement("span");
+    icon.className = "ray-menu-bubble-icon";
+    icon.textContent = item.icon;
+    label.appendChild(icon);
+  }
+
+  // Label text
+  const labelText = document.createElement("span");
+  labelText.className = "ray-menu-bubble-text";
+  labelText.textContent = item.label;
+  label.appendChild(labelText);
+
+  // Submenu indicator
+  if (hasChildren || canLoadChildren) {
+    const indicator = document.createElement("span");
+    indicator.className = "ray-menu-submenu-indicator";
+    indicator.setAttribute("aria-hidden", "true");
+    indicator.textContent = "▸";
+    label.appendChild(indicator);
+  }
+
+  return label;
+}
+
+/**
+ * Calculate fan layout for a bubble submenu branching off a parent bubble.
+ */
+export function calculateBubbleSubmenuLayout(
+  parentCenter: { x: number; y: number },
+  parentAngle: number,
+  childCount: number,
+  submenuRadius: number,
+): { centers: { x: number; y: number }[]; angles: number[] } {
+  if (childCount <= 0) return { centers: [], angles: [] };
+
+  const fanSweep = Math.min(childCount * 0.6, Math.PI);
+  const fanStart = parentAngle - fanSweep / 2;
+
+  const angles = distributeAngles(childCount, fanStart, fanSweep);
+  const centers = angles.map((angle) =>
+    toCartesian(parentCenter, { angle, distance: submenuRadius }),
+  );
+
+  return { centers, angles };
+}
+
+/**
+ * Adjust the submenu fan angle so all children stay within viewport bounds.
+ * parentScreenPos is the parent bubble center in screen coordinates.
+ * Returns the adjusted parentAngle.
+ */
+export function adjustBubbleSubmenuFanAngle(
+  parentScreenPos: { x: number; y: number },
+  parentAngle: number,
+  childCount: number,
+  submenuRadius: number,
+  viewport: { width: number; height: number },
+  padding: number = 30,
+): number {
+  if (childCount <= 0) return parentAngle;
+
+  const fanSweep = Math.min(childCount * 0.6, Math.PI);
+
+  // Test the current layout
+  const testAngles = distributeAngles(
+    childCount,
+    parentAngle - fanSweep / 2,
+    fanSweep,
+  );
+
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity;
+  for (const angle of testAngles) {
+    const x = parentScreenPos.x + submenuRadius * Math.cos(angle);
+    const y = parentScreenPos.y + submenuRadius * Math.sin(angle);
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+
+  // If everything fits, no adjustment needed
+  if (
+    minX >= padding &&
+    maxX <= viewport.width - padding &&
+    minY >= padding &&
+    maxY <= viewport.height - padding
+  ) {
+    return parentAngle;
+  }
+
+  // Rotate the fan center to push it away from the offending edge
+  let adjusted = parentAngle;
+
+  if (maxX > viewport.width - padding) {
+    // Fan extends past right edge — rotate toward left (PI)
+    adjusted = Math.PI - (maxX - (viewport.width - padding)) / submenuRadius;
+  } else if (minX < padding) {
+    // Fan extends past left edge — rotate toward right (0)
+    adjusted = (padding - minX) / submenuRadius;
+  }
+
+  if (maxY > viewport.height - padding) {
+    // Fan extends past bottom — rotate upward (-PI/2)
+    const overY = (maxY - (viewport.height - padding)) / submenuRadius;
+    adjusted -= overY;
+  } else if (minY < padding) {
+    // Fan extends past top — rotate downward (PI/2)
+    const overY = (padding - minY) / submenuRadius;
+    adjusted += overY;
+  }
+
+  return adjusted;
+}
+
+/**
+ * Create a connector line from parent bubble to submenu cluster center.
+ */
+export function createConnector(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): SVGLineElement {
+  const line = document.createElementNS(SVG_NS, "line");
+  line.setAttribute("class", "ray-menu-connector");
+  line.setAttribute("x1", String(x1));
+  line.setAttribute("y1", String(y1));
+  line.setAttribute("x2", String(x2));
+  line.setAttribute("y2", String(y2));
+  return line;
+}
+
+/**
+ * Render root ring + intermediate submenu levels as dimmed bubbles (for bubble variant).
+ * Replaces renderParentLevels() when variant is "bubble".
+ */
+export function renderBubbleParentLevels(
+  svg: SVGSVGElement,
+  container: HTMLElement,
+  navStack: NavStackEntry[],
+  config: MenuConfig,
+  svgCenter: number,
+): void {
+  if (navStack.length === 0) return;
+
+  // Render root-level bubbles (dimmed)
+  const rootEntry = navStack[0];
+  const rootItems = rootEntry.items;
+  const rootAngles = distributeAngles(
+    rootItems.length,
+    config.startAngle,
+    config.sweepAngle,
+  );
+
+  const placementRadius = (config.innerRadius + config.radius) / 2;
+  const maxBubbleRadius = Math.min(
+    placementRadius *
+      Math.sin(Math.PI / Math.max(rootItems.length, 1)) *
+      0.85,
+    (config.radius - config.innerRadius) / 2.5,
+  );
+  const bubbleRadius = Math.min(maxBubbleRadius, 28);
+
+  const selectedRootIndex = rootItems.findIndex(
+    (i) => i.id === rootEntry.item.id,
+  );
+
+  rootItems.forEach((item, index) => {
+    const angle = rootAngles[index];
+    const isSelected = index === selectedRootIndex;
+
+    const circle = createBubble(
+      svgCenter,
+      svgCenter,
+      angle,
+      placementRadius,
+      bubbleRadius,
+      false,
+      item.disabled || false,
+      index,
+    );
+    circle.setAttribute("data-level", "0");
+    circle.setAttribute("data-dimmed", "true");
+    if (isSelected) {
+      circle.setAttribute("data-selected", "true");
+      circle.setAttribute("data-dimmed", "false");
+    }
+    svg.appendChild(circle);
+
+    // Dimmed labels for root items
+    const label = createBubbleLabel({
+      item,
+      angle,
+      innerRadius: config.innerRadius,
+      outerRadius: config.radius,
+      isHovered: false,
+      isFocused: false,
+      isDropTarget: false,
+      index,
+      showKeyHint: false,
+    });
+    label.setAttribute("data-level", "0");
+    label.setAttribute("data-dimmed", "true");
+    if (isSelected) {
+      label.setAttribute("data-dimmed", "false");
+    }
+    container.appendChild(label);
+  });
+
+  // Render intermediate submenu levels (not the deepest/active one)
+  for (let stackIdx = 0; stackIdx < navStack.length - 1; stackIdx++) {
+    const entry = navStack[stackIdx];
+    if (!entry.parentCenter || !entry.submenuAngles) continue;
+
+    const nextEntry = navStack[stackIdx + 1];
+    const childItems = entry.item.children || [];
+    const selectedChildIndex = childItems.findIndex(
+      (i) => i.id === nextEntry.item.id,
+    );
+
+    // Draw connector from parent to submenu cluster center
+    const connectorEnd = toCartesian(entry.parentCenter, {
+      angle: entry.entryAngle,
+      distance: (entry.submenuRadius || 60) * 0.5,
+    });
+    svg.appendChild(
+      createConnector(
+        entry.parentCenter.x,
+        entry.parentCenter.y,
+        connectorEnd.x,
+        connectorEnd.y,
+      ),
+    );
+
+    const subRadius = entry.submenuRadius || 60;
+    const subBubbleRadius = Math.min(subRadius * 0.3, 22);
+
+    childItems.forEach((item, index) => {
+      const angle = entry.submenuAngles![index];
+      const pos = toCartesian(entry.parentCenter!, {
+        angle,
+        distance: subRadius,
+      });
+
+      const circle = document.createElementNS(SVG_NS, "circle");
+      circle.setAttribute("class", "ray-menu-bubble");
+      circle.setAttribute("cx", String(pos.x));
+      circle.setAttribute("cy", String(pos.y));
+      circle.setAttribute("r", String(subBubbleRadius));
+      circle.setAttribute("data-hovered", "false");
+      circle.setAttribute("data-disabled", String(item.disabled || false));
+      circle.setAttribute("data-index", String(index));
+      circle.setAttribute("data-level", String(stackIdx + 1));
+      circle.setAttribute("data-dimmed", "true");
+      circle.setAttribute("data-submenu", "true");
+      if (index === selectedChildIndex) {
+        circle.setAttribute("data-selected", "true");
+        circle.setAttribute("data-dimmed", "false");
+      }
+      svg.appendChild(circle);
+    });
+  }
+}
+
+/**
  * Render parent menu levels as dimmed concentric rings
  */
 export function renderParentLevels(

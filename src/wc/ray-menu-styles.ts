@@ -395,6 +395,117 @@ export const RAY_MENU_STYLES = `
     animation: loadingSpin 0.8s linear infinite;
   }
 
+  /* ===== Bubble Variant ===== */
+  :host {
+    --ray-bubble-fill: rgba(50, 50, 60, 0.7);
+    --ray-bubble-fill-hover: rgba(100, 180, 255, 0.5);
+    --ray-bubble-stroke: rgba(255, 255, 255, 0.15);
+    --ray-bubble-stroke-hover: rgba(100, 180, 255, 0.8);
+  }
+
+  .ray-menu-bubble {
+    fill: var(--ray-bubble-fill);
+    stroke: var(--ray-bubble-stroke);
+    stroke-width: 1.5;
+    cursor: pointer;
+    transition: all var(--ray-transition);
+    opacity: 0.8;
+  }
+
+  .ray-menu-bubble[data-hovered="true"],
+  .ray-menu-bubble[data-focused="true"] {
+    fill: var(--ray-bubble-fill-hover);
+    stroke: var(--ray-bubble-stroke-hover);
+    stroke-width: 2;
+    opacity: 1;
+    filter: url(#glow);
+  }
+
+  .ray-menu-bubble[data-disabled="true"] {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .ray-menu-bubble-label {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    padding: 4px;
+    gap: 2px;
+    pointer-events: none;
+  }
+
+  .ray-menu-bubble-label[data-hovered="true"] {
+    background: transparent;
+    box-shadow: none;
+    transform: translate(-50%, -50%) scale(var(--ray-scale-hover));
+  }
+
+  .ray-menu-bubble-label[data-focused="true"] {
+    background: transparent;
+    box-shadow: none;
+    transform: translate(-50%, -50%) scale(var(--ray-scale-focus));
+  }
+
+  .ray-menu-bubble-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .ray-menu-bubble-text {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Dimmed parent bubbles */
+  .ray-menu-bubble[data-dimmed="true"] {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  /* Selected parent bubble (highlighted) */
+  .ray-menu-bubble[data-selected="true"] {
+    stroke: var(--ray-bubble-stroke-hover);
+    stroke-width: 2;
+    opacity: 0.7;
+  }
+
+  /* Connector line from parent to submenu cluster */
+  .ray-menu-connector {
+    stroke: var(--ray-bubble-stroke);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    opacity: 0.4;
+  }
+
+  /* Staggered entry animation for submenu bubbles */
+  .ray-menu-bubble[data-submenu="true"] {
+    animation: ray-bubble-pop 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes ray-bubble-pop {
+    from { r: 0; opacity: 0; }
+    to { opacity: 0.8; }
+  }
+
+  /* Dimmed labels */
+  .ray-menu-label[data-dimmed="true"] {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  :host([variant="bubble"]) .ray-menu-outer-ring {
+    opacity: 0.25;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .ray-menu-arc, .ray-menu-label { transition: none !important; }
     .ray-menu-container { animation: none !important; }

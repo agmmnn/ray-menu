@@ -16,34 +16,36 @@ const submenuItems: MenuItem[] = [
   {
     id: "file",
     label: "File",
+    icon: "📄",
     children: [
-      { id: "new", label: "New" },
-      { id: "open", label: "Open" },
-      { id: "save", label: "Save" },
+      { id: "new", label: "New", icon: "✨" },
+      { id: "open", label: "Open", icon: "📂" },
+      { id: "save", label: "Save", icon: "💾" },
     ],
   },
   {
     id: "edit",
     label: "Edit",
+    icon: "✏️",
     children: [
-      { id: "undo", label: "Undo" },
-      { id: "redo", label: "Redo" },
-      { id: "find", label: "Find" },
+      { id: "undo", label: "Undo", icon: "↩️" },
+      { id: "redo", label: "Redo", icon: "↪️" },
+      { id: "find", label: "Find", icon: "🔍" },
     ],
   },
-  { id: "view", label: "View" },
-  { id: "help", label: "Help" },
+  { id: "view", label: "View", icon: "👁️" },
+  { id: "help", label: "Help", icon: "❓" },
 ];
 
 const manyItems: MenuItem[] = [
-  { id: "1", label: "North" },
-  { id: "2", label: "NE" },
-  { id: "3", label: "East" },
-  { id: "4", label: "SE" },
-  { id: "5", label: "South" },
-  { id: "6", label: "SW" },
-  { id: "7", label: "West" },
-  { id: "8", label: "NW" },
+  { id: "1", label: "North", icon: "⬆️" },
+  { id: "2", label: "NE", icon: "↗️" },
+  { id: "3", label: "East", icon: "➡️" },
+  { id: "4", label: "SE", icon: "↘️" },
+  { id: "5", label: "South", icon: "⬇️" },
+  { id: "6", label: "SW", icon: "↙️" },
+  { id: "7", label: "West", icon: "⬅️" },
+  { id: "8", label: "NW", icon: "↖️" },
 ];
 
 const dropActions: MenuItem[] = [
@@ -59,6 +61,7 @@ interface DemoProps {
   showAnchorLine?: boolean;
   showTrailPath?: boolean;
   radius?: number;
+  variant?: "slice" | "bubble";
 }
 
 function Demo({
@@ -67,6 +70,7 @@ function Demo({
   showAnchorLine = false,
   showTrailPath = false,
   radius,
+  variant,
 }: DemoProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [lastSelected, setLastSelected] = useState<string | null>(null);
@@ -78,6 +82,7 @@ function Demo({
     showAnchorLine,
     showTrailPath,
     radius,
+    variant,
     onSelect: (item: MenuItem) => {
       console.log(`[${title}] Selected:`, item.label);
       setLastSelected(item.label);
@@ -416,6 +421,168 @@ function DragIconMenu() {
   );
 }
 
+// Drag icon that opens bubble menu with submenus
+function BubbleDragIconMenu() {
+  const [lastAction, setLastAction] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const iconRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+
+  const bubbleSubmenuItems: MenuItem[] = [
+    {
+      id: "format",
+      label: "Format",
+      icon: "🎨",
+      children: [
+        { id: "bold", label: "Bold", icon: "𝐁" },
+        { id: "italic", label: "Italic", icon: "𝐼" },
+        { id: "underline", label: "Underline", icon: "U̲" },
+        { id: "strike", label: "Strike", icon: "S̶" },
+      ],
+    },
+    {
+      id: "insert",
+      label: "Insert",
+      icon: "➕",
+      children: [
+        { id: "image", label: "Image", icon: "🖼️" },
+        { id: "link", label: "Link", icon: "🔗" },
+        { id: "table", label: "Table", icon: "📊" },
+      ],
+    },
+    { id: "copy", label: "Copy", icon: "📋" },
+    { id: "paste", label: "Paste", icon: "📎" },
+    { id: "delete", label: "Delete", icon: "🗑️" },
+  ];
+
+  const menu = useRayMenu({
+    items: bubbleSubmenuItems,
+    variant: "bubble",
+    instantDragThrough: true,
+    onSelect: (item: MenuItem) => {
+      console.log("[BubbleDrag] Selected:", item.label);
+      setLastAction(item.label);
+    },
+  });
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+      iconRef.current?.setPointerCapture(e.pointerId);
+      if (ghostRef.current) {
+        ghostRef.current.style.left = `${e.clientX}px`;
+        ghostRef.current.style.top = `${e.clientY}px`;
+      }
+      menu.openAsDropTarget(e.clientX, e.clientY);
+    },
+    [menu],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (ghostRef.current) {
+        ghostRef.current.style.left = `${e.clientX}px`;
+        ghostRef.current.style.top = `${e.clientY}px`;
+      }
+      menu.updateHoverFromPoint(e.clientX, e.clientY);
+    },
+    [menu],
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      setIsDragging(false);
+      iconRef.current?.releasePointerCapture(e.pointerId);
+
+      const selected = menu.dropOnHovered();
+      if (selected) {
+        console.log("[BubbleDrag] Dropped on:", selected.label);
+      } else {
+        menu.cancelDrop();
+      }
+    },
+    [isDragging, menu],
+  );
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 12,
+      }}
+    >
+      <div style={{ fontSize: 12, color: "#a1a1aa" }}>
+        Bubble Drag (Submenus)
+      </div>
+      <div
+        ref={iconRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        style={{
+          width: 80,
+          height: 80,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          borderRadius: 12,
+          border: `2px solid ${isDragging ? "rgba(100,180,255,0.5)" : "rgba(255,255,255,0.15)"}`,
+          background: isDragging
+            ? "rgba(100,180,255,0.1)"
+            : "rgba(255,255,255,0.05)",
+          cursor: isDragging ? "grabbing" : "grab",
+          fontSize: 32,
+          userSelect: "none",
+          touchAction: "none",
+          transition: "border 0.2s, background 0.2s",
+        }}
+      >
+        <span>🎨</span>
+        <span style={{ fontSize: 10, color: "#a1a1aa" }}>
+          {isDragging ? "Release" : "Drag me"}
+        </span>
+      </div>
+
+      {/* Floating drag ghost */}
+      <div
+        ref={ghostRef}
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          transform: "translate(-50%, -50%)",
+          width: 60,
+          height: 60,
+          display: isDragging ? "flex" : "none",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 12,
+          background: "rgba(30, 30, 35, 0.9)",
+          border: "2px solid rgba(100,180,255,0.5)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          fontSize: 28,
+          pointerEvents: "none",
+          zIndex: 10000,
+        }}
+      >
+        🎨
+      </div>
+
+      {lastAction && (
+        <div style={{ fontSize: 11, color: "#22c55e" }}>
+          Action: {lastAction}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   return (
     <div
@@ -456,7 +623,11 @@ function App() {
         <Demo title="Submenus" items={submenuItems} />
         <Demo title="8 Items (compass)" items={manyItems} />
         <Demo title="Large Radius" items={basicItems} radius={180} />
+        <Demo title="Bubble" items={basicItems} variant="bubble" />
+        <Demo title="Bubble (8 items)" items={manyItems} variant="bubble" />
+        <Demo title="Bubble (submenus)" items={submenuItems} variant="bubble" />
         <DragIconMenu />
+        <BubbleDragIconMenu />
         <DragDemo />
       </div>
 

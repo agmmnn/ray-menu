@@ -97,6 +97,7 @@ ray-menu {
 | ------------------ | ------- | ---------------------------- |
 | `radius`           | `120`   | Menu radius in pixels        |
 | `inner-radius`     | `40`    | Center dead zone             |
+| `variant`          | `slice` | `"slice"` or `"bubble"`      |
 | `show-trail-path`  | `false` | Cursor trail effect          |
 | `show-anchor-line` | `false` | Line from menu to cursor     |
 | `start-angle`      | `-90`   | Start angle in degrees       |
