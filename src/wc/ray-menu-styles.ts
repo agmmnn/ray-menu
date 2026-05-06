@@ -64,14 +64,16 @@ export const RAY_MENU_STYLES = `
     --ray-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     --ray-shadow-hover: 0 0 20px rgba(100, 180, 255, 0.4);
     --ray-transition: 150ms ease;
+    --ray-scale-hover: 1.1;
+    --ray-scale-focus: 1.05;
+    --ray-frost-blur: 8px;
+
+    /* ===== Animation Tokens ===== */
     --ray-enter-duration: 150ms;
     --ray-enter-easing: cubic-bezier(0.16, 1, 0.3, 1);
     --ray-exit-duration: 120ms;
     --ray-exit-easing: ease-in;
     --ray-pop-scale: 0.8;
-    --ray-scale-hover: 1.1;
-    --ray-scale-focus: 1.05;
-    --ray-frost-blur: 8px;
     
     /* ===== State Colors ===== */
     --ray-error: #f87171;
