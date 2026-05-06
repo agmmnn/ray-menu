@@ -357,6 +357,11 @@
           <span>Instant Drag-Through</span>
         </label>
 
+        <label>
+          <input type="checkbox" id="frosted" />
+          <span>Frosted Glass</span>
+        </label>
+
         <div class="control-item">
           <span>Center Deadzone: <output id="deadzoneValue">30</output>px</span>
           <input type="range" id="deadzone" min="10" max="60" value="30" />
@@ -848,6 +853,14 @@
             menu.removeAttribute("instant-drag-through"); // Default is false (dwell only)
           }
         });
+
+      document.getElementById("frosted").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          menu.setAttribute("frosted", "");
+        } else {
+          menu.removeAttribute("frosted");
+        }
+      });
 
       document
         .getElementById("scrollBehavior")

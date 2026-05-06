@@ -39,6 +39,7 @@ import {
   calculateBubbleSubmenuLayout,
   adjustBubbleSubmenuFanAngle,
   createConnector,
+  createFrostWrapper,
 } from "./ray-menu-rendering";
 import { createDriftTraceSvg, updateDriftTrace } from "./ray-menu-drift-trace";
 
@@ -119,6 +120,9 @@ export class RayMenu extends BaseElement {
   // Variant
   private _variant: "slice" | "bubble" = "slice";
 
+  // Frosted glass
+  private _frosted = false;
+
   // Static/Dock mode state
   private _isStatic = false;
   private _defaultOpen = false;
@@ -158,6 +162,7 @@ export class RayMenu extends BaseElement {
       "static",
       "default-open",
       "variant",
+      "frosted",
     ];
   }
 
@@ -299,6 +304,9 @@ export class RayMenu extends BaseElement {
       cleanup();
     } else if (container) {
       container.setAttribute("data-closing", "true");
+      this.shadowRoot
+        ?.querySelectorAll(".ray-frost-wrapper")
+        .forEach((el) => el.setAttribute("data-closing", "true"));
       container.addEventListener("animationend", cleanup, { once: true });
       // Fallback in case animationend doesn't fire (e.g. prefers-reduced-motion)
       setTimeout(cleanup, 200);
@@ -513,6 +521,9 @@ export class RayMenu extends BaseElement {
         break;
       case "variant":
         this._variant = newValue === "bubble" ? "bubble" : "slice";
+        break;
+      case "frosted":
+        this._frosted = newValue !== null && newValue !== "false";
         break;
     }
     if (this._isOpen) this._render();
@@ -1437,6 +1448,9 @@ export class RayMenu extends BaseElement {
 
   private _clearContainer(): void {
     if (!this.shadowRoot) return;
+    this.shadowRoot
+      .querySelectorAll(".ray-frost-wrapper")
+      .forEach((el) => el.remove());
     const container = this.shadowRoot.querySelector(".ray-menu-container");
     if (container) {
       container.remove();
@@ -1849,6 +1863,18 @@ export class RayMenu extends BaseElement {
     container.appendChild(svg);
     this._createBackIndicator(container);
     this.shadowRoot.appendChild(container);
+
+    if (this._frosted) {
+      const svgSize = radius * 2 + 40;
+      const svgRect = {
+        left: this._position.x - svgSize / 2,
+        top: this._position.y - svgSize / 2,
+        width: svgSize,
+        height: svgSize,
+      };
+      const frostWrapper = createFrostWrapper(svg, svgRect);
+      this.shadowRoot.insertBefore(frostWrapper, container);
+    }
   }
 
   // --- Drift Trace ---
