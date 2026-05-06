@@ -357,10 +357,15 @@
           <span>Instant Drag-Through</span>
         </label>
 
-        <label>
-          <input type="checkbox" id="frosted" />
+        <div class="control-item">
           <span>Frosted Glass</span>
-        </label>
+          <select id="frosted">
+            <option value="off">Off</option>
+            <option value="menu">Menu</option>
+            <option value="path">Path</option>
+            <option value="all">All</option>
+          </select>
+        </div>
 
         <div class="control-item">
           <span>Center Deadzone: <output id="deadzoneValue">30</output>px</span>
@@ -855,10 +860,11 @@
         });
 
       document.getElementById("frosted").addEventListener("change", (e) => {
-        if (e.target.checked) {
-          menu.setAttribute("frosted", "");
-        } else {
+        const value = e.target.value;
+        if (value === "off") {
           menu.removeAttribute("frosted");
+        } else {
+          menu.setAttribute("frosted", value);
         }
       });
 

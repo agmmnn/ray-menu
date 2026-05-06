@@ -121,7 +121,7 @@ export class RayMenu extends BaseElement {
   private _variant: "slice" | "bubble" = "slice";
 
   // Frosted glass
-  private _frosted = false;
+  private _frosted: false | "menu" | "path" | "all" = false;
 
   // Static/Dock mode state
   private _isStatic = false;
@@ -523,7 +523,13 @@ export class RayMenu extends BaseElement {
         this._variant = newValue === "bubble" ? "bubble" : "slice";
         break;
       case "frosted":
-        this._frosted = newValue !== null && newValue !== "false";
+        if (newValue === null || newValue === "false") {
+          this._frosted = false;
+        } else if (newValue === "path" || newValue === "all") {
+          this._frosted = newValue;
+        } else {
+          this._frosted = "menu";
+        }
         break;
     }
     if (this._isOpen) this._render();
@@ -1872,7 +1878,7 @@ export class RayMenu extends BaseElement {
         width: svgSize,
         height: svgSize,
       };
-      const frostWrapper = createFrostWrapper(svg, svgRect);
+      const frostWrapper = createFrostWrapper(svg, svgRect, this._frosted);
       this.shadowRoot.insertBefore(frostWrapper, container);
     }
   }

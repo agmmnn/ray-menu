@@ -11,6 +11,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 export function createFrostWrapper(
   svg: SVGSVGElement,
   svgRect: { left: number; top: number; width: number; height: number },
+  mode: "menu" | "path" | "all",
 ): HTMLDivElement {
   const wrapper = document.createElement("div");
   wrapper.className = "ray-frost-wrapper";
@@ -27,19 +28,41 @@ export function createFrostWrapper(
     wrapper.appendChild(frost);
   };
 
-  svg.querySelectorAll(".ray-menu-arc").forEach((arc) => {
+  const arcSelector =
+    mode === "all"
+      ? ".ray-menu-arc, .ray-menu-parent-arc"
+      : mode === "path"
+        ? '.ray-menu-arc, .ray-menu-parent-arc[data-selected="true"]'
+        : ".ray-menu-arc";
+
+  svg.querySelectorAll(arcSelector).forEach((arc) => {
     const d = arc.getAttribute("d");
     if (d) addFrostLayer(`path('${d}')`);
   });
 
-  svg
-    .querySelectorAll('.ray-menu-bubble:not([data-dimmed="true"])')
-    .forEach((bubble) => {
-      const cx = bubble.getAttribute("cx");
-      const cy = bubble.getAttribute("cy");
-      const r = bubble.getAttribute("r");
-      if (cx && cy && r) addFrostLayer(`circle(${r}px at ${cx}px ${cy}px)`);
-    });
+  // Bubble frost layers are positioned individually so they work even when
+  // the SVG overflows (bubble submenus extend beyond the viewBox).
+  const bubbleSelector =
+    mode === "all"
+      ? ".ray-menu-bubble"
+      : mode === "path"
+        ? '.ray-menu-bubble:not([data-dimmed="true"])'
+        : ".ray-menu-bubble:not([data-dimmed])";
+
+  svg.querySelectorAll(bubbleSelector).forEach((bubble) => {
+    const cx = Number(bubble.getAttribute("cx"));
+    const cy = Number(bubble.getAttribute("cy"));
+    const r = Number(bubble.getAttribute("r"));
+    if (!r) return;
+    const frost = document.createElement("div");
+    frost.className = "ray-frost-layer";
+    frost.style.left = `${cx - r}px`;
+    frost.style.top = `${cy - r}px`;
+    frost.style.width = `${r * 2}px`;
+    frost.style.height = `${r * 2}px`;
+    frost.style.clipPath = `circle(50%)`;
+    wrapper.appendChild(frost);
+  });
 
   return wrapper;
 }

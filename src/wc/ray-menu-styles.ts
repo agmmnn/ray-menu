@@ -71,7 +71,7 @@ export const RAY_MENU_STYLES = `
     --ray-pop-scale: 0.8;
     --ray-scale-hover: 1.1;
     --ray-scale-focus: 1.05;
-    --ray-frost-blur: 12px;
+    --ray-frost-blur: 4px;
     
     /* ===== State Colors ===== */
     --ray-error: #f87171;
@@ -202,6 +202,7 @@ export const RAY_MENU_STYLES = `
   .ray-frost-wrapper {
     position: absolute;
     pointer-events: none;
+    overflow: visible;
   }
 
   .ray-frost-wrapper[data-closing="true"] .ray-frost-layer {
@@ -210,8 +211,8 @@ export const RAY_MENU_STYLES = `
 
   .ray-frost-layer {
     position: absolute;
-    backdrop-filter: blur(var(--ray-frost-blur, 12px));
-    -webkit-backdrop-filter: blur(var(--ray-frost-blur, 12px));
+    backdrop-filter: blur(var(--ray-frost-blur, 4px));
+    -webkit-backdrop-filter: blur(var(--ray-frost-blur, 4px));
     background: rgb(255 255 255 / 0%);
     pointer-events: none;
     animation: ray-frost-enter var(--ray-enter-duration) var(--ray-enter-easing) forwards;
@@ -223,6 +224,10 @@ export const RAY_MENU_STYLES = `
 
   :host([frosted]) .ray-menu-label {
     z-index: 2;
+  }
+
+  :host([variant="bubble"][frosted]) {
+    --ray-frost-blur: 2px;
   }
 
   .ray-menu-parent-arc {
