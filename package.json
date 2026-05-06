@@ -99,6 +99,8 @@
     "ajv": "^8.18.0",
     "eslint": "^10.0.0",
     "globals": "^17.3.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "tailwindcss": "^4.2.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.0",
