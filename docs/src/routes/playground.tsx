@@ -134,6 +134,7 @@ function Playground() {
     edgeBehavior: "flip",
     scrollBehavior: "close",
     variant: "slice" as "slice" | "bubble",
+    frosted: "off" as "off" | "menu" | "path" | "all",
     preset: "full",
     startAngle: -90,
     sweepAngle: 360,
@@ -145,6 +146,10 @@ function Playground() {
   });
 
   const [ready, setReady] = useState(false);
+  const [imgBg, setImgBg] = useState<string | false>(false);
+  const toggleImgBg = (on: boolean) => {
+    setImgBg(on ? `https://picsum.photos/seed/${Date.now()}/800/600` : false);
+  };
   const [dragData, setDragData] = useState<{
     type: string;
     label: string;
@@ -222,6 +227,9 @@ function Playground() {
     menu.setAttribute("edge-behavior", config.edgeBehavior);
     menu.setAttribute("scroll-behavior", config.scrollBehavior);
     menu.setAttribute("variant", config.variant);
+
+    if (config.frosted === "off") menu.removeAttribute("frosted");
+    else menu.setAttribute("frosted", config.frosted);
     menu.setAttribute("start-angle", String(config.startAngle));
     menu.setAttribute("sweep-angle", String(config.sweepAngle));
     menu.setAttribute("center-deadzone", String(config.deadzone));
@@ -434,6 +442,36 @@ function Playground() {
                       <SelectItem value="bubble">Bubble</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    Frosted Glass
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={config.frosted}
+                      onValueChange={(v) =>
+                        setConfig((c) => ({
+                          ...c,
+                          frosted: v as "off" | "menu" | "path" | "all",
+                        }))
+                      }
+                    >
+                      <SelectTrigger size="sm" className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="off">Off</SelectItem>
+                        <SelectItem value="menu">Menu</SelectItem>
+                        <SelectItem value="path">Path</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">img bg</Label>
+                      <Switch checked={!!imgBg} onCheckedChange={toggleImgBg} />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -692,8 +730,22 @@ function Playground() {
               onContextMenu={handleContextMenu}
               className="h-[420px] rounded-xl border border-dashed border-border bg-card/50 flex flex-col items-center justify-center cursor-context-menu transition-colors hover:border-primary/30 hover:bg-card/80 relative overflow-hidden group"
             >
+              {/* Background image for frosted glass demo */}
+              {imgBg && (
+                <img
+                  src={imgBg}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover opacity-80 pointer-events-none"
+                />
+              )}
               {/* Subtle radial decoration */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-primary)/3%_0%,transparent_70%)] pointer-events-none" />
+              {!imgBg && <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-primary)/3%_0%,transparent_70%)] pointer-events-none" />}
+
+              {/* Center darkening vignette behind text */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.4)_0%,rgba(0,0,0,0.4)_24%,transparent_70%)] pointer-events-none" />
+
+              {/* Black box behind text */}
+              <div className="absolute translate-y-4 rounded-3xl bg-black/60 px-36 py-20 blur-[40px] pointer-events-none" />
 
               <div className="relative flex flex-col items-center gap-3">
                 <MousePointerClick className="size-5 text-muted-foreground/50 group-hover:text-primary/50 transition-colors" />

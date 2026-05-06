@@ -156,6 +156,51 @@ ray-menu .ray-menu-bubble[data-submenu="true"] {
 }
 ```
 
+## Frosted Glass
+
+The `frosted` attribute adds a backdrop-blur effect to menu segments. Three modes control which segments get frosted during submenu navigation:
+
+- `"menu"` — frost only the active menu level; previous menu traces remain unfrosted (default when attribute has no value)
+- `"path"` — frost the active menu plus previously selected segments when diving into submenus
+- `"all"` — frost every segment at every level, regardless of selection state
+
+```html
+<ray-menu frosted></ray-menu>
+<ray-menu frosted="path"></ray-menu>
+<ray-menu frosted="all"></ray-menu>
+```
+
+Customize the blur intensity:
+
+```css
+ray-menu {
+  --ray-frost-blur: 12px; /* default: 8px */
+}
+```
+
+| Variable           | Default | Description                      |
+| ------------------ | ------- | -------------------------------- |
+| `--ray-frost-blur` | `8px`   | Backdrop blur amount for frosted glass |
+
+## Animation
+
+The enter/exit animations can be customized with CSS variables:
+
+| Variable              | Default                          | Description              |
+| --------------------- | -------------------------------- | ------------------------ |
+| `--ray-enter-duration` | `150ms`                         | Enter animation duration |
+| `--ray-enter-easing`   | `cubic-bezier(0.16, 1, 0.3, 1)` | Enter animation easing   |
+| `--ray-exit-duration`  | `120ms`                         | Exit animation duration  |
+| `--ray-exit-easing`    | `ease-in`                       | Exit animation easing    |
+| `--ray-pop-scale`      | `0.8`                           | Scale at animation start/end |
+
+```css
+ray-menu {
+  --ray-enter-duration: 200ms;
+  --ray-pop-scale: 0.9; /* subtler scale effect */
+}
+```
+
 ## Examples
 
 ### Minimal Theme
