@@ -5,10 +5,8 @@ import type { NavStackEntry } from "./ray-menu-types";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 /**
- * Create frost layers for all arc/bubble shapes, wrapped in a single
- * positioned container. The wrapper uses position:fixed so it sits outside
- * any CSS transform stacking context (which breaks backdrop-filter).
- * It animates opacity only to match the menu enter/exit timing.
+ * Frost layers live outside the menu container (at shadow root level) because
+ * the container's transform creates a stacking context that breaks backdrop-filter.
  */
 export function createFrostWrapper(
   svg: SVGSVGElement,
@@ -21,14 +19,17 @@ export function createFrostWrapper(
   wrapper.style.width = `${svgRect.width}px`;
   wrapper.style.height = `${svgRect.height}px`;
 
-  svg.querySelectorAll(".ray-menu-arc").forEach((arc) => {
-    const d = arc.getAttribute("d");
-    if (!d) return;
+  const addFrostLayer = (clipPath: string) => {
     const frost = document.createElement("div");
     frost.className = "ray-frost-layer";
     frost.style.inset = "0";
-    frost.style.clipPath = `path('${d}')`;
+    frost.style.clipPath = clipPath;
     wrapper.appendChild(frost);
+  };
+
+  svg.querySelectorAll(".ray-menu-arc").forEach((arc) => {
+    const d = arc.getAttribute("d");
+    if (d) addFrostLayer(`path('${d}')`);
   });
 
   svg
@@ -37,12 +38,7 @@ export function createFrostWrapper(
       const cx = bubble.getAttribute("cx");
       const cy = bubble.getAttribute("cy");
       const r = bubble.getAttribute("r");
-      if (!cx || !cy || !r) return;
-      const frost = document.createElement("div");
-      frost.className = "ray-frost-layer";
-      frost.style.inset = "0";
-      frost.style.clipPath = `circle(${r}px at ${cx}px ${cy}px)`;
-      wrapper.appendChild(frost);
+      if (cx && cy && r) addFrostLayer(`circle(${r}px at ${cx}px ${cy}px)`);
     });
 
   return wrapper;
