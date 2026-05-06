@@ -899,6 +899,7 @@
       // Variant selector
       document.getElementById("variant").addEventListener("change", (e) => {
         menu.setAttribute("variant", e.target.value);
+        menu.style.setProperty("--ray-frost-blur", e.target.value === "bubble" ? "3px" : null);
         log.textContent = `Variant: ${e.target.value}`;
       });
 

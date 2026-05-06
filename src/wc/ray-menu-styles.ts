@@ -71,7 +71,7 @@ export const RAY_MENU_STYLES = `
     --ray-pop-scale: 0.8;
     --ray-scale-hover: 1.1;
     --ray-scale-focus: 1.05;
-    --ray-frost-blur: 4px;
+    --ray-frost-blur: 8px;
     
     /* ===== State Colors ===== */
     --ray-error: #f87171;
@@ -224,10 +224,6 @@ export const RAY_MENU_STYLES = `
 
   :host([frosted]) .ray-menu-label {
     z-index: 2;
-  }
-
-  :host([variant="bubble"][frosted]) {
-    --ray-frost-blur: 2px;
   }
 
   .ray-menu-parent-arc {
