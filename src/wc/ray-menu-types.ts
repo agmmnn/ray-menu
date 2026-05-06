@@ -18,6 +18,8 @@ export interface NavStackEntry {
   submenuAngles?: number[];
 }
 
+export type FrostMode = "menu" | "path" | "all";
+
 export interface RayMenuDropDetail {
   item: MenuItem;
   data?: unknown;

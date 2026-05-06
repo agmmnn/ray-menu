@@ -16,7 +16,7 @@ import {
   calculateVelocity,
 } from "../core";
 
-import type { NavStackEntry } from "./ray-menu-types";
+import type { NavStackEntry, FrostMode } from "./ray-menu-types";
 export type {
   RayMenuDropDetail,
   RayMenuSubmenuDetail,
@@ -121,7 +121,7 @@ export class RayMenu extends BaseElement {
   private _variant: "slice" | "bubble" = "slice";
 
   // Frosted glass
-  private _frosted: false | "menu" | "path" | "all" = false;
+  private _frosted: false | FrostMode = false;
 
   // Static/Dock mode state
   private _isStatic = false;
