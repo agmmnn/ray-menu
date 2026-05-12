@@ -443,9 +443,9 @@ export const RAY_MENU_STYLES = `
 
   /* ===== Bubble Variant ===== */
   :host {
-    --ray-bubble-fill: rgba(50, 50, 60, 0.7);
-    --ray-bubble-fill-hover: rgba(100, 180, 255, 0.5);
-    --ray-bubble-stroke: rgba(255, 255, 255, 0.15);
+    --ray-bubble-fill: rgba(25, 25, 35, 0.92);
+    --ray-bubble-fill-hover: rgba(80, 160, 240, 0.85);
+    --ray-bubble-stroke: rgba(255, 255, 255, 0.08);
     --ray-bubble-stroke-hover: rgba(100, 180, 255, 0.8);
   }
 
@@ -454,8 +454,8 @@ export const RAY_MENU_STYLES = `
     stroke: var(--ray-bubble-stroke);
     stroke-width: 1.5;
     cursor: pointer;
-    transition: all var(--ray-transition);
-    opacity: 0.8;
+    transition: fill 150ms ease, stroke 150ms ease, stroke-width 150ms ease, opacity 150ms ease;
+    opacity: 0.95;
   }
 
   .ray-menu-bubble[data-hovered="true"],
@@ -497,15 +497,15 @@ export const RAY_MENU_STYLES = `
   }
 
   .ray-menu-bubble-icon {
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1;
   }
 
   .ray-menu-bubble-text {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     line-height: 1.2;
-    max-width: 60px;
+    max-width: 72px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -533,23 +533,19 @@ export const RAY_MENU_STYLES = `
   }
 
   /* Staggered entry animation for submenu bubbles */
-  .ray-menu-bubble[data-submenu="true"] {
+  .ray-menu-bubble[data-submenu="true"]:not([data-dimmed="true"]) {
     animation: ray-bubble-pop 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @keyframes ray-bubble-pop {
     from { r: 0; opacity: 0; }
-    to { opacity: 0.8; }
+    to { opacity: 0.95; }
   }
 
   /* Dimmed labels */
   .ray-menu-label[data-dimmed="true"] {
     opacity: 0.3;
     pointer-events: none;
-  }
-
-  :host([variant="bubble"]) .ray-menu-outer-ring {
-    opacity: 0.25;
   }
 
   @media (prefers-reduced-motion: reduce) {

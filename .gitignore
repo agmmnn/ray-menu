@@ -32,3 +32,4 @@ CLAUDE.md
 .tanstack
 .vercel
 .env*.local
+.osgrep

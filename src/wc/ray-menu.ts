@@ -119,6 +119,7 @@ export class RayMenu extends BaseElement {
 
   // Variant
   private _variant: "slice" | "bubble" = "slice";
+  private _hasRenderedOnce = false;
 
   // Frosted glass
   private _frosted: false | FrostMode = false;
@@ -282,6 +283,7 @@ export class RayMenu extends BaseElement {
       this._velocity = { vx: 0, vy: 0 };
       this._navStack = [];
       this._currentItems = [];
+      this._hasRenderedOnce = false;
       this._clearSpringLoad();
       this._clearBackDwell();
       this._removeBackIndicator();
@@ -950,6 +952,16 @@ export class RayMenu extends BaseElement {
     // In all other cases (near submenu, far outside, etc.) use angular match
     // on submenu items relative to parent center — this gives infinite selection
     // behavior for submenu bubbles
+    if (
+      this._config.infiniteSelection &&
+      this._config.infiniteThreshold > 0
+    ) {
+      const distToParent = distance(parentScreen, pointer);
+      if (distToParent > this._config.infiniteThreshold) {
+        return -1;
+      }
+    }
+
     const angle = angleFromCenter(parentScreen, pointer);
     return getClosestItemIndex(angle, deepestEntry.submenuAngles);
   }
@@ -1130,8 +1142,7 @@ export class RayMenu extends BaseElement {
     // For bubble variant: compute parent bubble center and submenu layout
     if (this._variant === "bubble") {
       const svgCenter = this._config.radius + 20;
-      const placementRadius =
-        (this._config.innerRadius + this._config.radius) / 2;
+      const placementRadius = this._config.radius * 0.72;
 
       const parentIndex = this._currentItems.findIndex(
         (i) => i.id === item.id,
@@ -1172,8 +1183,8 @@ export class RayMenu extends BaseElement {
       }
 
       // Shrink radius for deeper levels to prevent sprawl
-      const depthFactor = Math.pow(0.85, this._navStack.length);
-      const submenuRadius = Math.max(placementRadius * 0.7 * depthFactor, 40);
+      const depthFactor = Math.pow(0.92, this._navStack.length);
+      const submenuRadius = Math.max(placementRadius * 1.1 * depthFactor, 65);
 
       // Adjust fan angle for viewport edge constraints
       const parentScreenPos = this._svgToScreen(parentCenter);
@@ -1602,6 +1613,12 @@ export class RayMenu extends BaseElement {
       this._flipState.transform,
     );
 
+    if (this._hasRenderedOnce) {
+      container.style.animation = "none";
+      container.style.opacity = "1";
+    }
+    this._hasRenderedOnce = true;
+
     if (this._isDropTarget) {
       container.setAttribute("data-drop-target", "true");
     }
@@ -1619,7 +1636,7 @@ export class RayMenu extends BaseElement {
       svg.style.overflow = "visible";
     }
 
-    if (!isBubbleSubmenu) {
+    if (this._variant !== "bubble") {
       svg.appendChild(
         createOuterRing(
           radius,
@@ -1642,25 +1659,7 @@ export class RayMenu extends BaseElement {
     if (this._variant === "bubble") {
       if (this._navStack.length > 0) {
         // === Bubble submenu mode ===
-        // 1. Render root ring structure
-        svg.appendChild(
-          createOuterRing(
-            radius,
-            this._config.startAngle,
-            this._config.sweepAngle,
-          ),
-        );
-        svg.appendChild(
-          createInnerRing(
-            radius,
-            innerRadius,
-            this._centerTransparent,
-            this._config.startAngle,
-            this._config.sweepAngle,
-          ),
-        );
-
-        // 2. Render dimmed parent levels (root ring + intermediate fans)
+        // Render dimmed parent levels (root ring + intermediate fans)
         renderBubbleParentLevels(
           svg,
           container,
@@ -1673,7 +1672,7 @@ export class RayMenu extends BaseElement {
         const deepestEntry = this._navStack[this._navStack.length - 1];
         if (deepestEntry.parentCenter && deepestEntry.submenuAngles) {
           const subRadius = deepestEntry.submenuRadius || 60;
-          const subBubbleRadius = Math.min(subRadius * 0.35, 24);
+          const subBubbleRadius = Math.min(subRadius * 0.38, 30);
 
           // Draw connector from parent to submenu cluster
           const connectorEnd = toCartesian(deepestEntry.parentCenter, {
@@ -1775,15 +1774,15 @@ export class RayMenu extends BaseElement {
         }
       } else {
         // === Bubble root level (no submenu open) ===
-        const placementRadius = (innerRadius + radius) / 2;
+        const placementRadius = radius * 0.72;
         const itemCount = this._currentItems.length;
         const maxBubbleRadius = Math.min(
           placementRadius *
             Math.sin(Math.PI / Math.max(itemCount, 1)) *
             0.85,
-          (radius - innerRadius) / 2.5,
+          (radius - innerRadius) / 2.0,
         );
-        const bubbleRadius = Math.min(maxBubbleRadius, 28);
+        const bubbleRadius = Math.min(maxBubbleRadius, 48);
 
         this._currentItems.forEach((item, index) => {
           const angle = itemAngles[index];
