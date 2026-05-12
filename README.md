@@ -1,10 +1,11 @@
-<img width="1202" height="752" alt="CleanShot 2026-02-19 at 01 03 10@2x" src="https://github.com/user-attachments/assets/13766766-99fd-47be-8aca-9d566358ebd9" />
+https://github.com/user-attachments/assets/fb6a4dfb-453b-4bb3-aea6-e9414efaba10
 
 [![npm](https://img.shields.io/npm/v/ray-menu)](https://www.npmjs.com/package/ray-menu)
-[![npm bundle size](https://img.shields.io/bundlephobia/minzip/ray-menu)](https://bundlephobia.com/package/ray-menu)
 [![license](https://img.shields.io/npm/l/ray-menu)](https://github.com/agmmnn/ray-menu/blob/master/LICENSE)
 
-# ray-menu
+# [ray-menu](https://ray-menu.vercel.app/)
+
+> _playground: https://ray-menu.vercel.app/playground_
 
 Radial (pie) menu for the web. Framework-agnostic. Zero dependencies.
 
