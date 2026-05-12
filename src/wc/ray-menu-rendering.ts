@@ -462,7 +462,7 @@ export function calculateBubbleSubmenuLayout(
 ): { centers: { x: number; y: number }[]; angles: number[] } {
   if (childCount <= 0) return { centers: [], angles: [] };
 
-  const fanSweep = Math.min(childCount * 0.6, Math.PI);
+  const fanSweep = Math.min(childCount * 0.85, Math.PI * 1.4);
   const fanStart = parentAngle - fanSweep / 2;
 
   const angles = distributeAngles(childCount, fanStart, fanSweep);
@@ -488,7 +488,7 @@ export function adjustBubbleSubmenuFanAngle(
 ): number {
   if (childCount <= 0) return parentAngle;
 
-  const fanSweep = Math.min(childCount * 0.6, Math.PI);
+  const fanSweep = Math.min(childCount * 0.85, Math.PI * 1.4);
 
   // Test the current layout
   const testAngles = distributeAngles(
@@ -584,14 +584,14 @@ export function renderBubbleParentLevels(
     config.sweepAngle,
   );
 
-  const placementRadius = (config.innerRadius + config.radius) / 2;
+  const placementRadius = config.radius * 0.72;
   const maxBubbleRadius = Math.min(
     placementRadius *
       Math.sin(Math.PI / Math.max(rootItems.length, 1)) *
       0.85,
-    (config.radius - config.innerRadius) / 2.5,
+    (config.radius - config.innerRadius) / 2.0,
   );
-  const bubbleRadius = Math.min(maxBubbleRadius, 28);
+  const bubbleRadius = Math.min(maxBubbleRadius, 48);
 
   const selectedRootIndex = rootItems.findIndex(
     (i) => i.id === rootEntry.item.id,
@@ -665,7 +665,7 @@ export function renderBubbleParentLevels(
     );
 
     const subRadius = entry.submenuRadius || 60;
-    const subBubbleRadius = Math.min(subRadius * 0.3, 22);
+    const subBubbleRadius = Math.min(subRadius * 0.38, 30);
 
     childItems.forEach((item, index) => {
       const angle = entry.submenuAngles![index];
