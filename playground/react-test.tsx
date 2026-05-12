@@ -62,6 +62,7 @@ interface DemoProps {
   showTrailPath?: boolean;
   radius?: number;
   variant?: "slice" | "bubble";
+  frosted?: false | "menu" | "path" | "all";
 }
 
 function Demo({
@@ -71,6 +72,7 @@ function Demo({
   showTrailPath = false,
   radius,
   variant,
+  frosted,
 }: DemoProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [lastSelected, setLastSelected] = useState<string | null>(null);
@@ -83,6 +85,7 @@ function Demo({
     showTrailPath,
     radius,
     variant,
+    frosted,
     onSelect: (item: MenuItem) => {
       console.log(`[${title}] Selected:`, item.label);
       setLastSelected(item.label);
@@ -626,6 +629,9 @@ function App() {
         <Demo title="Bubble" items={basicItems} variant="bubble" />
         <Demo title="Bubble (8 items)" items={manyItems} variant="bubble" />
         <Demo title="Bubble (submenus)" items={submenuItems} variant="bubble" />
+        <Demo title="Frosted (menu)" items={submenuItems} frosted="menu" />
+        <Demo title="Frosted (path)" items={submenuItems} frosted="path" />
+        <Demo title="Frosted (all)" items={submenuItems} frosted="all" />
         <DragIconMenu />
         <BubbleDragIconMenu />
         <DragDemo />

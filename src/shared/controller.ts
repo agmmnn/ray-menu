@@ -23,6 +23,7 @@ export interface RayMenuControllerOptions {
   startAngle?: number;
   sweepAngle?: number;
   variant?: "slice" | "bubble";
+  frosted?: false | "menu" | "path" | "all";
   static?: boolean;
   defaultOpen?: boolean;
   onSelect?: (item: MenuItem) => void;
@@ -71,6 +72,7 @@ const ATTR_MAP: Record<string, string> = {
   startAngle: "start-angle",
   sweepAngle: "sweep-angle",
   variant: "variant",
+  frosted: "frosted",
   static: "static",
   defaultOpen: "default-open",
 };

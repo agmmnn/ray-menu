@@ -1,8 +1,68 @@
 import type { MenuItem, MenuConfig } from "../core";
 import { distributeAngles, toCartesian } from "../core";
-import type { NavStackEntry } from "./ray-menu-types";
+import type { NavStackEntry, FrostMode } from "./ray-menu-types";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+
+/**
+ * Frost layers live outside the menu container (at shadow root level) because
+ * the container's transform creates a stacking context that breaks backdrop-filter.
+ */
+const ARC_SELECTORS: Record<FrostMode, string> = {
+  menu: ".ray-menu-arc",
+  path: '.ray-menu-arc, .ray-menu-parent-arc[data-selected="true"]',
+  all: ".ray-menu-arc, .ray-menu-parent-arc",
+};
+
+const BUBBLE_SELECTORS: Record<FrostMode, string> = {
+  menu: ".ray-menu-bubble:not([data-dimmed])",
+  path: '.ray-menu-bubble:not([data-dimmed="true"])',
+  all: ".ray-menu-bubble",
+};
+
+export function createFrostWrapper(
+  svg: SVGSVGElement,
+  svgRect: { left: number; top: number; width: number; height: number },
+  mode: FrostMode,
+): HTMLDivElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "ray-frost-wrapper";
+  wrapper.style.left = `${svgRect.left}px`;
+  wrapper.style.top = `${svgRect.top}px`;
+  wrapper.style.width = `${svgRect.width}px`;
+  wrapper.style.height = `${svgRect.height}px`;
+
+  const addFrostLayer = (clipPath: string): HTMLDivElement => {
+    const frost = document.createElement("div");
+    frost.className = "ray-frost-layer";
+    frost.style.inset = "0";
+    frost.style.clipPath = clipPath;
+    wrapper.appendChild(frost);
+    return frost;
+  };
+
+  svg.querySelectorAll(ARC_SELECTORS[mode]).forEach((arc) => {
+    const d = arc.getAttribute("d");
+    if (d) addFrostLayer(`path('${d}')`);
+  });
+
+  // Bubble frost layers are positioned individually so they work even when
+  // the SVG overflows (bubble submenus extend beyond the viewBox).
+  svg.querySelectorAll(BUBBLE_SELECTORS[mode]).forEach((bubble) => {
+    const cx = Number(bubble.getAttribute("cx"));
+    const cy = Number(bubble.getAttribute("cy"));
+    const r = Number(bubble.getAttribute("r"));
+    if (!r) return;
+    const frost = addFrostLayer(`circle(50%)`);
+    frost.style.inset = "";
+    frost.style.left = `${cx - r}px`;
+    frost.style.top = `${cy - r}px`;
+    frost.style.width = `${r * 2}px`;
+    frost.style.height = `${r * 2}px`;
+  });
+
+  return wrapper;
+}
 
 /**
  * Describe an arc path for SVG

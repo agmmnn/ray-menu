@@ -136,6 +136,7 @@ Both `useRayMenu` and `<RayMenu>` accept the same options object:
 | `startAngle`         | `number`                                | `-90`     | Start angle in degrees                   |
 | `sweepAngle`         | `number`                                | `360`     | Sweep angle in degrees                   |
 | `variant`            | `'slice' \| 'bubble'`                   | `'slice'` | Visual variant                           |
+| `frosted`            | `false \| 'menu' \| 'path' \| 'all'`    | `false`   | Frosted glass backdrop-blur on segments  |
 | `static`             | `boolean`                               | `false`   | Static/dock mode                         |
 | `defaultOpen`        | `boolean`                               | `false`   | Open on mount                            |
 
@@ -263,6 +264,33 @@ const menu = useRayMenu({
   sweepAngle: 180, // half circle
 });
 ```
+
+### Frosted Glass
+
+```tsx
+const menu = useRayMenu({
+  items: [
+    {
+      id: "file",
+      label: "File",
+      children: [
+        { id: "new", label: "New" },
+        { id: "open", label: "Open" },
+      ],
+    },
+    { id: "edit", label: "Edit" },
+    { id: "view", label: "View" },
+  ],
+  frosted: "path", // frost active menu + selected parent segments
+  onSelect: (item) => console.log(item.label),
+});
+```
+
+The `frosted` prop accepts three modes:
+
+- `"menu"` — frost only the active menu level
+- `"path"` — frost the active menu plus previously selected segments in submenus
+- `"all"` — frost every segment at every level
 
 ## Exports
 

@@ -66,6 +66,14 @@ export const RAY_MENU_STYLES = `
     --ray-transition: 150ms ease;
     --ray-scale-hover: 1.1;
     --ray-scale-focus: 1.05;
+    --ray-frost-blur: 8px;
+
+    /* ===== Animation Tokens ===== */
+    --ray-enter-duration: 150ms;
+    --ray-enter-easing: cubic-bezier(0.16, 1, 0.3, 1);
+    --ray-exit-duration: 120ms;
+    --ray-exit-easing: ease-in;
+    --ray-pop-scale: 0.8;
     
     /* ===== State Colors ===== */
     --ray-error: #f87171;
@@ -84,24 +92,24 @@ export const RAY_MENU_STYLES = `
   }
 
   @keyframes ray-menu-enter {
-    from { opacity: 0; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(0.8); }
+    from { opacity: 0; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(var(--ray-pop-scale)); }
     to { opacity: 1; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(1); }
   }
 
   @keyframes ray-menu-exit {
     from { opacity: 1; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(1); }
-    to { opacity: 0; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(0.8); }
+    to { opacity: 0; transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1)) scale(var(--ray-pop-scale)); }
   }
 
   .ray-menu-container {
     position: absolute;
     pointer-events: auto;
-    animation: ray-menu-enter 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: ray-menu-enter var(--ray-enter-duration) var(--ray-enter-easing) forwards;
     transform: translate(-50%, -50%) var(--ray-flip-transform, scale(1, 1));
   }
 
   .ray-menu-container[data-closing="true"] {
-    animation: ray-menu-exit 120ms ease-in forwards;
+    animation: ray-menu-exit var(--ray-exit-duration) var(--ray-exit-easing) forwards;
     pointer-events: none;
   }
 
@@ -180,6 +188,44 @@ export const RAY_MENU_STYLES = `
 
   .ray-menu-arc[data-disabled="true"] {
     opacity: 0.3;
+  }
+
+  /* ===== Frosted Glass Layer ===== */
+  @keyframes ray-frost-enter {
+    from { opacity: 0; transform: scale(var(--ray-pop-scale)); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes ray-frost-exit {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(var(--ray-pop-scale)); }
+  }
+
+  .ray-frost-wrapper {
+    position: absolute;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .ray-frost-wrapper[data-closing="true"] .ray-frost-layer {
+    animation: ray-frost-exit var(--ray-exit-duration) var(--ray-exit-easing) forwards;
+  }
+
+  .ray-frost-layer {
+    position: absolute;
+    backdrop-filter: blur(var(--ray-frost-blur, 4px));
+    -webkit-backdrop-filter: blur(var(--ray-frost-blur, 4px));
+    background: rgb(255 255 255 / 0%);
+    pointer-events: none;
+    animation: ray-frost-enter var(--ray-enter-duration) var(--ray-enter-easing) forwards;
+  }
+
+  :host([frosted]) .ray-menu-container {
+    z-index: 1;
+  }
+
+  :host([frosted]) .ray-menu-label {
+    z-index: 2;
   }
 
   .ray-menu-parent-arc {

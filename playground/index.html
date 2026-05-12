@@ -358,6 +358,16 @@
         </label>
 
         <div class="control-item">
+          <span>Frosted Glass</span>
+          <select id="frosted">
+            <option value="off">Off</option>
+            <option value="menu">Menu</option>
+            <option value="path">Path</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+
+        <div class="control-item">
           <span>Center Deadzone: <output id="deadzoneValue">30</output>px</span>
           <input type="range" id="deadzone" min="10" max="60" value="30" />
         </div>
@@ -849,6 +859,15 @@
           }
         });
 
+      document.getElementById("frosted").addEventListener("change", (e) => {
+        const value = e.target.value;
+        if (value === "off") {
+          menu.removeAttribute("frosted");
+        } else {
+          menu.setAttribute("frosted", value);
+        }
+      });
+
       document
         .getElementById("scrollBehavior")
         .addEventListener("change", (e) => {
@@ -880,6 +899,7 @@
       // Variant selector
       document.getElementById("variant").addEventListener("change", (e) => {
         menu.setAttribute("variant", e.target.value);
+        menu.style.setProperty("--ray-frost-blur", e.target.value === "bubble" ? "3px" : null);
         log.textContent = `Variant: ${e.target.value}`;
       });
 
