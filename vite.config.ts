@@ -40,7 +40,6 @@ export default defineConfig(({ mode }) => {
       dts({
         include: dtsInclude,
         exclude: ["src/**/*.test.ts", "playground"],
-        rollupTypes: false,
         tsconfigPath: "./tsconfig.app.json",
       }),
     ],
